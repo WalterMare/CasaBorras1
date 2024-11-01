@@ -1,0 +1,28 @@
+<?php if ($_SESSION['Usuario_Id'] != 3) { ?>
+                        <tr class=<?php cal_Fecha($ListadoReporte[$i]['FECHA'], date('d/m/y')); ?> data-bs-toggle="tooltip" data-bs-placement="left">
+                        <th scope="row"><?php echo $i + 1; ?></th>
+                        <td><?php echo $ListadoReporte[$i]['FECHA']; ?></td>
+                        <td><?php echo $ListadoReporte[$i]['DESTINO']; ?></td>
+                        <td><?php echo $ListadoReporte[$i]['MARCA'] . "-" . $ListadoReporte[$i]['MODELO'] . "-" . $ListadoReporte[$i]['PATENTE']; ?></td>
+                        <td><?php echo $ListadoReporte[$i]['APELLIDO'] . ", " . $ListadoReporte[$i]['NOMBRE']; ?></td>
+                      <?php }
+                       else if ($_SESSION['Usuario_Id'] == 3 && $_SESSION['Usuario_Apellido'] == $ListadoReporte[$i]['APELLIDO'] && $_SESSION['Usuario_Nombre'] == $ListadoReporte[$i]['NOMBRE']) { ?>
+                        <tr class=<?php cal_Fecha($ListadoReporte[$i]['FECHA'], date('d/m/y')); ?> data-bs-toggle="tooltip" data-bs-placement="left">
+                        <th scope="row"><?php echo $i + 1; ?></th>
+                        <td><?php echo $ListadoReporte[$i]['FECHA']; ?></td>
+                        <td><?php echo $ListadoReporte[$i]['DESTINO']; ?></td>
+                        <td><?php echo $ListadoReporte[$i]['MARCA'] . "-" . $ListadoReporte[$i]['MODELO'] . "-" . $ListadoReporte[$i]['PATENTE']; ?></td>
+                        <td><?php echo $ListadoReporte[$i]['APELLIDO'] . ", " . $ListadoReporte[$i]['NOMBRE']; ?></td>
+                      <?php } ?>
+                      <?php if ($_SESSION['Usuario_Id'] != 3) { ?>
+                        <td><?php echo "$" . $ListadoReporte[$i]['COSTO']; ?></td>
+                      <?php }else{?>
+                        <td><?php echo ""; ?></td>
+                      <?php } ?>
+                      <?php if ($_SESSION['Usuario_Id'] == 1) { ?>
+                        <td><?php echo "$" . (($ListadoReporte[$i]['COSTO'] * $ListadoReporte[$i]['PORCENTAJE']) / 100) . " " . "(" . $ListadoReporte[$i]['PORCENTAJE'] . "%" . ")"; ?></td>
+                      <?php } else if ($_SESSION['Usuario_Id'] == 3 && $_SESSION['Usuario_Apellido'] == $ListadoReporte[$i]['APELLIDO'] && $_SESSION['Usuario_Nombre'] == $ListadoReporte[$i]['NOMBRE']) { ?>
+                        <td><?php echo "$" . (($ListadoReporte[$i]['COSTO'] * $ListadoReporte[$i]['PORCENTAJE']) / 100); ?></td>
+                    </tr>
+                <?php }
+                    } ?>

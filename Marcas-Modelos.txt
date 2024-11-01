@@ -1,0 +1,12 @@
+Modelos de Transportes:
+Iveco	Daily Furgon / Daily Chasis
+	https://www.iveco.com/argentina/pages/home-page.aspx#
+
+Volvo	Volvo FH / Volvo FM
+	https://www.volvotrucks.com.ar/es-ar/
+
+Scania: Serie P / Serie G
+	https://www.scania.com/ar/es/home/products/trucks.html
+
+Volkswagen:  Delivery / Meteor
+	https://vwcamionesybuses.com.ar/
