@@ -1,0 +1,34 @@
+<?php
+function Validar_Datos() {
+    $vMensaje='';
+    
+
+    if (empty($_POST['licencia'])) {//strlen cuenta la cantidad de caracteres de la cadena
+        $vMensaje='Debes seleccionar la licencia a la que quieres agregar el detalle. <br />';
+    }
+    if (empty($_POST['descripcion'])) {//strlen cuenta la cantidad de caracteres de la cadena
+        $vMensaje='Debes escribir una descripción. <br />';
+    }
+    if (empty($_POST['fecha'])) {//strlen cuenta la cantidad de caracteres de la cadena
+        $vMensaje='Debes ingresar una fecha. <br />';
+    }
+    if (empty($_POST['usuario'])) {//strlen cuenta la cantidad de caracteres de la cadena
+        $vMensaje='Debes ingresar un usuario. <br />';
+    }
+   
+  
+
+    
+
+    //con esto aseguramos que limpiamos espacios y limpiamos de caracteres de codigo ingresados
+    foreach($_POST as $Id=>$Valor){
+        $_POST[$Id] = trim($_POST[$Id]);
+        $_POST[$Id] = strip_tags($_POST[$Id]); //limpia los caracteres
+    }
+
+
+    return $vMensaje;
+
+}
+
+?>

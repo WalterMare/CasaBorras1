@@ -12,21 +12,15 @@ require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
 
-require_once 'select_tipoLicencia.php';
-$listadoestado = Listar_Estado($conexion);
-$Cantidadestado = count($listadoestado);
 
 require_once 'select_tipoLicencia.php';
-$listadolicencias = Listar_Licencia_Bis($conexion);
+$listadolicencias = Listar_Licencia($conexion);
 $Cantidadlicencias = count($listadolicencias);
 
-require_once 'select_empleado.php';
-  $listadoEmpleado = Listar_empleado_activos_bis($conexion);
-  $CantidadEmpleado = count($listadoEmpleado);
 
 
-require_once 'validacion_registro_licencias.php';
-require_once 'insertar_Licencia.php';
+require_once 'validacion_registro_detallelicencia-php';
+require_once 'insertar_Detalle_Licencia.php';
 
 
 
@@ -85,12 +79,12 @@ require_once 'insertar_Licencia.php';
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Registrar Licencias</h1>
+      <h1>Registrar Detalle de Lincencia</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.php">Home</a></li>
           <li class="breadcrumb-item">Gestor de movimientos</li>
-          <li class="breadcrumb-item active">Registrar Licencias</li>
+          <li class="breadcrumb-item active">Registrar Detalle de Licencia</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -113,16 +107,16 @@ require_once 'insertar_Licencia.php';
                 //estoy en condiciones de poder validar los datos
                 $Mensaje = Validar_Datos();
                 if (empty($Mensaje)) {
-                  if (InsertarLicencia($conexion) != false) {
-                    $Mensaje = 'Se ha registrado correctamente.';
+                  if (InsertarDetalleLicencia($conexion) != false) {
+                    $Mensaje = 'Se ha insertado el detalle correctamente.';
                     $_POST = array();
                     $Estilo = 'success';
-                  
                   } ?>
                   <div id='cartel' class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="bi bi-check-circle me-1"></i>
                     <?php echo $Mensaje;
-                   
+
+
                     ?>
                   </div>
                 <?php  } else { ?>
@@ -133,88 +127,38 @@ require_once 'insertar_Licencia.php';
                     } ?>
 
 
-
-
-              <form class="row g-3" method="post"> <!--se agrego el metodo post para la captura de datos -->
+              <form class="row g-3" method="post" enctype="multipart/form-data"> <!--se agrego el metodo post para la captura de datos -->
 
                 <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Tipo (*)</label>
-                  <select class="form-select" aria-label="Selector" id="selector" name="tipo"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
-                    <?php
-                    $selected = '';
-                    for ($i = 0; $i < $Cantidadlicencias; $i++) {
-                      if (!empty($_POST['tipo']) && $_POST['tipo'] ==  $listadolicencias[$i]['ID']) { //recuerda el elemento seleccionado
-                        $selected = 'selected';
-                      } else {
-                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
-                      }
-                    ?>
-                      <option value="<?php echo $listadolicencias[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadolicencias[$i]['NOMBRE'];?>
-                      </option>
-                    <?php } ?>
-                  </select>
-                </div>
-            
-
-                <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Empleado al que se asignará(*)</label>
-                  <select class="form-select" aria-label="Selector" id="selector" name="empleado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
-                    <?php
-                    $selected = '';
-                    for ($i = 0; $i < $CantidadEmpleado; $i++) {
-                      if (!empty($_POST['empleado']) && $_POST['empleado'] ==  $listadoEmpleado[$i]['ID']) { //recuerda el elemento seleccionado
-                        $selected = 'selected';
-                      } else {
-                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
-                      }
-                    ?>
-                      <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadoEmpleado[$i]['NOMBRE']." ".$listadoEmpleado[$i]['APELLIDO']; ?>
-                      </option>
-                    <?php } ?>
-                  </select>
-                </div>
-
-                <div class="col-6">
-                  <label for="fecha" class="form-label">Fecha Inicio(*)</label>
-                  <input type="date" class="form-control" id="fecha" name="fecha">
+                  <label for="licencia" class="form-label">Licencia</label>
+                  <input type="text" class="form-control" id="licencia" name="licencia" value="<?php echo $_GET['ID']; ?>" require readonly>
                 </div>
 
 
                 <div class="col-6">
-                  <label for="dias" class="form-label">Cantidad de Días(*)</label>
-                  <input type="number" step="1.00" class="form-control" id="dias" name='dias'>
+                  <label for="descripcion" class="form-label">Descripción(*)</label>
+                  <input type="text" class="form-control" id="descripcion" name="descripcion" require>
                 </div>
 
 
                 <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Estado de la Licencia(*)</label>
-                  <select class="form-select" aria-label="Selector" id="selector" name="estado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
-                    <?php
-                    $selected = '';
-                    for ($i = 0; $i < $Cantidadestado; $i++) {
-                      if (!empty($_POST['tipo']) && $_POST['tipo'] ==  $listadoestado[$i]['ID']) { //recuerda el elemento seleccionado
-                        $selected = 'selected';
-                      } else {
-                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
-                      }
-                    ?>
-                      <option value="<?php echo $listadoestado[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadoestado[$i]['NOMBRE'];?>
-                      </option>
-                    <?php } ?>
-                  </select>
+                  <label for="fecha" class="form-label">Fecha de Creacion(*)</label>
+                  <input type="date" class="form-control" id="fecha" name='fecha' require>
                 </div>
 
+                <div class="col-6">
+                  <label for="usuario" class="form-label">Usuario</label>
+                  <input type="text" class="form-control" id="usuario" value="<?php echo $_SESSION['Usuario_Id'] ?>" name='usuario' readonly>
+                </div>
 
-        
+                <div class="col-6">
+                  <label for="documento" class="form-label">Seleccione una imagen (*)</label>
+                  <input type="file" class="form-control" id="documento" name="documento" accept=".jpg,.png,.pdf" required>
+                </div>
+
 
                 <div class="text-center">
-                  <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Registrar</button>
+                  <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Ingresar Detalle</button>
                   <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
                   <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
                 </div>

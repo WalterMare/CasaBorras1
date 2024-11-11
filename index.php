@@ -11,11 +11,9 @@ if (empty($_SESSION['Usuario_Nombre'])) {
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
+
 require_once 'Actualizar_Estado_Empleado.php';
 actualizarEstados($conexion);
-
-
-
 
 require_once 'select_empleado.php';
 $ListadoReporte = Listar_empleado($conexion);

@@ -54,7 +54,7 @@
         </li>
         <li>
           <a href="Listado_Viatico_Empleado.php" class="active">
-            <i class="bi bi-file-earmark-plus"></i><span>Consultar Viaticos de Empleado</span>
+            <i class="bi bi-file-earmark-plus"></i><span>Consultar Viaticos</span>
           </a>
         </li>
         <li>
@@ -77,18 +77,7 @@
 
         <li>
           <a href="Listado_HorasExtra_Empleado.php" class="active">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Horas Extras de un empleado</span>
-          </a>
-        </li>
-        <li>
-          <a href="viaje_carga.php" class="active">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Embargos</span>
-          </a>
-        </li>
-
-        <li>
-          <a href="viajes_listado.php" class="active">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Embargo</span>
+            <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Horas Extras</span>
           </a>
         </li>
         <li>
@@ -96,7 +85,6 @@
             <i class="bi bi-file-earmark-plus"></i><span>Registrar Obra Social</span>
           </a>
         </li>
-
         <li>
           <a href="Listado_Obrasocial_Empleado.php" class="active">
             <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Prepaga</span>
@@ -125,6 +113,11 @@
         <li>
           <a href="Registrar_Licencia.php" class="active">
             <i class="bi bi-layout-text-window-reverse"></i><span>Registrar Licencias</span>
+          </a>
+        </li>
+        <li>
+          <a href="Listar_Licencias.php" class="active">
+            <i class="bi bi-layout-text-window-reverse"></i><span>Listar Licencias</span>
           </a>
         </li>
 

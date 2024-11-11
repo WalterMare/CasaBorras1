@@ -12,8 +12,8 @@ $fecha_finalicima= $fecha_final->format('Y-m-d');
 
 
 
-    $SQL_Insert="INSERT INTO licencia (idlicencia, fechainicio, fechafin, IdTipo, idEmpleado, idEstado, cantidaddias, descripciones) 
-    VALUES (null,'".$_POST['fecha']."', '".$fecha_finalicima."' , '".$_POST['tipo']."' , '".$_POST['empleado']."', '".$_POST['estado']."', '".$_POST['dias']."', '".$_POST['descripcion']."')";
+    $SQL_Insert="INSERT INTO licencia (idlicencia, fechainicio, fechafin, IdTipo, idEmpleado, IdEstado, cantidaddias) 
+    VALUES (null,'".$_POST['fecha']."', '".$fecha_finalicima."' , '".$_POST['tipo']."' , '".$_POST['empleado']."', '".$_POST['estado']."', '".$_POST['dias']."')";
 
 
     if (!mysqli_query($vConexion, $SQL_Insert)) {

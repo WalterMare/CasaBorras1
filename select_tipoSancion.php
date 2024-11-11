@@ -31,7 +31,7 @@ function Listar_Estado($vConexion) {
     $Listado=array();
 
     //1) genero la consulta que deseo
-    $consulta = "SELECT * FROM estadosancion ORDER BY nombre";
+    $consulta = "SELECT * FROM estadosancion ORDER BY nombres";
 
     //2) a la conexion actual le brindo mi consulta, y el resultado lo entrego a variable $rs
      $rs = mysqli_query($vConexion, $consulta);
@@ -40,7 +40,7 @@ function Listar_Estado($vConexion) {
      $i=0;
     while ($data = mysqli_fetch_array($rs)) {
             $Listado[$i]['ID'] = $data['idestadoSancion'];
-            $Listado[$i]['NOMBRE'] = $data['nombre'];
+            $Listado[$i]['NOMBRE'] = $data['nombres'];
             
             $i++;
     }

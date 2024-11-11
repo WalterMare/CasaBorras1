@@ -18,7 +18,7 @@ $listadoviatico = Listar_tipo_viatico($conexion);
 $Cantidadviatico = count($listadoviatico);
 
 require_once 'select_empleado.php';
-  $listadoEmpleado = Listar_empleado($conexion);
+  $listadoEmpleado = Listar_empleado_activos_bis($conexion);
   $CantidadEmpleado = count($listadoEmpleado);
 
 
