@@ -11,7 +11,7 @@ if (empty($_SESSION['Usuario_Nombre'])) {
     exit;
 }
 $seleccionado = "1"; //se establece un valor por defecto para la primera carga de la página
-$seleccionado2 = "";
+$seleccionado2 = "2";
 if (isset($_POST['grupo'])) {
     $_SESSION['RadioSeleccionado'] = $_POST['grupo'];
     if (isset($_POST['grupo1'])) {
@@ -35,6 +35,7 @@ $MiConexion = ConexionBD();
 
 
 require_once 'select_UltimosEmpleados.php';
+
 
 
 ?>
@@ -70,6 +71,7 @@ require_once 'select_UltimosEmpleados.php';
 -->
     <!-- Template Main CSS File -->
     <link href="assets/css/style.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- =======================================================
   * Template Name: NiceAdmin
@@ -117,7 +119,7 @@ require_once 'select_UltimosEmpleados.php';
                                 //estoy en condiciones de poder validar los datos
 
                                 if (Listar_ultimosEmpleados2($MiConexion, $_POST["grupo"] != false)) {
-                                    if ($seleccionado2 == "") {
+                                    if ($seleccionado2 == "2") {
                                         $listadoEmpleados = Listar_ultimosEmpleados2($MiConexion, $_POST["grupo"]);
                                         $CantidadEmpleados = count($listadoEmpleados);
                                         $Mensaje = 'Datos encontrados.';
@@ -129,8 +131,6 @@ require_once 'select_UltimosEmpleados.php';
                                         $Mensaje = 'Datos encontrados.';
                                         $_POST = array();
                                         $Estilo = 'success';
-                
-        
                                     }
                                 } ?>
                                 <div class="alert alert-<?php echo $Estilo; ?> alert-dismissible fade show" role="alert">
@@ -145,10 +145,12 @@ require_once 'select_UltimosEmpleados.php';
                             <?php } ?>
 
 
-                            <form class="row g-6" method="post"> <!--se agrego el metodo post para la captura de datos -->
 
+
+
+                            <form class="row g-6" method="post">
                                 <div class="col-6">
-                                    <label name="selector" for="selector" class="form-label">Lapso del tiempo de busqueda: </label>
+                                    <label for="selector" class="form-label">Lapso del tiempo de búsqueda:</label>
                                     <input type="radio" id="opcion1" name="grupo" value="1" <?php if ($seleccionado == "1") echo "checked"; ?>>
                                     <label for="opcion1"> 1 año</label>
                                     <input type="radio" id="opcion2" name="grupo" value="3" <?php if ($seleccionado == "3") echo "checked"; ?>>
@@ -157,21 +159,21 @@ require_once 'select_UltimosEmpleados.php';
                                     <label for="opcion3"> 5 años</label>
                                 </div>
                                 <div class="col-6">
-                                    <label name="selector" for="selector" class="form-label">Estado en el que se encuentra: </label>
+                                    <label for="selector" class="form-label">Estado en el que se encuentra:</label>
                                     <input type="radio" id="opcion4" name="grupo1" value="1" <?php if ($seleccionado2 == "1") echo "checked"; ?>>
                                     <label for="opcion4"> Activo</label>
                                     <input type="radio" id="opcion5" name="grupo1" value="0" <?php if ($seleccionado2 == "0") echo "checked"; ?>>
                                     <label for="opcion5"> Inactivo</label>
-                                    <input type="radio" id="opcion5" name="grupo1" value="" <?php if ($seleccionado2 == "") echo "checked"; ?>>
-                                    <label for="opcion5"> Ambos</label>
-
+                                    <input type="radio" id="opcion6" name="grupo1" value="2" <?php if ($seleccionado2 == "2") echo "checked"; ?>>
+                                    <label for="opcion6"> Ambos</label>
                                 </div>
-
-                                <div class="col-2 row g-6 text-center">
+                                <div class="col-2 row g-2 text-center">
                                     <button class="btn btn-primary" type="submit" value="Buscar" name="BotonBuscar">Buscar</button>
                                 </div>
 
-                            </form><!-- Vertical Form -->
+                                <div class="col-1 row g-2 text-center"></div>
+
+                            </form>
 
                             <?php if ($CantidadEmpleados != 0 && $CantidadEmpleados != null) { ?>
                                 <div class="row">
@@ -204,20 +206,22 @@ require_once 'select_UltimosEmpleados.php';
                                                                         </a>
                                                                     </td>
                                                                     <td><?php echo $listadoEmpleados[$i]['CARGO']; ?></td>
-                                                            </tr>
+                                                                </tr>
                                                         </tbody>
                                                     <?php } ?>
                                                 </table>
-                                                <div class="col-2 row g-6 text-center">
-                                                    <button class="btn btn-primary" id="btnver">Generar Informe</button>
-                                                </div>
+
                                                 <!-- End Default Table Example -->
 
+                                            </div>
+                                            <div class="col-2 row g-2 text-center">
+                                                <button class="btn btn-primary" id="btnver">Generar Informe</button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            <?php }} ?>
+                        <?php }
+                                                } ?>
         </section>
 
     </main><!-- End #main -->
@@ -237,12 +241,12 @@ require_once 'select_UltimosEmpleados.php';
   <script src="assets/vendor/quill/quill.js"></script>
   <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
     <script src="assets/vendor/tinymce/tinymce.min.js"></script>
-    <script src="acciones_botones/btnGenerarInforme.js" ></script>
+
     <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
 
     <!-- Template Main JS File -->
     <script src="assets/js/main.js"></script>
-
+    <script src="assets/js/btnGenerarInforme.js"></script>
 </body>
 
 </html>

@@ -16,18 +16,12 @@ function DatosLogin($vUsuario, $vClave, $vConexion){
     $data = mysqli_fetch_array($rs);
 
     if (!empty($data)) {
-        // Si la contraseña está en texto plano, la comparamos directamente
-        if ($vClave === $data['clave']) {
-            // Si la contraseña es correcta, migramos a un hash seguro
-            $hashedPassword = password_hash($vClave, PASSWORD_DEFAULT);
+        // Verificar la contraseña usando password_verify (para contraseñas almacenadas como hash)
+        if (password_verify($vClave, $data['clave'])) {
+            // Si la contraseña es correcta, procedemos con la autenticación
 
-            // Actualizamos la contraseña en la base de datos con el nuevo hash
-            $updateSQL = "UPDATE usuario SET clave = ? WHERE idusuario = ?";
-            $updateStmt = mysqli_prepare($vConexion, $updateSQL);
-            mysqli_stmt_bind_param($updateStmt, "si", $hashedPassword, $data['idusuario']);
-            mysqli_stmt_execute($updateStmt);
+            // No es necesario actualizar el hash de la contraseña en cada login
 
-            // Procedemos con la autenticación normal
             $Usuario['NOMBRE'] = $data['nombre'];
             $Usuario['APELLIDO'] = $data['apellido'];
             $Usuario['TIPO'] = $data['Idtipo'];
@@ -42,6 +36,7 @@ function DatosLogin($vUsuario, $vClave, $vConexion){
             // Otros datos del usuario
             $Usuario['ID'] = $data['idusuario'];
             $Usuario['NOMBRE_TIPO'] = $data['descripcion'];
+
         } else {
             // Si la contraseña es incorrecta
             return false;
@@ -54,4 +49,5 @@ function DatosLogin($vUsuario, $vClave, $vConexion){
     return $Usuario;
 }
 ?>
+
 

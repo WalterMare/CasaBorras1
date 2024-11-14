@@ -1,115 +1,86 @@
 <?php
-   require_once "conexiondb.php";
+// Incluir las librerías necesarias
+require_once('conexiondb.php');
+require_once('select_UltimosEmpleados.php');
+require_once('TCPDF-main/tcpdf.php'); // Asegúrate de tener TCPDF configurado correctamente
 
-   $conexion= ConexionBD();
+// Recibir los datos del filtro enviados por AJAX
+$grupo = isset($_POST['grupo']) ? $_POST['grupo'] : 1;  // Por defecto, 1 año
+$grupo1 = isset($_POST['grupo1']) ? $_POST['grupo1'] : 2;  // Filtro de estado (vacío para ambos)
 
-    require_once ("select_UltimosEmpleados.php");
-    $datos =Listar_ultimosEmpleados2($conexion,1);
+// Conexión a la base de datos
+$conexion = ConexionBD();
 
-    require_once('TCPDF-main/tcpdf.php');
-    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+// Obtener los datos según los filtros seleccionados
+if ($grupo1 !== 2) {
+    $datos = Listar_ultimosEmpleados($conexion, $grupo, $grupo1); // Si hay estado (activo/inactivo)
+} else {
+    $datos = Listar_ultimosEmpleados2($conexion, $grupo); // Solo por tiempo
+}
 
-    $pdf->SetCreator(PDF_CREATOR);
-    $pdf->SetAuthor('Casa Borras S.A');
-    $pdf->SetTitle('Reporte');
+// Verifica que se obtienen datos
+if (empty($datos)) {
+    echo "No se encontraron datos para el reporte.";
+    exit;
+}
 
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
+// Generación del PDF con TCPDF
+$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
-    $pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
+// Configuración del PDF
+$pdf->SetCreator(PDF_CREATOR);
+$pdf->SetAuthor('Casa Borras S.A');
+$pdf->SetTitle('Reporte de Últimos Empleados');
+$pdf->setPrintHeader(false);
+$pdf->setPrintFooter(false);
+$pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
+$pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
 
-    $pdf->setHeaderFont(array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
-    $pdf->setFooterFont(array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+// Agregar una página
+$pdf->AddPage();
 
-    $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+// Configurar fuente
+$pdf->SetFont('helvetica', '', 11);
 
-    $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
-    $pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
-    $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+// Crear el contenido HTML
+$html = '
+    <style>
+        h1 { font-family: Arial, Helvetica, sans-serif; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+    </style>
+    <img src="assets/img/LOGO2.jpg" alt="logo">
+    <h1>Reporte de Últimos Empleados Registrados</h1>
+    <p><strong>Período:</strong> ' . ($grupo == 1 ? '1 Año' : ($grupo == 3 ? '3 Años' : '5 Años')) . '</p>
+    <p><strong>Estado:</strong> ' . ($grupo1 == 2 ? 'Ambos' : ($grupo1 == 1 ? 'Activo' : 'Inactivo')) . '</p>
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Empleado</th>
+            <th>Fecha de Inicio</th>
+            <th>Estado</th>
+            <th>Cargo</th>
+        </tr>';
 
-    $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+foreach ($datos as $i => $row) {
+    $html .= '
+        <tr>
+            <td>' . ($i + 1) . '</td>
+            <td>' . $row['NOMBRE'] . ' ' . $row['APELLIDO'] . '</td>
+            <td>' . $row['FECHA_INICIO'] . '</td>
+            <td>' . ($row['ESTADO'] == 1 ? 'Activo' : 'Inactivo') . '</td>
+            <td>' . $row['CARGO'] . '</td>
+        </tr>';
+}
 
-    $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+$html .= '</table>';
 
-    if (@file_exists(dirname('FILE') . '/lang/eng.php')) {
-        require_once(dirname('FILE') . '/lang/eng.php');
-        $pdf->setLanguageArray($l);
-    }
+// Escribir el contenido HTML en el PDF
+$pdf->writeHTML($html, true, false, false, false, 'C');
 
-    $pdf->SetFont('helvetica', '', 11);
-
-    $pdf->AddPage();
-    
-    $html = '
-        <style>
-            h1{
-                font-family: Arial, Helvetica, sans-serif;
-            }
-        </style>
-        <img src="assets/img/LOGO2.jpg">
-        <h1>REPORTE</h1>
-        <h3>ÚLTIMOS EMPLEADOS REGISTRADOS</h3>
-        <br><br>
-    ';
-
-    $html.='
-        <style>
-            table {
-                border-collapse: collapse;
-                margin-top: 100px;
-            }
-            th{
-                vertical-align:middle;
-            }
-
-            table, th, td {
-                border: 1px solid black;
-            }
-            table > tr > th {
-                font-weight: bold; 
-                text-align: center;
-                vertical-align: middle;
-                color: black;
-                height: 40px;
-            }
-
-            table > tr > td {
-                font-weight: bold; 
-                text-align: center;
-                color: black;
-                height: 40px;
-            }
-        </style>
-        <p align="center"> Fecha: <? php echo(date("d-m-Y"));?>
-						</p>
-        <table>
-            <tr>    
-                <th scope="col">EMPLEADO</th>
-                <th scope="col">FECHA DE INICIO</th>
-                <th scope="col">ESTADO</th>
-                <th scope="col">CARGO</th>
-            </tr>';
-
-            foreach ($datos as $row) {
-                $html.= 
-                '<tr>
-                    <td>' . $row['NOMBRE'] ." ". $row['APELLIDO'] .  '</td>
-                    <td>' . $row['FECHA_INICIO'] . '</td>
-                    <td>' . $row['ESTADO']. '</td>
-                    <td>' . $row['CARGO'] . '</td>
-                </tr>';
-            }
-
-    $html.=' 
-            </table>';
-
-    $pdf->writeHTML($html, true, false, false, false, 'C');
-
-    // move pointer to last page
-    $pdf->lastPage();
-    ob_end_clean();
-    // ---------------------------------------------------------
-
-    //Close and output PDF document
-    $pdf->Output('Reporte.pdf', 'I');
+// Salvar el PDF en la respuesta
+$pdf->lastPage();
+ob_end_clean();
+$pdf->Output('Reporte_Empleados.pdf', 'I'); // Esto lo envía al navegador para su visualización
 ?>
