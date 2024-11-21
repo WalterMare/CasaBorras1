@@ -128,8 +128,18 @@
           </a>
         </li>
         <li>
-          <a href="Registrar_Reporte.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Informe_Ultimos_e.php' ? 'active' : ''; ?>">
+          <a href="Registrar_Reporte.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Reporte.php' ? 'active' : ''; ?>">
             <i class="bi bi-file-earmark-plus"></i><span>Registrar Reporte</span>
+          </a>
+        </li>
+        <li>
+          <a href="Reportes.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reportes.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Registrar Reporte 2</span>
+          </a>
+        </li>
+        <li>
+          <a href="Listar_Reportes.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listar_Reportes.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Listar Reporte</span>
           </a>
         </li>
       </ul>

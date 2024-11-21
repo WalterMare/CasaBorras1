@@ -24,6 +24,16 @@ try {
     echo 'Error al actualizar los estados: ' . $e->getMessage();
 }
 
+require_once 'Actualizar_estado_licencia_empleado.php';
+try {
+    actualizarEstadoLicencia($conexion);
+} catch (Exception $e) {
+    // Manejar errores de actualización de estado
+    echo 'Error al actualizar los estados de las Licencias: ' . $e->getMessage();
+}
+
+
+
 require_once 'select_empleado.php';
 
 try {

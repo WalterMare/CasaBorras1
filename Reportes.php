@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 
@@ -18,39 +19,7 @@ require_once 'select_reporte.php';
 $listadoReporte = Listar_TipoReporte($conexion);
 $Cantidadreporte = count($listadoReporte);
 
-require_once 'validacion_registro_Reporte.php';
-require_once 'insertar_Reporte.php';
-require_once 'select_detalle_Reporte.php';
 
-$Cantidad = 0;
-$Mensaje = '';
-$Estilo = 'warning';
-
-// Verifica si se presionó el botón de registrar
-if (!empty($_POST['BotonRegistrar'])) {
-    // Validar datos del formulario
-    $Mensaje = Validar_Datos();
-
-    if (empty($Mensaje)) {
-        // Si la validación es correcta, insertar el reporte
-        if (InsertarReporte($conexion) != false) {
-            $Mensaje = 'Se ha registrado correctamente.';
-           
-            $Estilo = 'success';
-            var_dump($_POST['tipo']);
-            // Si el tipo de reporte es 1 y se seleccionó un empleado, recuperar el detalle del reporte de licencia
-            if ($_POST['tipo'] == 1) {
-                $listado = Recuperar_detalle_reporte_licencia($conexion, $_POST['empleado'], $_POST['fechainicio'], $_POST['fechafin']);
-               
-                var_dump($listado);
-                $Cantidad = count($listado);
-                var_dump($Cantidad);
-            }
-            // Limpiar los valores del formulario después del registro
-            $_POST = array();
-        }
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -117,10 +86,10 @@ if (!empty($_POST['BotonRegistrar'])) {
                             <?php endif; ?>
 
                             <!-- Formulario de Registro -->
-                            <form class="row g-3" method="post">
+                            <form class="row g-3" method="GET" action="Insert_reporte.php">
                                 <div class="col-6">
-                                    <label for="selector" class="form-label">Empleado(*)</label>
-                                    <select class="form-select" id="selector" name="empleado" required>
+                                    <label for="empleado" class="form-label">Seleccionar Empleado:</label>
+                                    <select class="form-select" id="empleado" name="empleado" required>
                                         <option value="">Selecciona una opción</option>
                                         <?php foreach ($listadoEmpleado as $empleado): ?>
                                             <option value="<?= $empleado['ID']; ?>" <?= (isset($_POST['empleado']) && $_POST['empleado'] == $empleado['ID']) ? 'selected' : ''; ?>>
@@ -131,8 +100,8 @@ if (!empty($_POST['BotonRegistrar'])) {
                                 </div>
 
                                 <div class="col-6">
-                                    <label for="selector" class="form-label">Tipo de Reporte</label>
-                                    <select class="form-select" id="tipoReporte" name="tipo" required>
+                                    <label for="tipo_reporte" class="form-label">Seleccionar Tipo de Reporte:</label>
+                                    <select class="form-select" id="tipo_reporte" name="tipo_reporte" required>
                                         <option value="">Selecciona una opción</option>
                                         <?php foreach ($listadoReporte as $reporte): ?>
                                             <option value="<?= $reporte['ID']; ?>" <?= (isset($_POST['tipo']) && $_POST['tipo'] == $reporte['ID']) ? 'selected' : ''; ?>>
@@ -142,28 +111,9 @@ if (!empty($_POST['BotonRegistrar'])) {
                                     </select>
                                 </div>
 
-                                <div class="col-6">
-                                    <label for="fecha" class="form-label">Fecha Reporte(*)</label>
-                                    <input type="date" class="form-control" id="fecha" name="fecha" required>
-                                </div>
-
-                                <div class="col-12">
-                                    <hr>
-                                    <label for="titulo" class="form-label"><b>Período del que se van a obtener los datos para el detalle del reporte</b></label>
-
-                                    <div class="col-6">
-                                        <label for="fechainicio" class="form-label">Fecha de Inicio(*)</label>
-                                        <input type="date" class="form-control" id="fechainicio" name="fechainicio" required>
-                                    </div>
-
-                                    <div class="col-6">
-                                        <label for="fechafin" class="form-label">Fecha de Fin(*)</label>
-                                        <input type="date" class="form-control" id="fechafin" name="fechafin" required>
-                                    </div>
-                                </div>
-
+                                
                                 <div class="text-center">
-                                    <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Registrar</button>
+                                    <button class="btn btn-primary" type="submit" value="Generar Reporte" >Generar</button>
                                     <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
                                     <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
                                 </div>

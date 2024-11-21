@@ -25,7 +25,6 @@ $listadolicencias = Listar_Licencia($MiConexion);
 $Cantidadlicencias = count($listadolicencias);
 
 
-
 $Cantidad = 0;
 
 require_once 'Validad_Datos_Busqueda.php';
@@ -124,7 +123,7 @@ require_once 'Validad_Datos_Busqueda.php';
                                 }
                             } ?>
 
-                            <?php  //MUESTRA EL MENSAJE SI SE ELIMINÓ O NO EL EMBARGO
+                            <?php  
                             if (!empty($_SESSION['Mensaje'])) { ?>
                                 <div id='cartel' class="alert alert-<?php echo $_SESSION['Estilo']; ?> alert-dismissible fade show">
                                     <?php echo $_SESSION['Mensaje'] ?>
@@ -223,7 +222,7 @@ require_once 'Validad_Datos_Busqueda.php';
                                                                     <td><?php echo $listado[$i]['ESTADO']; ?></td>
                                                                     <td><?php echo $listado[$i]['DIAS']; ?></td>
                                                                     <td>
-                                                                        <?php $resultadoConsulta = Listar_Detalle_Licencia($MiConexion, $listado[$i]['ID']);
+                                                                        <?php $resultadoConsulta = Listar_Detalle_Licencia($conexion, $listado[$i]['ID']);
                                                                         if ($resultadoConsulta) { ?>
 
                                                                             <a href="Mostrar_detalles.php?ID=<?php echo $listado[$i]['ID']; ?>"
