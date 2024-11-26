@@ -27,14 +27,15 @@ function DatosLogin($vUsuario, $vClave, $vConexion){
             $Usuario['TIPO'] = $data['Idtipo'];
             $Usuario['ESTADO'] = $data['estado'];
 
-            // Si no tiene imagen, asignamos una predeterminada
-            if (empty($data['imagen'])) {
+            // Si no tiene imagen o la imagen no existe, asignamos una predeterminada
+            if (empty($data['imagen']) || !file_exists('assets/img/'. $data['imagen'])) {
                 $data['imagen'] = "profile.jpg"; 
             }
-            $Usuario['IMG'] = $data['imagen'];
+            $Usuario['IMG'] = base64_encode($data['imagen']);
 
             // Otros datos del usuario
             $Usuario['ID'] = $data['idusuario'];
+            $Usuario['IDEMPLEADO']= $data['idempleado'];
             $Usuario['NOMBRE_TIPO'] = $data['descripcion'];
 
         } else {

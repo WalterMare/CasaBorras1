@@ -108,11 +108,6 @@
             <i class="bi bi-layout-text-window-reverse"></i><span>Registrar Licencias</span>
           </a>
         </li>
-        <li>
-          <a href="Listar_Licencias.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listar_Licencias.php' ? 'active' : ''; ?>">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Listar Licencias</span>
-          </a>
-        </li>
       </ul>
     </li><!-- End Gestor Movimientos -->
 
@@ -127,19 +122,8 @@
             <i class="bi bi-file-earmark-plus"></i><span>Últimos empleados registrados</span>
           </a>
         </li>
-        <li>
-          <a href="Registrar_Reporte.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Reporte.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Reporte</span>
-          </a>
-        </li>
-        <li>
           <a href="Reportes.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reportes.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Reporte 2</span>
-          </a>
-        </li>
-        <li>
-          <a href="Listar_Reportes.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listar_Reportes.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Listar Reporte</span>
+            <i class="bi bi-file-earmark-plus"></i><span>Generar Reportes </span>
           </a>
         </li>
       </ul>

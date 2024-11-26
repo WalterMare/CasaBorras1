@@ -41,3 +41,15 @@ $dni= $_POST["documento"];
 
     return true;
 }
+?>
+
+<?php
+function Modificar_EstadoLicencia_Empleado($Id, $Estado, $conexion){
+    $SQL="UPDATE empleado AS E SET E.estado=$Estado WHERE E.idempleado=$Id ";
+
+    if(!mysqli_query($conexion,$SQL)){
+        return false;
+    }
+    return true;
+}
+?>

@@ -27,6 +27,31 @@ function Listar_empleado($vConexion)
 ?>
 
 <?php
+function Listar_Imagen_empleado($vConexion,$empleado)
+{
+
+    $Listado = array();
+
+    //1) genero la consulta que deseo
+    $consulta = "SELECT imagen FROM empleado WHERE idempleado=$empleado";
+
+    //2) a la conexion actual le brindo mi consulta, y el resultado lo entrego a variable $rs
+    $rs = mysqli_query($vConexion, $consulta);
+
+    //3) el resultado deberá organizarse en una matriz, entonces lo recorro
+    $data = mysqli_fetch_array($rs);
+    if ($data) {
+        $Listado[$i]['IMAGEN'] = $data['imagen'];
+    
+    }
+
+
+    //devuelvo el listado generado en el array $Listado. (Podra salir vacio o con datos)..
+    return $Listado;
+}
+?>
+
+<?php
 function Listar_empleado_activos($vConexion)
 {
 

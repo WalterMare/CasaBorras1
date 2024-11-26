@@ -14,34 +14,28 @@ if (!empty($_POST['BotonEnviar'])) {
   
   //la consulta con la BD para que encuentre un usuario registrado con el usuario y clave brindados
 
-
+  if ($UsuarioLogueado) {
+    // Verificar el estado del usuario
     if ($UsuarioLogueado['ESTADO'] == 0) {
-      $Mensaje = 'Ud. no se encuentra activo en el sistema.';
-      
-    } else if(($UsuarioLogueado['ESTADO'] == 1)) {
-      if (!empty($UsuarioLogueado)) {
-        // $Mensaje ='ok! ya puedes ingresar';
-    
-        //generar los valores del usuario (esto va a venir de mi BD)
+        $Mensaje = 'Ud. no se encuentra activo en el sistema.';
+    } else if ($UsuarioLogueado['ESTADO'] == 1) {
+        // Si el usuario está activo, guardamos los datos en la sesión
         $_SESSION['Usuario_Nombre']     =   $UsuarioLogueado['NOMBRE'];
         $_SESSION['Usuario_Apellido']   =   $UsuarioLogueado['APELLIDO'];
         $_SESSION['Usuario_Nivel']      =   $UsuarioLogueado['TIPO'];
         $_SESSION['Usuario_Img']        =   $UsuarioLogueado['IMG'];
-      
-        //agregados
-        $_SESSION['Usuario_Id'] = $UsuarioLogueado['ID'];
+        $_SESSION['Usuario_Id']         =   $UsuarioLogueado['ID'];
         $_SESSION['Usuario_Nombre_Nivel'] = $UsuarioLogueado['NOMBRE_TIPO'];
-      header('Location: index.php'); //redirecciona a otra pagina
-      exit;
-    }else{
-      header('Location: login.php'); //redirecciona a otra pagina
-      exit;
+        $_SESSION['Usuario_IdEmpleado'] =$UsuarioLogueado['IDEMPLEADO'];
+        
+        // Redirigir al index si el login es correcto
+        header('Location: index.php');
+        exit;
     }
-  }
-    
-    else {
+} else {
+    // Si no se encuentra el usuario, mostramos el mensaje de error
     $Mensaje = 'Datos incorrectos, ingresa nuevamente.';
-  }
+}
 }
 
 ?>

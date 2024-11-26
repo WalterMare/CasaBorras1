@@ -71,7 +71,8 @@ function Listar_Reporte_Empleado3($vConexion, $empleado,$tipo)
     FROM licencia l
     JOIN tipolicencia t ON l.IdTipo = t.idtipoLicencia
     JOIN estadolicencia e ON l.IdEstado = e.idestadoLicencia
-    WHERE l.idEmpleado = $empleado";
+    JOIN detallelicencia d ON l.idlicencia= d.idLicencia
+    WHERE d.idEmpleado = $empleado";
     
 
     //2) a la conexion actual le brindo mi consulta, y el resultado lo entrego a variable $rs
@@ -94,44 +95,59 @@ function Listar_Reporte_Empleado3($vConexion, $empleado,$tipo)
     return $Listado;
 }
 ?>
-
-<?php
+<?php 
 function Listar_Reporte_Empleado3_Detalle($vConexion, $idLicencia)
 {
-
     $Listado = array();
 
-    //1) genero la consulta que deseo
-    $consulta = "SELECT dl.descripcion, dl.documentacion, dl.fechacreacion, e.nombre, e.apellido
-          FROM detallelicencia dl
-          JOIN usuario u ON dl.usuarioCreacion = u.idusuario
-          JOIN empleado e ON u.IdEmpleado= e.idempleado
-          WHERE dl.idLicencia = $idLicencia";
-    
+    //1) Genero la consulta que deseo
+    $consulta = "
+        SELECT 
+            dl.descripcion,
+            dl.documentacion,
+            dl.fechacreacion,
+            e.nombre AS empleado_nombre,
+            e.apellido AS empleado_apellido,
+            tl.descripcion AS tipo_licencia,
+            el.nombreEstado AS estado_licencia
+        FROM 
+            detallelicencia dl
+        JOIN 
+            licencia l ON dl.idLicencia = l.idlicencia
+        JOIN 
+            empleado e ON dl.idEmpleado = e.idempleado
+        JOIN 
+            tipolicencia tl ON l.IdTipo = tl.idtipoLicencia
+        JOIN 
+            estadolicencia el ON l.IdEstado = el.idestadoLicencia
+        WHERE 
+            dl.idLicencia = $idLicencia
+    ";
 
-    //2) a la conexion actual le brindo mi consulta, y el resultado lo entrego a variable $rs
+    //2) Ejecuto la consulta y obtengo el resultado
     $rs = mysqli_query($vConexion, $consulta);
 
-    //3) el resultado deberá organizarse en una matriz, entonces lo recorro
+    //3) Si la consulta trae datos, los guardo en el array $Listado
     $i = 0;
-    if (!empty($rs)) { 
-    while ($data = mysqli_fetch_array($rs)) {
-        $Listado[$i]['DESCRIPCION'] = $data['descripcion'];
-        $Listado[$i]['FECHACREACION'] = $data['fechacreacion'];
-        $Listado[$i]['NOMBRE'] = $data['nombre'];
-        $Listado[$i]['APELLIDO'] = $data['apellido'];
-        $Listado[$i]['DOCUMENTACION'] = "<a href='data:application/octet-stream;base64," . base64_encode($data['documentacion']) . "' download='documentacion_licencia'>Descargar Documentación</a>";
-     
-        $i++;
-    }
-    }else{
-        echo "No hay detalles disponibles para esta licencia.";
+    if ($rs && mysqli_num_rows($rs) > 0) {
+        while ($data = mysqli_fetch_array($rs)) {
+            $Listado[$i]['DESCRIPCION'] = $data['descripcion'];
+            $Listado[$i]['FECHACREACION'] = $data['fechacreacion'];
+            $Listado[$i]['NOMBRE'] = $data['empleado_nombre'];
+            $Listado[$i]['APELLIDO'] = $data['empleado_apellido'];
+            $Listado[$i]['DOCUMENTACION'] = "<a href='data:application/octet-stream;base64," . base64_encode($data['documentacion']) . "' download='documentacion_licencia'>Descargar Documentación</a>";
+            $Listado[$i]['TIPO_LICENCIA'] = $data['tipo_licencia'];
+            $Listado[$i]['ESTADO_LICENCIA'] = $data['estado_licencia'];
+            $i++;
+        }
+    } else {
+        // Si no se encuentran datos, puedo manejarlo de alguna manera, por ejemplo:
+        $Listado = array('mensaje' => 'No hay detalles disponibles para esta licencia.');
     }
 
-    //devuelvo el listado generado en el array $Listado. (Podra salir vacio o con datos)..
+    //Devuelvo el listado con los detalles de la licencia
     return $Listado;
-}
-?>
+}?>
 
 <?php
 function Listar_Reporte_Empleado_Embargo($vConexion, $empleado)

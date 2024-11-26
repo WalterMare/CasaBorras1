@@ -4,7 +4,7 @@ function actualizarEstadoLicencia($conexion)
     // Obtenemos la fecha actual
     $hoy = date('Y-m-d');  // o usar 'CURDATE()' directamente en SQL
 
-    // Consultamos todas las licencias cuya fecha de fin sea igual a la fecha actual
+    // Consultamos todas las licencias cuya fecha de fin sea igual o mayor a la fecha actual
     $query = "SELECT * FROM licencia WHERE fechafin <= ?";
     $stmt = mysqli_prepare($conexion, $query);
 
@@ -46,6 +46,31 @@ function actualizarEstadoLicencia($conexion)
             error_log("Error al actualizar la licencia con id: " . $licencia_id . " - " . mysqli_error($conexion));
             return false;
         }
+        // Ahora, actualizamos el estado de los empleados que están asociados con esta licencia
+        $SQL_empleados = "SELECT idEmpleado FROM detallelicencia WHERE idLicencia = ?";
+        $stmt_empleados = mysqli_prepare($conexion, $SQL_empleados);
+        mysqli_stmt_bind_param($stmt_empleados, "i", $licencia_id);
+        mysqli_stmt_execute($stmt_empleados);
+        $resultado_empleados = mysqli_stmt_get_result($stmt_empleados);
+
+        // Verificamos si encontramos empleados asociados
+        while ($empleado = mysqli_fetch_assoc($resultado_empleados)) {
+            $idEmpleado = $empleado['idEmpleado'];
+
+            // Actualizamos el estado del empleado a 1 (suponiendo que 1 es el estado "activo")
+            $SQL_update_empleado = "UPDATE empleado SET estado = 1 WHERE idempleado = ?";
+            $stmt_update_empleado = mysqli_prepare($conexion, $SQL_update_empleado);
+            mysqli_stmt_bind_param($stmt_update_empleado, "i", $idEmpleado);
+            $resultado_update_empleado = mysqli_stmt_execute($stmt_update_empleado);
+
+            // Verificamos si la actualización del empleado fue exitosa
+            if (!$resultado_update_empleado) {
+                error_log("Error al actualizar el estado del empleado con id: " . $idEmpleado . " - " . mysqli_error($conexion));
+                return false;
+            } else {
+                error_log("Estado del empleado con id: " . $idEmpleado . " actualizado a 1 (activo).");
+            }
+        }
     }
 
     if (!$licencia_encontrada) {
@@ -55,6 +80,3 @@ function actualizarEstadoLicencia($conexion)
     // Si todas las consultas fueron exitosas, retornamos true
     return true;
 }
-?>
-
-

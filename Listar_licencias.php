@@ -222,7 +222,7 @@ require_once 'Validad_Datos_Busqueda.php';
                                                                     <td><?php echo $listado[$i]['ESTADO']; ?></td>
                                                                     <td><?php echo $listado[$i]['DIAS']; ?></td>
                                                                     <td>
-                                                                        <?php $resultadoConsulta = Listar_Detalle_Licencia($conexion, $listado[$i]['ID']);
+                                                                        <?php $resultadoConsulta = Listar_Detalle_Licencia($MiConexion, $listado[$i]['ID']);
                                                                         if ($resultadoConsulta) { ?>
 
                                                                             <a href="Mostrar_detalles.php?ID=<?php echo $listado[$i]['ID']; ?>"

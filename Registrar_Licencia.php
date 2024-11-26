@@ -1,37 +1,87 @@
 <?php
-
 session_start();
 
-//si tengo vacio mi elemento de sesion me tiene q redireccionar al login.. 
-//al cerrarsesion para que mate todo de la sesion y el se encarga de ubicar en el login
+// Verifica si el usuario está logueado
 if (empty($_SESSION['Usuario_Nombre'])) {
   header('Location: cerrarsesion.php');
   exit;
 }
+$mensaje = '';
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
-
 require_once 'select_tipoLicencia.php';
 $listadoestado = Listar_Estado($conexion);
-$Cantidadestado = count($listadoestado);
-
-require_once 'select_tipoLicencia.php';
-$listadolicencias = Listar_Licencia_Bis($conexion);
-$Cantidadlicencias = count($listadolicencias);
 
 require_once 'select_empleado.php';
-  $listadoEmpleado = Listar_empleado_activos_bis($conexion);
-  $CantidadEmpleado = count($listadoEmpleado);
+$listadolicencias = Listar_Licencia_Bis($conexion);
+$listadoEmpleado = Listar_empleado_activos_bis($conexion);
 
-
-require_once 'validacion_registro_licencias.php';
-require_once 'insertar_Licencia.php';
+require_once 'modificar_empleado.php';
 
 
 
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+  // Validar los datos antes de proceder
+
+  $estilo = 'warning';
+
+  // Verificamos si los datos obligatorios están presentes
+  if (empty($_POST['tipo']) || empty($_POST['fecha']) || empty($_POST['dias']) || empty($_POST['estado']) || empty($_POST['empleado'])) {
+    $mensaje = "Todos los campos obligatorios deben ser completados.";
+  } else {
+    // Datos capturados del formulario
+    $tipoLicencia = $_POST['tipo'];
+    $fechaInicio = $_POST['fecha'];
+    $dias = $_POST['dias'];
+    $estadoLicencia = $_POST['estado'];
+    $empleadosSeleccionados = $_POST['empleado'];
+    $fechainicial = new DateTime($fechaInicio);
+    $fecha_final = $fechainicial->modify("+$dias days");
+    $fecha_finalicima = $fecha_final->format('Y-m-d');
+    // Validación de archivo (si se carga uno)
+    $documento = '';
+    if (isset($_FILES['documento']) && $_FILES['documento']['error'] == 0) {
+      $documento = file_get_contents($_FILES['documento']['tmp_name']);
+    }
+
+    // Insertar en la base de datos
+    try {
+      mysqli_begin_transaction($conexion); // Iniciar la transacción
+
+      // Insertar la licencia en la base de datos
+      $sqlLicencia = "INSERT INTO licencia (fechainicio, fechafin, cantidaddias, IdTipo, IdUsuario, IdEstado)
+                            VALUES (?, ?, ?, ?, ?, ?)";
+      $stmtLicencia = $conexion->prepare($sqlLicencia);
+      $stmtLicencia->execute([$fechaInicio, $fecha_finalicima, $dias, $tipoLicencia, $_SESSION['Usuario_Id'], $estadoLicencia]);
+
+      // Obtener el ID de la licencia recién insertada
+      $idLicencia = $conexion->insert_id;
+
+      // Insertar los detalles de la licencia para cada empleado seleccionado
+      foreach ($empleadosSeleccionados as $idEmpleado) {
+        $descripcion = $_POST['descripcion']; // Asumimos que se recibe una descripción
+        $sqlDetalleLicencia = "INSERT INTO detallelicencia (idLicencia, Descripcion, Documentacion, FechaCreacion, idEmpleado)
+                                       VALUES (?, ?, ?, NOW(), ?)";
+        $stmtDetalleLicencia = $conexion->prepare($sqlDetalleLicencia);
+        $stmtDetalleLicencia->execute([$idLicencia, $descripcion, $documento, $idEmpleado]);
+
+        //Cambiar el estado del empleado a 0 (por ejemplo, "en licencia")
+        $estadoEmpleado = 0; // Estado para "en licencia"
+        Modificar_EstadoLicencia_Empleado($idEmpleado, $estadoEmpleado, $conexion);
+      }
+
+      mysqli_commit($conexion); // Confirmar la transacción
+      $mensaje = 'Licencia registrada exitosamente.';
+      $estilo = 'success';
+    } catch (Exception $e) {
+      mysqli_rollBack($conexion); // Revertir si algo sale mal
+      $mensaje = 'Error al registrar la licencia: ' . $e->getMessage();
+      $estilo = 'danger';
+    }
+  }
+}
 ?>
-
 
 <!DOCTYPE html>
 <html lang="es">
@@ -39,11 +89,8 @@ require_once 'insertar_Licencia.php';
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-
   <title>Casa Borras</title>
-  <meta content="" name="description">
-  <meta content="" name="keywords">
-
+  <link href="assets/css/style.css" rel="stylesheet">
   <!-- Favicons -->
   <link href="assets/img/favicon.png" rel="icon">
   <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
@@ -74,16 +121,10 @@ require_once 'insertar_Licencia.php';
 </head>
 
 <body>
-
-  <!-- ======= Header ======= -->
   <?php include_once 'partes/header.php' ?>
-  <!-- End Header -->
-  <!-- ======= Sidebar ======= -->
   <?php include_once 'partes/menu.php'; ?>
 
-  <!-- End Sidebar-->
   <main id="main" class="main">
-
     <div class="pagetitle">
       <h1>Registrar Licencias</h1>
       <nav>
@@ -93,7 +134,8 @@ require_once 'insertar_Licencia.php';
           <li class="breadcrumb-item active">Registrar Licencias</li>
         </ol>
       </nav>
-    </div><!-- End Page Title -->
+    </div>
+
 
     <section class="section">
       <div class="row">
@@ -105,134 +147,101 @@ require_once 'insertar_Licencia.php';
                 <i class="bi bi-info-circle me-1"></i>
                 Los campos indicados con (*) son requeridos
               </div>
+              <div id='cartel' class="alert alert-<?php echo $estilo ?> alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-1"></i>
+                <?php echo $mensaje; ?>
+              </div>
 
-              <?php
-              $Mensaje = '';
-              $Estilo = 'warning';
-              if (!empty($_POST['BotonRegistrar'])) {
-                //estoy en condiciones de poder validar los datos
-                $Mensaje = Validar_Datos();
-                if (empty($Mensaje)) {
-                  if (InsertarLicencia($conexion) != false) {
-                    $Mensaje = 'Se ha registrado correctamente.';
-                    $_POST = array();
-                    $Estilo = 'success';
-                  
-                  } ?>
-                  <div id='cartel' class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle me-1"></i>
-                    <?php echo $Mensaje;
-                   
-                    ?>
+
+              <form class="row g-3" method="post" enctype="multipart/form-data">
+                <!-- Tipo de Licencia -->
+                <div class="col-6">
+                  <label for="tipo" class="form-label">Tipo de Licencia</label>
+                  <select class="form-select" name="tipo" id="tipo" required>
+                    <option value="">Selecciona una opción</option>
+                    <?php foreach ($listadolicencias as $licencia) { ?>
+                      <option value="<?php echo $licencia['ID']; ?>" <?php echo (!empty($_POST['tipo']) && $_POST['tipo'] == $licencia['ID']) ? 'selected' : ''; ?>>
+                        <?php echo $licencia['NOMBRE']; ?>
+                      </option>
+                    <?php } ?>
+                  </select>
+                </div>
+
+                <!-- Empleados -->
+                <div class="col-6">
+                  <label for="empleados" class="form-label">Seleccione el/los empleados</label>
+                  <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd;">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>Seleccionar</th>
+                          <th>Nombre</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <?php foreach ($listadoEmpleado as $empleado) { ?>
+                          <tr>
+                            <td>
+                              <input type="checkbox" name="empleado[]" value="<?php echo $empleado['ID']; ?>" <?php echo (!empty($_POST['empleado']) && in_array($empleado['ID'], $_POST['empleado'])) ? 'checked' : ''; ?>>
+                            </td>
+                            <td><?php echo $empleado['NOMBRE'] . " " . $empleado['APELLIDO']; ?></td>
+                          </tr>
+                        <?php } ?>
+                      </tbody>
+                    </table>
                   </div>
-                <?php  } else { ?>
-                  <div id='cartel' class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-triangle me-1"></i>
-                    <?php echo $Mensaje; ?>
-                  </div><?php }
-                    } ?>
-
-
-
-
-              <form class="row g-3" method="post"> <!--se agrego el metodo post para la captura de datos -->
-
-                <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Tipo (*)</label>
-                  <select class="form-select" aria-label="Selector" id="selector" name="tipo"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
-                    <?php
-                    $selected = '';
-                    for ($i = 0; $i < $Cantidadlicencias; $i++) {
-                      if (!empty($_POST['tipo']) && $_POST['tipo'] ==  $listadolicencias[$i]['ID']) { //recuerda el elemento seleccionado
-                        $selected = 'selected';
-                      } else {
-                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
-                      }
-                    ?>
-                      <option value="<?php echo $listadolicencias[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadolicencias[$i]['NOMBRE'];?>
-                      </option>
-                    <?php } ?>
-                  </select>
                 </div>
-            
 
+                <!-- Fecha Inicio -->
                 <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Empleado al que se asignará(*)</label>
-                  <select class="form-select" aria-label="Selector" id="selector" name="empleado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
-                    <?php
-                    $selected = '';
-                    for ($i = 0; $i < $CantidadEmpleado; $i++) {
-                      if (!empty($_POST['empleado']) && $_POST['empleado'] ==  $listadoEmpleado[$i]['ID']) { //recuerda el elemento seleccionado
-                        $selected = 'selected';
-                      } else {
-                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
-                      }
-                    ?>
-                      <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadoEmpleado[$i]['NOMBRE']." ".$listadoEmpleado[$i]['APELLIDO']; ?>
+                  <label for="fecha" class="form-label">Fecha Inicio (*)</label>
+                  <input type="date" class="form-control" id="fecha" name="fecha" required>
+                </div>
+
+                <!-- Cantidad de Días -->
+                <div class="col-6">
+                  <label for="dias" class="form-label">Cantidad de Días (*)</label>
+                  <input type="number" step="1" class="form-control" id="dias" name="dias" required>
+                </div>
+
+                <!-- Estado de la Licencia -->
+                <div class="col-6">
+                  <label for="estado" class="form-label">Estado de la Licencia (*)</label>
+                  <select class="form-select" name="estado" id="estado" required>
+                    <option value="">Selecciona una opción</option>
+                    <?php foreach ($listadoestado as $estado) { ?>
+                      <option value="<?php echo $estado['ID']; ?>" <?php echo (!empty($_POST['estado']) && $_POST['estado'] == $estado['ID']) ? 'selected' : ''; ?>>
+                        <?php echo $estado['NOMBRE']; ?>
                       </option>
                     <?php } ?>
                   </select>
                 </div>
 
+                <!-- Descripción -->
                 <div class="col-6">
-                  <label for="fecha" class="form-label">Fecha Inicio(*)</label>
-                  <input type="date" class="form-control" id="fecha" name="fecha">
+                  <label for="descripcion" class="form-label">Descripción (*)</label>
+                  <textarea class="form-control" id="descripcion" name="descripcion" required></textarea>
                 </div>
 
-
+                <!-- Documento Adicional -->
                 <div class="col-6">
-                  <label for="dias" class="form-label">Cantidad de Días(*)</label>
-                  <input type="number" step="1.00" class="form-control" id="dias" name='dias'>
+                  <label for="documento" class="form-label">Adjuntar Documento</label>
+                  <input type="file" class="form-control" id="documento" name="documento" accept="image/*, .pdf">
                 </div>
 
-
-                <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Estado de la Licencia(*)</label>
-                  <select class="form-select" aria-label="Selector" id="selector" name="estado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
-                    <?php
-                    $selected = '';
-                    for ($i = 0; $i < $Cantidadestado; $i++) {
-                      if (!empty($_POST['tipo']) && $_POST['tipo'] ==  $listadoestado[$i]['ID']) { //recuerda el elemento seleccionado
-                        $selected = 'selected';
-                      } else {
-                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
-                      }
-                    ?>
-                      <option value="<?php echo $listadoestado[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadoestado[$i]['NOMBRE'];?>
-                      </option>
-                    <?php } ?>
-                  </select>
+                <!-- Botón para Registrar -->
+                <div class="col-12">
+                  <button type="submit" class="btn btn-primary" name="BotonRegistrar">Registrar Licencia</button>
                 </div>
-
-
-        
-
-                <div class="text-center">
-                  <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Registrar</button>
-                  <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
-                  <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
-                </div>
-              </form><!-- Vertical Form -->
-
+              </form>
             </div>
           </div>
         </div>
       </div>
     </section>
+  </main>
 
-  </main><!-- End #main -->
-
-
-  <!-- ======= Footer ======= -->
-  <?php include_once 'partes/footer.php' ?>
-  <!-- End Footer -->
-
+  <?php include_once 'partes/footer.php'; ?>
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
   <!-- Vendor JS Files
@@ -243,15 +252,11 @@ require_once 'insertar_Licencia.php';
   <script src="assets/vendor/quill/quill.js"></script>
   <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
   <script src="assets/vendor/tinymce/tinymce.min.js"></script>
-
-  <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
   <script src="assets/js/cartel.js"></script>
+  <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
+
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
-
-
-
-
 </body>
 
 </html>
