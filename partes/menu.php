@@ -126,6 +126,17 @@
             <i class="bi bi-file-earmark-plus"></i><span>Generar Reportes </span>
           </a>
         </li>
+        <li>
+          <a href="Reporte_Estadistico_Licencias.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reporte_Estadistico_Licencias.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Generar Reporte Estadistico Licencias </span>
+          </a>
+        </li>
+        <li>
+          <a href="Registro_Licencia.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registro_Licencia.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Registrar Licencias </span>
+          </a>
+        </li>
+
       </ul>
     </li><!-- End Gestor de Reportes -->
   </ul>

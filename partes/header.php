@@ -1,4 +1,3 @@
-
 <!-- ======= Header ======= -->
 
 <header id="header" class="header fixed-top d-flex align-items-center">
@@ -19,7 +18,15 @@
       <li class="nav-item dropdown pe-3">
 
         <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-        <img src="assets/img/<?php echo $_SESSION['Usuario_Img']; ?>" alt="Profile" class="rounded-circle">
+          <?php
+          // Si el valor de 'Usuario_Img' está en base64, lo usamos directamente en el src
+          if (!empty($_SESSION['Usuario_Img'])) {
+            echo '<img src="data:image/jpeg;base64,' . $_SESSION['Usuario_Img'] . '" alt="Profile" class="rounded-circle">';
+          } else {
+            // Si no hay imagen, mostramos la imagen predeterminada
+            echo '<img src="assets/img/profile.jpg" alt="Profile" class="rounded-circle">';
+          }
+          ?>
           <span class="d-none d-md-block dropdown-toggle ps-2"><?php echo $_SESSION['Usuario_Nombre'] . " " . $_SESSION['Usuario_Apellido']; ?></span>
         </a><!-- End Profile Iamge Icon -->
 

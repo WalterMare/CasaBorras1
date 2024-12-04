@@ -28,10 +28,10 @@ function DatosLogin($vUsuario, $vClave, $vConexion){
             $Usuario['ESTADO'] = $data['estado'];
 
             // Si no tiene imagen o la imagen no existe, asignamos una predeterminada
-            if (empty($data['imagen']) || !file_exists('assets/img/'. $data['imagen'])) {
-                $data['imagen'] = "profile.jpg"; 
+            if (empty($data['imagen'])) {
+                $data['imagen'] = "profile.jpg"; // Si no tiene imagen, asignamos una predeterminada
             }
-            $Usuario['IMG'] = base64_encode($data['imagen']);
+            $Usuario['IMG'] = base64_encode($data['imagen']); // Convertimos el blob a base64
 
             // Otros datos del usuario
             $Usuario['ID'] = $data['idusuario'];
