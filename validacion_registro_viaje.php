@@ -12,13 +12,13 @@ function Validar_Datos_viaje() {
         $vMensaje.='Debes ingresar la fecha. <br />';
     }
     if (empty($_POST['destino'])){
-        $vMensaje='Debes selecionar un destino';
+        $vMensaje='Debes selecionar un destino. <br />';
     }
     if (empty($_POST['costo'])){
-        $vMensaje='Debes Ingresar el costo del viaje';
+        $vMensaje='Debes Ingresar el costo del viaje. <br />';
     }
     if (empty($_POST['porcentaje'])){
-        $vMensaje='Debes Ingresar porcentaje del pago al chofer';
+        $vMensaje='Debes Ingresar porcentaje del pago al chofer. <br />';
     }
     
 

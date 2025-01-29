@@ -5,7 +5,7 @@ function Listar_empleado($vConexion)
     $Listado = array();
 
     //1) genero la consulta que deseo
-    $consulta = "SELECT * FROM empleado ORDER BY apellido";
+    $consulta = "SELECT * FROM empleado WHERE empleado.fecha_baja IS NULL ORDER BY apellido";
 
     //2) a la conexion actual le brindo mi consulta, y el resultado lo entrego a variable $rs
     $rs = mysqli_query($vConexion, $consulta);
@@ -111,7 +111,7 @@ function Listar_empleado_inactivos($vConexion)
     $Listado = array();
 
     //1) genero la consulta que deseo
-    $consulta = "SELECT * FROM empleado WHERE empleado.estado=0 ";
+    $consulta = "SELECT * FROM empleado WHERE empleado.estado=0  and empleado.fecha_baja IS NULL";
 
     //2) a la conexion actual le brindo mi consulta, y el resultado lo entrego a variable $rs
     $rs = mysqli_query($vConexion, $consulta);

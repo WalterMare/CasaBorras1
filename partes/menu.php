@@ -104,8 +104,8 @@
           </a>
         </li>
         <li>
-          <a href="Registrar_Licencia.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Licencia.php' ? 'active' : ''; ?>">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Registrar Licencias</span>
+          <a href="Registro_Licencia.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registro_Licencia.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Registrar Licencias </span>
           </a>
         </li>
       </ul>
@@ -127,15 +127,11 @@
           </a>
         </li>
         <li>
-          <a href="Reporte_Estadistico_Licencias.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reporte_Estadistico_Licencias.php' ? 'active' : ''; ?>">
+          <a href="reporte_estadistico.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'reporte_estadistico.php' ? 'active' : ''; ?>">
             <i class="bi bi-file-earmark-plus"></i><span>Generar Reporte Estadistico Licencias </span>
           </a>
         </li>
-        <li>
-          <a href="Registro_Licencia.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registro_Licencia.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Licencias </span>
-          </a>
-        </li>
+        
 
       </ul>
     </li><!-- End Gestor de Reportes -->

@@ -25,12 +25,13 @@ $empleado = Listar_empleadoId($conexion, $empleado_id);
 require_once 'Select_reportes.php';
 $tipo_reporte = isset($_GET['tipo_reporte']) ? $_GET['tipo_reporte'] : '';
 
+// Obtener el ID de la licencia desde el parámetro GET
+$idLicencia = isset($_GET['id_licencia']) ? (int)$_GET['id_licencia'] : 0;
 
-
+// Consulta SQL para obtener las licencias y sus detalles
 if ($tipo_reporte == 1) {
-    $listado = Listar_Reporte_Empleado3($conexion, $empleado_id, $tipo_reporte);
-    // Obtener los detalles de la licencia
-    $listadoDetalle = Listar_Reporte_Empleado3_Detalle($conexion, $_GET['id_licencia']);
+    // Obtener las licencias del empleado
+$listadoLicencias = Listar_Reporte_Empleado3($conexion, $empleado_id, 1);
 } else if ($tipo_reporte == 6) {
     $listadoEmbargo = Listar_Reporte_Empleado_Embargo($conexion, $empleado_id);
 }
@@ -51,15 +52,15 @@ $pdf->SetMargins(15, 20, 15);
 $pdf->SetAutoPageBreak(true, 10);
 
 // Agregar una página
-$pdf->AddPage('L', 'LEGAL');
-$pdf->Image('assets/img/LOGO2.jpg', 165, 0, 0, 0);
+$pdf->AddPage('P', 'LEGAL');
+$pdf->Image('assets/img/LOGO2.jpg', 95, 0, 0, 0);
 // Establecer el título del reporte
 $pdf->SetFont('helvetica', 'B', 16);
 $pdf->Cell(0, 15, 'Reporte', 0, 1, 'C');
 
 
 // Agregar la información del empleado
-$pdf->SetFont('helvetica', '', 12);
+$pdf->SetFont('helvetica', 'B', 12);
 $pdf->Ln(10);
 $pdf->Cell(70, 10, 'Empleado: ' . $empleado['NOMBRE'] . " " . $empleado['APELLIDO'], 0, 1);
 $pdf->Cell(40, 10, 'DNI: ' . $empleado['DNI'], 0, 1);
@@ -72,61 +73,59 @@ $pdf->Cell(40, 10, 'Provincia: ' . $empleado['PROVINCIA'], 0, 1);
 
 // Agregar los datos de licencias si el tipo de reporte es '1'
 if ($tipo_reporte == '1') {
-    // Ajuste de la tabla para que ocupe el ancho completo de la página
-    $anchoTotal = $pdf->getPageWidth();
-    $anchoColumna = $anchoTotal / 12; // Ajustamos el número de columnas
+   // Verificar si hay licencias
+if (!empty($listadoLicencias)) {
+    foreach ($listadoLicencias as $licencia) {
+        // Mostrar datos básicos de la licencia
+        $pdf->SetFont('helvetica', 'B', 12);
+        $pdf->Ln(10);
+        $pdf->Cell(70, 10, 'ID Licencia: ' . $licencia['ID'], 0, 1);
+        $pdf->Cell(70, 10, 'Tipo de Licencia: ' . $licencia['TIPO'], 0, 1);
+        $pdf->Cell(70, 10, 'Fecha Inicio: ' . $licencia['FECHAINICIO'], 0, 1);
+        $pdf->Cell(70, 10, 'Fecha Fin: ' . $licencia['FECHAFIN'], 0, 1);
+        $pdf->Cell(70, 10, 'Cantidad de Días: ' . $licencia['CANTIDADDIAS'], 0, 1);
+        $pdf->Cell(70, 10, 'Estado: ' . $licencia['ESTADO'], 0, 1);
 
-    $pdf->Ln(5);
-    $pdf->SetFont('helvetica', 'B', 16);
-    $pdf->Cell(0, 10, 'Licencias', 0, 1, 'L');
-    $pdf->SetFont('helvetica', 'B', 10);
-    $pdf->Cell($anchoColumna, 10, '#', 1, 0, 'C');
-    $pdf->Cell($anchoColumna, 10, 'Fecha Inicio', 1, 0, 'C');
-    $pdf->Cell($anchoColumna, 10, 'Fecha Fin', 1, 0, 'C');
-    $pdf->Cell($anchoColumna, 10, 'Cantidad de Días', 1, 0, 'C');
-    $pdf->Cell($anchoColumna, 10, 'Tipo de Licencia', 1, 0, 'C');
-    $pdf->Cell($anchoColumna, 10, 'Estado', 1, 1, 'C');
+        // Obtener los detalles de la licencia
+        $listadoDetalles = Listar_Reporte_Empleado3_Detalle($conexion, $licencia['ID']);
 
-    // Agregar las licencias al PDF
-    if (!empty($listado)) {
-        foreach ($listado as $index => $licencia) {
-            $pdf->SetFont('helvetica', '', 8);
-            $pdf->Cell($anchoColumna, 10, $index + 1, 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $licencia['FECHAINICIO'], 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $licencia['FECHAFIN'], 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $licencia['CANTIDADDIAS'], 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $licencia['TIPO'], 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $licencia['ESTADO'], 1, 1, 'C');
-        }
-    } else {
-        // Si no hay licencias, muestra un mensaje indicando que no hay licencias
-        $pdf->SetFont('helvetica', 'I', 10);
-        $pdf->Cell(0, 10, 'El empleado seleccionado no tiene licencias.', 0, 1, 'C');
-    }
-    if (!empty($listadoDetalle)) {
-        $anchoTotal = $pdf->getPageWidth();
-        $anchoColumna = $anchoTotal / 5; // Ajustamos el número de columnas
+        if (!empty($listadoDetalles) && !isset($listadoDetalles['mensaje'])) {
+            // Cabecera de los detalles
+            $pdf->Ln(5);
+            $pdf->SetFont('helvetica', 'B', 12);
+            $pdf->Cell(0, 10, 'Detalles de la Licencia', 0, 1);
 
-        // Cabecera de la tabla
-        $pdf->Ln(5);
-        $pdf->SetFont('helvetica', 'B', 16);
-        $pdf->Cell(0, 10, 'Detalles', 0, 1, 'L');
-        $pdf->SetFont('helvetica', 'B', 10);
-        $pdf->Cell($anchoColumna, 10, '#', 1, 0, 'C');
-        $pdf->Cell($anchoColumna, 10, 'Descripción', 1, 0, 'C');
-        $pdf->Cell($anchoColumna, 10, 'Fecha de Creación', 1, 0, 'C');
-        $pdf->Cell($anchoColumna, 10, 'Empleado', 1, 1, 'C');
+            // Ajustar columnas
+            $pdf->SetFont('helvetica', 'B', 10);
+            $pdf->Cell(40, 10, 'Descripción', 1, 0, 'C');
+            $pdf->Cell(40, 10, 'Fecha Creación', 1, 0, 'C');
+            $pdf->Cell(30, 10, 'Estado', 1, 1, 'C');
 
-
-        // Agregar los detalles al PDF
-        foreach ($listadoDetalle as $index => $detalle) {
-            $pdf->SetFont('helvetica', '', 8);
-            $pdf->Cell($anchoColumna, 10, $index + 1, 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $detalle['DESCRIPCION'], 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $detalle['FECHACREACION'], 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $detalle['NOMBRE'] . " " . $detalle['APELLIDO'], 1, 0, 'C');
+            // Rellenar los detalles
+            foreach ($listadoDetalles as $detalle) {
+                $pdf->SetFont('helvetica', '', 10);
+                $pdf->Cell(40, 10, $detalle['DESCRIPCION'], 1, 0);
+                $pdf->Cell(40, 10, $detalle['FECHACREACION'], 1, 0);
+                $pdf->Cell(30, 10, $detalle['ESTADO_LICENCIA'], 1, 1);
+                // Agregar el enlace de documentación
+                if (!empty($detalle['DOCUMENTACION'])) {
+                    $pdf->SetFont('helvetica', 'I', 10);
+                    $pdf->writeHTMLCell(0, 10, '', '', '<a href="data:application/octet-stream;base64,' . base64_encode($detalle['DOCUMENTACION']) . '">Descargar Documentación</a>', 0, 1, false, true, 'L');
+                }
+            }
+        } else {
+            // Mostrar mensaje si no hay detalles
+            $pdf->Ln(5);
+            $pdf->SetFont('helvetica', 'I', 10);
+            $pdf->Cell(0, 10, 'No hay detalles disponibles para esta licencia.', 0, 1, 'C');
         }
     }
+} else {
+    // Mostrar mensaje si no hay licencias
+    $pdf->Ln(20);
+    $pdf->SetFont('helvetica', 'I', 12);
+    $pdf->Cell(0, 10, 'El empleado seleccionado no tiene licencias.', 0, 1, 'C');
+}
 }
 if ($tipo_reporte == '6') {
     // Ajuste de la tabla para que ocupe el ancho completo de la página
@@ -143,14 +142,15 @@ if ($tipo_reporte == '6') {
     $pdf->Cell(150, 10, 'Descripción', 1, 1, 'C');
 
     if (!empty($listadoEmbargo)) {
-    // Agregar las licencias al PDF
-    foreach ($listadoEmbargo as $index => $embargo) {
-        $pdf->SetFont('helvetica', '', 8);
-        $pdf->Cell($anchoColumna, 10, $index + 1, 1, 0, 'C');
-        $pdf->Cell($anchoColumna, 10, $embargo['FECHA'], 1, 0, 'C');
-        $pdf->Cell($anchoColumna, 10, $embargo['MONTO'], 1, 0, 'C');
-        $pdf->Cell(150, 10, $embargo['DESCRIPCION'], 1, 0, 'C');
-    }} else {
+        // Agregar las licencias al PDF
+        foreach ($listadoEmbargo as $index => $embargo) {
+            $pdf->SetFont('helvetica', '', 8);
+            $pdf->Cell($anchoColumna, 10, $index + 1, 1, 0, 'C');
+            $pdf->Cell($anchoColumna, 10, $embargo['FECHA'], 1, 0, 'C');
+            $pdf->Cell($anchoColumna, 10, $embargo['MONTO'], 1, 0, 'C');
+            $pdf->Cell(150, 10, $embargo['DESCRIPCION'], 1, 0, 'C');
+        }
+    } else {
         // Si no hay licencias, muestra un mensaje indicando que no hay licencias
         $pdf->SetFont('helvetica', 'I', 10);
         $pdf->Cell(0, 10, 'El empleado seleccionado no tiene Embargos.', 0, 1, 'C');
@@ -160,4 +160,4 @@ if ($tipo_reporte == '6') {
 
 
 // Salida del PDF
-$pdf->Output('reporte_empleado_' . $empleado_id . '.pdf', 'I');
+$pdf->Output('reporte_empleado_' . $empleado_id . '.pdf', 'D');

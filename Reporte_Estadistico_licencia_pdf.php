@@ -30,5 +30,6 @@ function Consultar_licencias_para_reporte_estadistico($conexion, $fechaInicio, $
     while ($row = mysqli_fetch_assoc($result)) {
         $licencias_data[] = $row;
     }
+    return $licencias_data;
 }
 ?>

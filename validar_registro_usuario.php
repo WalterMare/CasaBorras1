@@ -14,7 +14,7 @@ function Validar_Datos_Usuario()
         $vMensaje .= 'Debe reingresar la clave. <br />';
     }
     if (strlen($_POST['clave1']) < 6 || strlen($_POST['clave'] <6) ) {
-        $vMensaje .= 'Debe Ingresar una clave correcta';
+        $vMensaje .= 'Debe Ingresar una clave correcta. <br />';
     }
 
     if ($_POST['clave'] != $_POST['clave1']   ) {
@@ -22,10 +22,10 @@ function Validar_Datos_Usuario()
     }
    
     if (empty($_POST['empleado']) ) {
-        $vMensaje .= 'Para continuar debes seleccionar el tipo de relacion';
+        $vMensaje .= 'Para continuar debes seleccionar el tipo de relacion. <br />';
     }
     if (empty($_POST['tipo'])) {
-        $vMensaje .= 'Para continuar debes Ingresar la Fecha de Nacimiento';
+        $vMensaje .= 'Para continuar debes Ingresar la Fecha de Nacimiento. <br />';
     }
     
 

@@ -99,7 +99,6 @@ require_once 'funcion_calcularEdad.php';
               <h5 class="card-title">Datos</h5>
               
 
-
               <form class="row g-3" method="post" > <!--se agrego el metodo post para la captura de datos -->
                 <div class="col-3">
                   <img width= '80px' height='80px'  src="data:image/jpg; base64,<?php echo base64_encode($datosEmpleado['IMAGEN']);?>" alt="" class="rounded-circle" >
@@ -171,7 +170,6 @@ require_once 'funcion_calcularEdad.php';
                   <input type="text" class="form-control" id="cargo" name="cargo"value="<?php echo $datosEmpleado['CARGO'];?>"disabled>
                 </div>
 
-            
 
                 <div class="col-3">
                   <label class="form-label">Estado</label>
@@ -180,6 +178,12 @@ require_once 'funcion_calcularEdad.php';
                     <label class="form-check-label" for="gridCheck1"> Activo</label>
                   </div>
                 </div>
+
+                <div class="col-3">
+                  <label for="fechabaja" class="form-label">Fecha Baja</label>
+                  <input type="text" class="form-control" id="fechabaja" name="fechabaja"value="<?php echo $datosEmpleado['FECHABAJA'];?>"disabled>
+                </div>
+
                 <div class="col-12">
                   <label for="" class="form-label">FAMILIARES A CARGO</label>
                 </div>
@@ -196,6 +200,8 @@ require_once 'funcion_calcularEdad.php';
                     <th scope="col">Fecha Nacimiento</th>
                     <th scope="col">Edad</th>
                     <th scope="col">Tel</th> 
+                    <th scope="col">Fecha Baja</th> 
+
                   </tr>
                 </thead>
                 <tbody>
@@ -209,6 +215,7 @@ require_once 'funcion_calcularEdad.php';
                       <td><?php echo $ListadoReporte[$i]['FECHANACIMIENTO']; ?></td>
                       <td><?php echo edad($ListadoReporte[$i]['FECHANACIMIENTO'])." "."años";?></td>
                       <td><?php echo $ListadoReporte[$i]['TEL']; ?></td>
+                      <td><?php echo $ListadoReporte[$i]['FECHABAJA']; ?></td>
                       <td>
                         <a href="Mostrar_familiar.php?ID=<?php echo $ListadoReporte[$i]['ID'];?>&IDEMPLEADO=<?php echo $ListadoReporte[$i]['IDEMPLEADO']; ?>" role="button" title="Modificar" <span class="badge bg-info"><i class="bi bi-info-circle me-1"></i></span> </a>
                         <a onclick="if (confirm('Esta seguro que desea eliminar?')){return true;}else {return false;}"
@@ -226,7 +233,7 @@ require_once 'funcion_calcularEdad.php';
                 
 
                 <div class="text-center">
-                  <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
+                  <a href="Listado_empleados.php" class="text-primary fw-bold">Atras</a>
                 </div>
               </form><!-- Vertical Form -->
 

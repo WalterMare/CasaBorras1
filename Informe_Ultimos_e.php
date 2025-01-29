@@ -12,6 +12,8 @@ if (empty($_SESSION['Usuario_Nombre'])) {
 }
 $seleccionado = "1"; //se establece un valor por defecto para la primera carga de la página
 $seleccionado2 = "2";
+
+
 if (isset($_POST['grupo'])) {
     $_SESSION['RadioSeleccionado'] = $_POST['grupo'];
     if (isset($_POST['grupo1'])) {
@@ -118,14 +120,11 @@ require_once 'select_UltimosEmpleados.php';
                             if (!empty($_POST['BotonBuscar'])) {
                                 //estoy en condiciones de poder validar los datos
 
-                                if (Listar_ultimosEmpleados2($MiConexion, $_POST["grupo"] != false)) {
-                                    if ($seleccionado2 == "2") {
-                                        $listadoEmpleados = Listar_ultimosEmpleados2($MiConexion, $_POST["grupo"]);
-                                        $CantidadEmpleados = count($listadoEmpleados);
-                                        $Mensaje = 'Datos encontrados.';
-                                        $_POST = array();
-                                        $Estilo = 'success';
-                                    } else if ($seleccionado2 == "0" || $seleccionado2 == "1") {
+                                // Primero verifica si $_POST["grupo"] tiene un valor válido
+                                if ($_POST["grupo"] != false) {
+                                    // Luego llama a la función Listar_ultimosEmpleados2 solo si $_POST["grupo"] no es falso
+                                   
+                                     if (!empty($seleccionado2)) {
                                         $listadoEmpleados = Listar_ultimosEmpleados($MiConexion, $_POST["grupo"], $_POST["grupo1"]);
                                         $CantidadEmpleados = count($listadoEmpleados);
                                         $Mensaje = 'Datos encontrados.';
@@ -144,10 +143,6 @@ require_once 'select_UltimosEmpleados.php';
                                 </div>
                             <?php } ?>
 
-
-
-
-
                             <form class="row g-6" method="post">
                                 <div class="col-6">
                                     <label for="selector" class="form-label">Lapso del tiempo de búsqueda:</label>
@@ -160,12 +155,15 @@ require_once 'select_UltimosEmpleados.php';
                                 </div>
                                 <div class="col-6">
                                     <label for="selector" class="form-label">Estado en el que se encuentra:</label>
+                                    <input type="radio" id="opcion5" name="grupo1" value="4" <?php if ($seleccionado2 == '4') echo "checked"; ?>>
+                                    <label for="opcion5"> Inactivo</label>
                                     <input type="radio" id="opcion4" name="grupo1" value="1" <?php if ($seleccionado2 == "1") echo "checked"; ?>>
                                     <label for="opcion4"> Activo</label>
-                                    <input type="radio" id="opcion5" name="grupo1" value="0" <?php if ($seleccionado2 == "0") echo "checked"; ?>>
-                                    <label for="opcion5"> Inactivo</label>
                                     <input type="radio" id="opcion6" name="grupo1" value="2" <?php if ($seleccionado2 == "2") echo "checked"; ?>>
-                                    <label for="opcion6"> Ambos</label>
+                                    <label for="opcion6"> Activos e Inactivos</label>
+                                    <input type="radio" id="opcion7" name="grupo1" value="3" <?php if ($seleccionado2 == "3") echo "checked"; ?>>
+                                    <label for="opcion7"> Inactivo por Baja</label>
+                                   
                                 </div>
                                 <div class="col-2 row g-2 text-center">
                                     <button class="btn btn-primary" type="submit" value="Buscar" name="BotonBuscar">Buscar</button>
@@ -189,6 +187,7 @@ require_once 'select_UltimosEmpleados.php';
                                                             <th scope="col">#</th>
                                                             <th scope="col">Empleado</th>
                                                             <th scope="col">Fecha de Inicio</th>
+                                                            <th scope="col">Fecha de Baja</th>
                                                             <th scope="col">Estado</th>
                                                             <th scope="col">Cargo</th>
                                                         </tr>
@@ -201,6 +200,7 @@ require_once 'select_UltimosEmpleados.php';
                                                                     <th scope="row"><?php echo $i + 1; ?></th>
                                                                     <td><?php echo $listadoEmpleados[$i]['NOMBRE'] . " " . $listadoEmpleados[$i]['APELLIDO']; ?></td>
                                                                     <td><?php echo $listadoEmpleados[$i]['FECHA_INICIO']; ?></td>
+                                                                    <td><?php echo $listadoEmpleados[$i]['FECHA_BAJA']; ?></td>
                                                                     <td>
                                                                         <a><span class="badge bg-<?php echo $listadoEmpleados[$i]['ESTADO'] == 1 ? 'success' : 'danger'; ?>"><i class="bi bi-check-circle me-1"></i></span>
                                                                         </a>

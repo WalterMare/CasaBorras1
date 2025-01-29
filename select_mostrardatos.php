@@ -41,6 +41,7 @@ function Listar_Empleado($vConexion, $empleado)
         $Listado['FECHANACIMIENTO'] = $data['fechaNacimiento'];
         $Listado['DIRECCION'] = $data['direccion'];
         $Listado['DNI'] = $data['dni'];
+        $Listado['FECHABAJA'] = $data['fecha_baja'];
     }
     //devuelvo el listado generado en el array $Listado. (Podra salir vacio o con datos)..
     return $Listado;

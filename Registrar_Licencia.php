@@ -2,7 +2,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
+$mensaje='';
 try {
     $pdo = new PDO('mysql:host=localhost;dbname=recursoshumanos', 'root', '12345');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -36,6 +36,9 @@ try {
 
     $idLicencia = $pdo->lastInsertId();
    
+    // Actualizar estado del empleado a 0 (inactivo)
+    $stmt = $pdo->prepare("UPDATE empleado SET estado = 0 WHERE idempleado = :idEmpleado");
+    $stmt->execute([':idEmpleado' => $_POST['idEmpleado']]);
     
     if (!empty($_POST['detalles_descripcion'])) {
       foreach ($_POST['detalles_descripcion'] as $index => $descripcion) {
@@ -46,14 +49,14 @@ try {
               $documentacion = file_get_contents($_FILES['detalles_documentacion']['tmp_name'][$index]);
           }
   
-          $stmt = $pdo->prepare("INSERT INTO detallelicencia (idLicencia, descripcion, documentacion, FechaCreacion, idEmpleado) 
-                                 VALUES (:idLicencia, :descripcion, :documentacion,:FechaCreacion :idEmpleado)");
+          $stmt = $pdo->prepare("INSERT INTO detallelicencia (idLicencia, descripcion, documentacion, FechaCreacion, idUsuario) 
+                                 VALUES (:idLicencia, :descripcion, :documentacion, :FechaCreacion, :idUsuario)");
           $stmt->execute([
               ':idLicencia' => $idLicencia,
               ':descripcion' => $descripcion,
               ':documentacion' => $documentacion,
               ':FechaCreacion' => date('Y-m-d'),
-              ':idEmpleado' => $_POST['idEmpleado']
+              ':idUsuario' => $_POST['usuario']
           ]);
       }
   }
@@ -61,14 +64,12 @@ try {
     // Confirmar transacción
     $pdo->commit();
     $mensaje= "Licencia y detalles registrados exitosamente.";
-    return true;
 } catch (Exception $e) {
     // Revertir transacción si está activa
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
     $mensaje= "Error: " . $e->getMessage();
-    return false;
 }
 echo "<script>alert('$mensaje'); window.location.href='Registro_Licencia.php';</script>";
 ?>

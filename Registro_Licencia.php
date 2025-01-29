@@ -109,7 +109,7 @@ $estilo = 'info';
                                 <i class="bi bi-info-circle me-1"></i>
                                 Los campos indicados con (*) son requeridos
                             </div>
-                          
+
 
                             <form class="row g-3" action="Registrar_Licencia.php" method="post" enctype="multipart/form-data">
                                 <div class="col-6">
@@ -162,6 +162,11 @@ $estilo = 'info';
                                         ?>
                                     </select><br><br>
                                 </div>
+                                <br>
+                                <div class="col-2">
+                                    <label class="form-label" for="usuario">Usuario que otorga:</label>
+                                    <input class="form-control" type="text" id="usuario" name="usuario" value="<?php echo $_SESSION['Usuario_Id'] ?>" readonly>
+                                </div>
                                 <!-- Detalles de Licencia -->
                                 <h2>Detalles de la Licencia</h2>
                                 <div id="detallesContainer">
@@ -169,12 +174,15 @@ $estilo = 'info';
                                     <div class="detalle">
                                         <div class="col-6">
                                             <label class="form-control" for="detalles_descripcion[]">Descripción del Detalle:</label>
-                                            <input class="form-control" type="text" id="detalles_descripcion[]"  name="detalles_descripcion[]" required>
+                                            <input class="form-control" type="text" id="detalles_descripcion[]" name="detalles_descripcion[]" required>
                                         </div>
+                                        <br>
                                         <div class="col-6">
                                             <label class="form-control" for="detalles_documentacion[]">Documentación:</label>
                                             <input class="form-control" type="file" id="detalles_documentacion[]" name="detalles_documentacion[]" accept="application/pdf">
                                         </div>
+                                        <br>
+
 
                                     </div>
                                 </div>

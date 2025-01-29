@@ -17,9 +17,13 @@ require_once 'conexiondb.php';
 $MiConexion = ConexionBD();
 
 require_once 'select_Trans_Dest_Usu_Via.php';
-//voy a ir listando lo necesario para trabajar en este script: 
-$ListadoReporte = Listar_Reporte_2($MiConexion, $_SESSION['Usuario_Nivel']);
+// Obtener el filtro del estado desde el formulario (si está definido)
+$filtro_estado = isset($_GET['filtro_estado']) ? $_GET['filtro_estado'] : 'todos';
+
+// Llamar a la función con el filtro seleccionado
+$ListadoReporte = Listar_Reporte_2($MiConexion, $_SESSION['Usuario_Nivel'], $filtro_estado);
 $CantidadReportes = count($ListadoReporte);
+
 
 //se incluye la funcion para calcular las fechas asi obtener el color que le corresponde a la tabla
 //require_once 'testFechas.php';
@@ -93,8 +97,27 @@ $CantidadReportes = count($ListadoReporte);
         <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
+
+              <!-- Agregado del filtro activo-Inactivo-De Baja -->
+              <form method="GET" action="listado_empleados.php" class="mb-4">
+                <div class="row">
+                  <div class="col-md-4">
+                    <label for="filtro_estado" class="form-label">Filtrar por estado:</label>
+                    <select name="filtro_estado" id="filtro_estado" class="form-select">
+                      <option value="todos" <?php echo (isset($_GET['filtro_estado']) && $_GET['filtro_estado'] == 'todos') ? 'selected' : ''; ?>>Todos</option>
+                      <option value="activos" <?php echo (isset($_GET['filtro_estado']) && $_GET['filtro_estado'] == 'activos') ? 'selected' : ''; ?>>Activos</option>
+                      <option value="inactivos" <?php echo (isset($_GET['filtro_estado']) && $_GET['filtro_estado'] == 'inactivos') ? 'selected' : ''; ?>>Inactivos (Licencias/Vacaciones)</option>
+                      <option value="baja" <?php echo (isset($_GET['filtro_estado']) && $_GET['filtro_estado'] == 'baja') ? 'selected' : ''; ?>>Dados de baja</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Aplicar</button>
+                  </div>
+                </div>
+              </form>
+
               <h5 class="card-title">Empleados cargados</h5>
-              
+
 
               <!-- Default Table -->
               <table class="table table-striped">
@@ -108,14 +131,17 @@ $CantidadReportes = count($ListadoReporte);
                     <th scope="col">Provincia</th>
                     <th scope="col">Tel</th>
                     <th scope="col">Fecha Inicio</th>
+                    <th scope="col">Fecha de Baja</th>
                     <th scope="col">Estado</th>
                     <th scope="col">Cargo</th>
                     <th scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <?php for ($i = 0; $i < $CantidadReportes; $i++) { ?>
-                    <tr>
+                  <?php for ($i = 0; $i < $CantidadReportes; $i++) {
+                    $estaDadoDeBaja = !empty($ListadoReporte[$i]['FECHABAJA']) && $ListadoReporte[$i]['FECHABAJA'] != 'N/A';
+                  ?>
+                    <tr class="<?php echo $estaDadoDeBaja ? 'table-info' : ''; ?>">
                       <th scope="row"><?php echo $i + 1; ?></th>
                       <td><?php echo $ListadoReporte[$i]['ID']; ?></td>
                       <td><?php echo $ListadoReporte[$i]['NOMBRE']; ?></td>
@@ -124,21 +150,37 @@ $CantidadReportes = count($ListadoReporte);
                       <td><?php echo $ListadoReporte[$i]['PROVINCIA']; ?></td>
                       <td><?php echo $ListadoReporte[$i]['TEL']; ?></td>
                       <td><?php echo $ListadoReporte[$i]['FECHAINICIO']; ?></td>
+                      <td><?php echo $ListadoReporte[$i]['FECHABAJA']; ?></td>
                       <td>
-                        <a onclick="if (confirm('Esta seguro que desea cambiar el Estado?')){return true;}else {return false;}"
-                          href="cambiar_estado.php?ESTADO=<?php echo $ListadoReporte[$i]['ESTADO']; ?>&ID=<?php echo $ListadoReporte[$i]['ID']; ?> "
-                          role='button' title='Modificar estado'><span class="badge bg-<?php echo $ListadoReporte[$i]['ESTADO'] == 1 ? 'success' : 'danger'; ?>"><i class="bi bi-check-circle me-1"></i></span>
-                        </a>
+                        <?php if (!$estaDadoDeBaja) { ?>
+                          <a onclick="if (confirm('Está seguro que desea cambiar el Estado?')){return true;}else {return false;}"
+                            href="cambiar_estado.php?ESTADO=<?php echo $ListadoReporte[$i]['ESTADO']; ?>&ID=<?php echo $ListadoReporte[$i]['ID']; ?> "
+                            role='button' title='Modificar estado'>
+                            <span class="badge bg-<?php echo $ListadoReporte[$i]['ESTADO'] == 1 ? 'success' : 'danger'; ?>">
+                              <i class="bi bi-check-circle me-1"></i>
+                            </span>
+                          </a>
+                        <?php } ?>
                       </td>
                       <td><?php echo $ListadoReporte[$i]['CARGO']; ?></td>
                       <td>
-
-                        <a href="Mostrar_datos.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button"" title=" Ver"<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i> </span> </a>
-                        <a href="Modificar_datos.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Modificar" <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i></span> </a>
+                        <a href="Mostrar_datos.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Ver">
+                          <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i></span>
+                        </a>
+                        <?php if (!$estaDadoDeBaja) { ?>
+                          <a href="Modificar_datos.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Modificar">
+                            <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i></span>
+                          </a>
+                          <a onclick="return confirm('¿Está seguro de que desea dar de baja a este empleado?');"
+                            href="dar_baja_empleado.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Dar de baja">
+                            <span class="badge bg-danger text-light"><i class="bi bi-x-circle me-1"></i></span>
+                          </a>
+                        <?php } ?>
                       </td>
                     </tr>
                   <?php }; ?>
                 </tbody>
+
               </table>
               <!-- End Default Table Example -->
             </div>

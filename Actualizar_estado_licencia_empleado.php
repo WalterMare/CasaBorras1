@@ -2,81 +2,73 @@
 function actualizarEstadoLicencia($conexion)
 {
     // Obtenemos la fecha actual
-    $hoy = date('Y-m-d');  // o usar 'CURDATE()' directamente en SQL
+    $hoy = date('Y-m-d'); // o usar CURDATE() en SQL
 
-    // Consultamos todas las licencias cuya fecha de fin sea igual o mayor a la fecha actual
-    $query = "SELECT * FROM licencia WHERE fechafin <= ?";
+    // Consultamos todas las licencias cuya fecha de fin sea igual o menor a la fecha actual
+    $query = "SELECT idlicencia, idEmpleado FROM licencia WHERE fechafin <= ?";
     $stmt = mysqli_prepare($conexion, $query);
+
+    if (!$stmt) {
+        error_log("Error preparando la consulta: " . mysqli_error($conexion));
+        return false;
+    }
 
     // Enlazamos el parámetro para la fecha
     mysqli_stmt_bind_param($stmt, "s", $hoy);
 
     // Ejecutamos la consulta
-    mysqli_stmt_execute($stmt);
-    $resultado = mysqli_stmt_get_result($stmt);
-
-    // Verificamos si la consulta fue exitosa
-    if (!$resultado) {
-        error_log("Error al ejecutar la consulta para obtener las licencias: " . mysqli_error($conexion));
+    if (!mysqli_stmt_execute($stmt)) {
+        error_log("Error ejecutando la consulta para obtener licencias: " . mysqli_error($conexion));
         return false;
     }
 
-    // Verificamos si se obtuvieron licencias
-    $licencia_encontrada = false;
-    while ($licencias = mysqli_fetch_assoc($resultado)) {
-        $licencia_encontrada = true;
-        $licencia_id = $licencias['idlicencia'];
+    $resultado = mysqli_stmt_get_result($stmt);
+    if (!$resultado) {
+        error_log("Error obteniendo el resultado: " . mysqli_error($conexion));
+        return false;
+    }
 
-        // Registramos el id de la licencia que se va a actualizar
-        error_log("Actualizando licencia con id: " . $licencia_id);
+    // Procesamos las licencias vencidas
+    while ($licencia = mysqli_fetch_assoc($resultado)) {
+        $licencia_id = $licencia['idlicencia'];
+        $empleado_id = $licencia['idEmpleado'];
 
-        // Realizamos la actualización del estado de la licencia
-        $SQL = "UPDATE licencia SET IdEstado = 3 WHERE idlicencia = ?";
-        $stmt_update = mysqli_prepare($conexion, $SQL);
+        // Actualizar el estado de la licencia a 3 (finalizada)
+        $SQL_actualizar_licencia = "UPDATE licencia SET IdEstado = 3 WHERE idlicencia = ?";
+        $stmt_actualizar_licencia = mysqli_prepare($conexion, $SQL_actualizar_licencia);
 
-        // Enlazamos el parámetro de idlicencia
-        mysqli_stmt_bind_param($stmt_update, "i", $licencia_id);
-
-        // Ejecutamos la consulta de actualización
-        $resultado_update = mysqli_stmt_execute($stmt_update);
-
-        // Verificamos si la consulta de actualización fue exitosa
-        if (!$resultado_update) {
-            // Registrar el error si no se pudo actualizar
-            error_log("Error al actualizar la licencia con id: " . $licencia_id . " - " . mysqli_error($conexion));
+        if (!$stmt_actualizar_licencia) {
+            error_log("Error preparando la actualización de licencia: " . mysqli_error($conexion));
             return false;
         }
-        // Ahora, actualizamos el estado de los empleados que están asociados con esta licencia
-        $SQL_empleados = "SELECT idEmpleado FROM detallelicencia WHERE idLicencia = ?";
-        $stmt_empleados = mysqli_prepare($conexion, $SQL_empleados);
-        mysqli_stmt_bind_param($stmt_empleados, "i", $licencia_id);
-        mysqli_stmt_execute($stmt_empleados);
-        $resultado_empleados = mysqli_stmt_get_result($stmt_empleados);
 
-        // Verificamos si encontramos empleados asociados
-        while ($empleado = mysqli_fetch_assoc($resultado_empleados)) {
-            $idEmpleado = $empleado['idEmpleado'];
+        mysqli_stmt_bind_param($stmt_actualizar_licencia, "i", $licencia_id);
+        if (!mysqli_stmt_execute($stmt_actualizar_licencia)) {
+            error_log("Error actualizando la licencia con id: $licencia_id - " . mysqli_error($conexion));
+            return false;
+        } else {
+            error_log("Licencia con id: $licencia_id actualizada a estado 3.");
+        }
 
-            // Actualizamos el estado del empleado a 1 (suponiendo que 1 es el estado "activo")
-            $SQL_update_empleado = "UPDATE empleado SET estado = 1 WHERE idempleado = ?";
-            $stmt_update_empleado = mysqli_prepare($conexion, $SQL_update_empleado);
-            mysqli_stmt_bind_param($stmt_update_empleado, "i", $idEmpleado);
-            $resultado_update_empleado = mysqli_stmt_execute($stmt_update_empleado);
+        // Actualizar el estado del empleado a 1 (activo)
+        $SQL_actualizar_empleado = "UPDATE empleado SET estado = 1 WHERE idempleado = ?";
+        $stmt_actualizar_empleado = mysqli_prepare($conexion, $SQL_actualizar_empleado);
 
-            // Verificamos si la actualización del empleado fue exitosa
-            if (!$resultado_update_empleado) {
-                error_log("Error al actualizar el estado del empleado con id: " . $idEmpleado . " - " . mysqli_error($conexion));
-                return false;
-            } else {
-                error_log("Estado del empleado con id: " . $idEmpleado . " actualizado a 1 (activo).");
-            }
+        if (!$stmt_actualizar_empleado) {
+            error_log("Error preparando la actualización de empleado: " . mysqli_error($conexion));
+            return false;
+        }
+
+        mysqli_stmt_bind_param($stmt_actualizar_empleado, "i", $empleado_id);
+        if (!mysqli_stmt_execute($stmt_actualizar_empleado)) {
+            error_log("Error actualizando el empleado con id: $empleado_id - " . mysqli_error($conexion));
+            return false;
+        } else {
+            error_log("Empleado con id: $empleado_id actualizado a estado 1 (activo).");
         }
     }
 
-    if (!$licencia_encontrada) {
-        error_log("No se encontraron licencias con fecha de fin igual a hoy: " . $hoy);
-    }
-
-    // Si todas las consultas fueron exitosas, retornamos true
+    // Si se procesaron correctamente todas las licencias, retornamos true
+    error_log("Proceso completado. Estados actualizados para licencias y empleados.");
     return true;
 }

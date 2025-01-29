@@ -15,16 +15,16 @@ function Validar_Datos_Familiar()
     }
    
     if (empty($_POST['relacion']) ) {
-        $vMensaje .= 'Para continuar debes seleccionar el tipo de relacion';
+        $vMensaje .= 'Para continuar debes seleccionar el tipo de relacion. <br />';
     }
     if (empty($_POST['fechanacimiento'])) {
-        $vMensaje .= 'Para continuar debes Ingresar la Fecha de Nacimiento';
+        $vMensaje .= 'Para continuar debes Ingresar la Fecha de Nacimiento. <br />';
     }
     if (empty($_POST['tel'])) {
-        $vMensaje .= 'Para continuar debes Ingresar un telefono';
+        $vMensaje .= 'Para continuar debes Ingresar un telefono. <br />';
     }
     if (empty($_POST['empleado'])) {
-        $vMensaje .= 'Para continuar debes seleccionar un empleado al cual se asociara el familiar';
+        $vMensaje .= 'Para continuar debes seleccionar un empleado al cual se asociara el familiar. <br />';
     }
 
 
@@ -54,17 +54,17 @@ function Validar_Datos_Familiar_bis()
         $vMensaje .= 'Debe ingresar el apellido. <br />';
     }
     if (strlen($_POST['dni']) < 7 || strlen($_POST['dni']) > 10) {
-        $vMensaje .= 'Debe Ingresar el dni correctamente';
+        $vMensaje .= 'Debe Ingresar el dni correctamente. <br />';
     }
    
     if (empty($_POST['relacion']) ) {
-        $vMensaje .= 'Para continuar debes seleccionar el tipo de relacion';
+        $vMensaje .= 'Para continuar debes seleccionar el tipo de relacion. <br />';
     }
     if (empty($_POST['fechanacimiento'])) {
-        $vMensaje .= 'Para continuar debes Ingresar la Fecha de Nacimiento';
+        $vMensaje .= 'Para continuar debes Ingresar la Fecha de Nacimiento. <br />';
     }
     if (empty($_POST['tel'])) {
-        $vMensaje .= 'Para continuar debes Ingresar un telefono';
+        $vMensaje .= 'Para continuar debes Ingresar un telefono. <br />';
     }
    
 
