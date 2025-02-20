@@ -31,11 +31,15 @@ require_once 'select_cargo.php';
 $listadoCargo = Listar_cargo($conexion);
 $CantidadCargo = count($listadoCargo);
 
+require_once 'select_turno.php';
+$listadoTurno = Listar_Turno($conexion);
+$CantidadTurno = count($listadoTurno);
+
 require_once 'select_mostrardatos.php';
-if (!empty($_GET['ID'])){
-    $datosEmpleado=Listar_Empleado($conexion, $_GET['ID']);
-}else{
-    $_SESSION['Mensaje']= 'Sin datos para mostrar...';
+if (!empty($_GET['ID'])) {
+  $datosEmpleado = Listar_Empleado($conexion, $_GET['ID']);
+} else {
+  $_SESSION['Mensaje'] = 'Sin datos para mostrar...';
 }
 
 require_once 'validacion_registro_empleado.php';
@@ -68,21 +72,11 @@ require_once 'modificar_empleado.php';
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <!--<link href="assets/vendor/quill/quill.snow.css" rel="stylesheet">
-  <link href="assets/vendor/quill/quill.bubble.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-  <link href="assets/vendor/simple-datatables/style.css" rel="stylesheet">
--->
+
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
 
-  <!-- =======================================================
-  * Template Name: NiceAdmin
-  * Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
-  * Updated: Apr 20 2024 with Bootstrap v5.3.3
-  * Author: BootstrapMade.com
-  * License: https://bootstrapmade.com/license/
-  ======================================================== -->
+
 </head>
 
 <body>
@@ -125,12 +119,10 @@ require_once 'modificar_empleado.php';
                 //estoy en condiciones de poder validar los datos
                 $Mensaje = Validar_Datos();
                 if (empty($Mensaje)) {
-                  if (ModificarEmpleado($conexion,$_GET['ID']) != false) {
+                  if (ModificarEmpleado($conexion, $_GET['ID']) != false) {
                     $Mensaje = 'Se ha registrado correctamente.';
                     $_POST = array();
                     $Estilo = 'success';
-                    
-
                   } ?>
                   <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="bi bi-check-circle me-1"></i>
@@ -143,40 +135,37 @@ require_once 'modificar_empleado.php';
                   </div><?php }
                     } ?>
 
-
-
-
               <form class="row g-3" method="post" enctype="multipart/form-data"> <!--se agrego el metodo post para la captura de datos -->
 
                 <div class="col-6">
                   <label for="nombre" class="form-label">Nombre (*)</label>
-                  <input type="text" class="form-control" id="nombre" name="nombre" value="<?php echo $datosEmpleado['NOMBRE'];?>">
+                  <input type="text" class="form-control" id="nombre" name="nombre" value="<?php echo $datosEmpleado['NOMBRE']; ?>">
                 </div>
 
 
                 <div class="col-6">
                   <label for="apellido" class="form-label">Apellido (*)</label>
-                  <input type="text" class="form-control" id="apellido" name='apellido'value="<?php echo $datosEmpleado['APELLIDO'];?>">
+                  <input type="text" class="form-control" id="apellido" name='apellido' value="<?php echo $datosEmpleado['APELLIDO']; ?>">
                 </div>
 
                 <div class="col-6">
                   <label for="documento" class="form-label">Documento</label>
-                  <input type="number" class="form-control" id="documento" name="documento" value="<?php echo $datosEmpleado['DNI'];?>">
+                  <input type="number" class="form-control" id="documento" name="documento" value="<?php echo $datosEmpleado['DNI']; ?>">
                 </div>
                 <div class="col-6">
                   <label for="direccion" class="form-label">Direccion(*)</label>
-                  <input type="text" class="form-control" id="direccion" name='direccion'value="<?php echo $datosEmpleado['DIRECCION'];?>">
+                  <input type="text" class="form-control" id="direccion" name='direccion' value="<?php echo $datosEmpleado['DIRECCION']; ?>">
                 </div>
 
                 <div class="col-6">
                   <label for="ciudad" class="form-label">Ciudad</label>
-                  <input type="text" class="form-control" id="ciudad" name="ciudad" value="<?php echo $datosEmpleado['CIUDAD'];?>">
+                  <input type="text" class="form-control" id="ciudad" name="ciudad" value="<?php echo $datosEmpleado['CIUDAD']; ?>">
                 </div>
 
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Provincia (*)</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="provincia"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="<?php echo $datosEmpleado['IDPROV'];?>"><?PHP echo $datosEmpleado['PROVINCIA'];?></option>
+                    <option value="<?php echo $datosEmpleado['IDPROV']; ?>"><?PHP echo $datosEmpleado['PROVINCIA']; ?></option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadProvincias; $i++) {
@@ -196,12 +185,12 @@ require_once 'modificar_empleado.php';
 
                 <div class="col-6">
                   <label for="email" class="form-label">Email</label>
-                  <input type="text" class="form-control" id="email" name="email"value="<?php echo $datosEmpleado['EMAIL'];?>">
+                  <input type="text" class="form-control" id="email" name="email" value="<?php echo $datosEmpleado['EMAIL']; ?>">
                 </div>
 
                 <div class="col-6">
                   <label for="tel" class="form-label">Tel</label>
-                  <input type="number" class="form-control" id="tel" name="tel" value="<?php echo $datosEmpleado['TEL'];?>">
+                  <input type="number" class="form-control" id="tel" name="tel" value="<?php echo $datosEmpleado['TEL']; ?>">
                 </div>
 
                 <div class="col-6">
@@ -211,8 +200,8 @@ require_once 'modificar_empleado.php';
 
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Estado Civil (*)</label>
-                  <select class="form-select" aria-label="Selector" id="selector" name="estadocivil" value="<?php echo $datosEmpleado['ESTADOCIVIL'];?>"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="<?php echo $datosEmpleado['IDCIVIL'];?>"><?PHP echo $datosEmpleado['ESTADOCIVIL'];?></option>
+                  <select class="form-select" aria-label="Selector" id="selector" name="estadocivil" value="<?php echo $datosEmpleado['ESTADOCIVIL']; ?>"> <!--combobox ya cargado con las marcas traidas desde la bd -->
+                    <option value="<?php echo $datosEmpleado['IDCIVIL']; ?>"><?PHP echo $datosEmpleado['ESTADOCIVIL']; ?></option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadEstadoCivil; $i++) {
@@ -231,8 +220,8 @@ require_once 'modificar_empleado.php';
 
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Sexo (*)</label>
-                  <select class="form-select" aria-label="Selector" id="selector" name="sexo" value="<?php echo $datosEmpleado['SEXO'];?>"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="<?php echo $datosEmpleado['IDSEXO'];?>"><?PHP echo $datosEmpleado['SEXO'];?></option>
+                  <select class="form-select" aria-label="Selector" id="selector" name="sexo" value="<?php echo $datosEmpleado['SEXO']; ?>"> <!--combobox ya cargado con las marcas traidas desde la bd -->
+                    <option value="<?php echo $datosEmpleado['IDSEXO']; ?>"><?PHP echo $datosEmpleado['SEXO']; ?></option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadSexo; $i++) {
@@ -251,15 +240,15 @@ require_once 'modificar_empleado.php';
 
                 <div class="col-6">
                   <label for="fechainicio" class="form-label">Fecha Inicio (*)</label>
-                  <input type="date" class="form-control" id="fechainicio" name="fechainicio" value="<?php echo date('Y-m-d', strtotime($datosEmpleado['FECHAINICIO']));?>">
+                  <input type="date" class="form-control" id="fechainicio" name="fechainicio" value="<?php echo date('Y-m-d', strtotime($datosEmpleado['FECHAINICIO'])); ?>">
                 </div>
 
 
 
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Cargo (*)</label>
-                  <select class="form-select" aria-label="Selector" id="selector" name="cargo" value="<?php echo $datosEmpleado['CARGO'];?>"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="<?php echo $datosEmpleado['IDCARGO'];?>"><?PHP echo $datosEmpleado['CARGO'];?></option>
+                  <select class="form-select" aria-label="Selector" id="selector" name="cargo" value="<?php echo $datosEmpleado['CARGO']; ?>"> <!--combobox ya cargado con las marcas traidas desde la bd -->
+                    <option value="<?php echo $datosEmpleado['IDCARGO']; ?>"><?PHP echo $datosEmpleado['CARGO']; ?></option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadCargo; $i++) {
@@ -277,19 +266,52 @@ require_once 'modificar_empleado.php';
                 </div>
 
                 <div class="col-6">
+                  <label name="selector" for="selector" class="form-label">Turno(*)</label>
+                  <select class="form-select" aria-label="Selector" id="selector" name="turno" require> <!--combobox ya cargado con las marcas traidas desde la bd -->
+                    <option value="<?php echo $datosEmpleado['IDTURNO']; ?>"><?PHP echo $datosEmpleado['TURNO']; ?></option>
+                    <?php
+                    $selected = '';
+                    for ($i = 0; $i < $CantidadTurno; $i++) {
+                      if (!empty($_POST['turno']) && $_POST['turno'] ==  $listadoTurno[$i]['ID']) { //recuerda el elemento seleccionado
+                        $selected = 'selected';
+                      } else {
+                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
+                      }
+                    ?>
+                      <option value="<?php echo $listadoTurno[$i]['ID']; ?>" <?php echo $selected; ?>>
+                        <?php echo $listadoTurno[$i]['NOMBRE']; ?>
+                      </option>
+                    <?php } ?>
+                  </select>
+                </div>
+
+                <div class="col-6">
                   <label class="form-label">Estado</label>
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1" name="estado" value=<?php echo $datosEmpleado['ESTADO'];?> <?php echo (!empty($_POST['estado']) && $_POST['estado'] == '1' || $datosEmpleado['ESTADO']=='1') ? 'checked' : ''; ?>>
-                    <label class="form-check-label" for="gridCheck1"> Activo</label>
+                    <input class="form-check-input" type="radio" id="activo" name="estado" value="1"
+                      <?php echo ($datosEmpleado['ESTADO'] == '1') ? 'checked' : ''; ?>>
+                    <label class="form-check-label" for="activo">Activo</label>
+                  </div>
+
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" id="inactivo" name="estado" value="0"
+                      <?php echo ($datosEmpleado['ESTADO'] == '0') ? 'checked' : ''; ?>>
+                    <label class="form-check-label" for="inactivo">Inactivo</label>
                   </div>
                 </div>
 
                 <div class="col-6">
+                  <label for="fechabaja" class="form-label">Fecha de Baja</label>
+                  <input type="date" class="form-control" id="fechabaja" name="fechabaja" value="<?php echo $datosEmpleado['FECHABAJA']; ?>">
+                </div>
+
+
+                <div class="col-6">
                   <label for="imagen" class="form-label">Seleccione una imagen (*)</label>
-                  <input type="file" class="form-control" id="imagen" name="imagen" accept=".jpg,.png" >
+                  <input type="file" class="form-control" id="imagen" name="imagen" accept=".jpg,.png">
                 </div>
                 <div class="col-6">
-                  <img width= '80px' height='80px'  src="data:image/jpg;base64,<?php echo base64_encode($datosEmpleado['IMAGEN']);?>" id="img" class="rounded-circle" />
+                  <img width='80px' height='80px' src="data:image/jpg;base64,<?php echo base64_encode($datosEmpleado['IMAGEN']); ?>" id="img" class="rounded-circle" />
                 </div>
 
 
@@ -318,14 +340,8 @@ require_once 'modificar_empleado.php';
   <!-- Vendor JS Files
   <script src="assets/vendor/apexcharts/apexcharts.min.js"></script> -->
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <!-- <script src="assets/vendor/chart.js/chart.umd.js"></script>
-  <script src="assets/vendor/echarts/echarts.min.js"></script>
-  <script src="assets/vendor/quill/quill.js"></script>
-  <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
+ 
   <script src="assets/vendor/tinymce/tinymce.min.js"></script>
-
-  <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
-
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
   <script src="assets/js/imagen.js"></script>

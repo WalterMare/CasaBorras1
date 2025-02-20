@@ -167,10 +167,10 @@ $CantidadReportes = count($ListadoReporte);
                         <a href="Mostrar_datos.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Ver">
                           <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i></span>
                         </a>
-                        <?php if (!$estaDadoDeBaja) { ?>
-                          <a href="Modificar_datos.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Modificar">
+                        <a href="Modificar_datos.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Modificar">
                             <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i></span>
                           </a>
+                        <?php if (!$estaDadoDeBaja) { ?>
                           <a onclick="return confirm('¿Está seguro de que desea dar de baja a este empleado?');"
                             href="dar_baja_empleado.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Dar de baja">
                             <span class="badge bg-danger text-light"><i class="bi bi-x-circle me-1"></i></span>

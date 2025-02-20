@@ -15,6 +15,7 @@ ini_set('display_errors', 1);
 require_once 'conexiondb.php';
 require_once 'Reporte_Estadistico_licencia_pdf.php';  // Archivo con la función para generar el PDF
 require_once 'generar_pdf.php';
+
 // Conexión a la base de datos
 $MiConexion = ConexionBD();
 

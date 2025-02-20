@@ -43,7 +43,12 @@
         <i class="bi bi-globe2"></i><span>Gestor Movimientos</span><i class="bi bi-chevron-down ms-auto"></i>
       </a>
       <ul id="forms-nav-movimientos" class="nav-content collapse <?php echo (basename($_SERVER['PHP_SELF']) == 'Registrar_viatico.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Viatico_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Anticipo.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Anticipo_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'RegistrarHoraExtra.php' || basename($_SERVER['PHP_SELF']) == 'Listado_HorasExtra_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Obrasocial.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Obrasocial_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Embargo.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Embargo_empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Sanciones.php' || basename($_SERVER['PHP_SELF']) == 'Listar_sanciones_empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Licencia.php' || basename($_SERVER['PHP_SELF']) == 'Listar_Licencias.php') ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
-        <li>
+      <li>
+          <a href="Asistencia_Empleados.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Asistencia_Empleados.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Asistencia de Empleados </span>
+          </a>
+        </li>
+      <li>
           <a href="Registrar_viatico.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_viatico.php' ? 'active' : ''; ?>">
             <i class="bi bi-file-earmark-plus"></i><span>Registrar Viáticos</span>
           </a>
@@ -101,6 +106,11 @@
         <li>
           <a href="Listar_sanciones_empleado.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listar_sanciones_empleado.php' ? 'active' : ''; ?>">
             <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Sanciones</span>
+          </a>
+        </li>
+        <li>
+          <a href="Registrar_Vacaciones.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Vacaciones.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Registrar Vacaciones </span>
           </a>
         </li>
         <li>

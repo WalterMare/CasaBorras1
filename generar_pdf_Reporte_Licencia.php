@@ -34,8 +34,20 @@ if ($tipo_reporte == 1) {
 $listadoLicencias = Listar_Reporte_Empleado3($conexion, $empleado_id, 1);
 } else if ($tipo_reporte == 6) {
     $listadoEmbargo = Listar_Reporte_Empleado_Embargo($conexion, $empleado_id);
+}else if ($tipo_reporte == 2) {
+    $listadoSancion = Listar_Reporte_Empleado_Sancion($conexion, $empleado_id);
+}else if ($tipo_reporte == 3) {
+    $listadoExtras = Listar_Reporte_Empleado_HorasExtras($conexion, $empleado_id);
 }
-
+else if ($tipo_reporte == 5) {
+    $listadoViatico = Listar_Reporte_Viaticos_Empleado($conexion, $empleado_id);
+} 
+else if ($tipo_reporte == 4) {
+    // Obtener el reporte de asistencias
+    $reporte = Listar_Reporte_Asistencias_Empleado($conexion, $empleado_id);
+    $listadoAsistencia = $reporte['asistencias'];
+    $totalHoras = $reporte['total_horas']; // Total de horas trabajadas en el mes
+}
 
 
 
@@ -134,21 +146,21 @@ if ($tipo_reporte == '6') {
 
     $pdf->Ln(5);
     $pdf->SetFont('helvetica', 'B', 16);
-    $pdf->Cell(0, 10, 'Embargos', 0, 1, 'L');
+    $pdf->Cell(0, 10, 'EMBARGOS', 0, 1, 'L');
     $pdf->SetFont('helvetica', 'B', 10);
-    $pdf->Cell($anchoColumna, 10, '#', 1, 0, 'C');
-    $pdf->Cell($anchoColumna, 10, 'Fecha', 1, 0, 'C');
-    $pdf->Cell($anchoColumna, 10, 'Monto', 1, 0, 'C');
-    $pdf->Cell(150, 10, 'Descripción', 1, 1, 'C');
+    $pdf->Cell(8, 10, '#', 1, 0, 'C');
+    $pdf->Cell(18, 10, 'Fecha', 1, 0, 'C');
+    $pdf->Cell(25, 10, 'Monto', 1, 0, 'C');
+    $pdf->Cell(130, 10, 'Descripción', 1, 1, 'C');
 
     if (!empty($listadoEmbargo)) {
         // Agregar las licencias al PDF
         foreach ($listadoEmbargo as $index => $embargo) {
             $pdf->SetFont('helvetica', '', 8);
-            $pdf->Cell($anchoColumna, 10, $index + 1, 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $embargo['FECHA'], 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $embargo['MONTO'], 1, 0, 'C');
-            $pdf->Cell(150, 10, $embargo['DESCRIPCION'], 1, 0, 'C');
+            $pdf->Cell(8, 10, $index + 1, 1, 0, 'C');
+            $pdf->Cell(18, 10, $embargo['FECHA'], 1, 0, 'C');
+            $pdf->Cell(25, 10, $embargo['MONTO'], 1, 0, 'C');
+            $pdf->Cell(130, 10, $embargo['DESCRIPCION'], 1, 0, 'C');
         }
     } else {
         // Si no hay licencias, muestra un mensaje indicando que no hay licencias
@@ -156,6 +168,140 @@ if ($tipo_reporte == '6') {
         $pdf->Cell(0, 10, 'El empleado seleccionado no tiene Embargos.', 0, 1, 'C');
     }
 }
+if ($tipo_reporte == '2') {
+    // Ajuste de la tabla para que ocupe el ancho completo de la página
+    $anchoTotal = $pdf->getPageWidth();
+    $anchoColumna = $anchoTotal / 8; // Ajustamos el número de columnas
+
+    $pdf->Ln(5);
+    $pdf->SetFont('helvetica', 'B', 16);
+    $pdf->Cell(0, 10, 'SANCIONES', 0, 1, 'L');
+    $pdf->SetFont('helvetica', 'B', 10);
+    if (!empty($listadoSancion)) {
+    $pdf->Cell(10, 10, '#', 1, 0, 'C');
+    $pdf->Cell($anchoColumna, 10, 'Fecha Inicio', 1, 0, 'C');
+    $pdf->Cell($anchoColumna, 10, 'Fecha Fin', 1, 0, 'C');
+    $pdf->Cell(40, 10, 'Cantidad de Días', 1, 0, 'C');
+    $pdf->Cell(40, 10, 'Tipo de Sanción', 1, 0, 'C');
+    $pdf->Cell(50, 10, 'Estado', 1, 1, 'C');
+
+    
+        // Agregar las licencias al PDF
+        foreach ($listadoSancion as $index => $sancion) {
+            $pdf->SetFont('helvetica', '', 8);
+            $pdf->Cell(10, 10, $index + 1, 1, 0, 'C');
+            $pdf->Cell($anchoColumna, 10, $sancion['FECHA_INICIO'], 1, 0, 'C');
+            $pdf->Cell($anchoColumna, 10, $sancion['FECHA_FIN'], 1, 0, 'C');
+            $pdf->Cell(40, 10, $sancion['CANTIDAD_DIAS'], 1, 0, 'C');
+            $pdf->Cell(40, 10, $sancion['TIPO'], 1, 0, 'C');
+            $pdf->Cell(50, 10, $sancion['ESTADO'], 1, 0, 'C');
+        }
+    } else {
+        // Si no hay SANCIONES, muestra un mensaje indicando que no hay 
+        $pdf->SetFont('helvetica', 'I', 10);
+        $pdf->Cell(0, 10, 'El empleado seleccionado no tiene Sanciones.', 0, 1, 'C');
+    }
+}
+if ($tipo_reporte == '3') {
+    // Ajuste de la tabla para que ocupe el ancho completo de la página
+    $anchoTotal = $pdf->getPageWidth();
+    $anchoColumna = $anchoTotal / 8; // Ajustamos el número de columnas
+
+    $pdf->Ln(5);
+    $pdf->SetFont('helvetica', 'B', 16);
+    $pdf->Cell(0, 10, 'HORAS EXTRAS', 0, 1, 'L');
+    $pdf->SetFont('helvetica', 'B', 10);
+    if (!empty($listadoExtras)) {
+    $pdf->Cell(10, 10, '#', 1, 0, 'C');
+    $pdf->Cell($anchoColumna, 10, 'Fecha', 1, 0, 'C');
+    $pdf->Cell(40, 10, 'Cantidad de Horas', 1, 1, 'C');
+   
+
+    
+        // Agregar las licencias al PDF
+        foreach ($listadoExtras as $index => $extra) {
+            $pdf->SetFont('helvetica', '', 8);
+            $pdf->Cell(10, 10, $index + 1, 1, 0, 'C');
+            $pdf->Cell($anchoColumna, 10, $extra['FECHA'], 1, 0, 'C');
+            $pdf->Cell(40, 10, $extra['CANTIDAD_HORAS'], 1, 0, 'C');
+        }
+    } else {
+        // Si no hay Extras, muestra un mensaje indicando que no hay 
+        $pdf->SetFont('helvetica', 'I', 10);
+        $pdf->Cell(0, 10, 'El empleado seleccionado no tiene Horas Extras.', 0, 1, 'C');
+    }
+}
+if ($tipo_reporte == '5') {
+    // Ajuste de la tabla para que ocupe el ancho completo de la página
+    $anchoTotal = $pdf->getPageWidth();
+    $anchoColumna = $anchoTotal / 10; // Ajustamos el número de columnas
+
+    $pdf->Ln(5);
+    $pdf->SetFont('helvetica', 'B', 16);
+    $pdf->Cell(0, 10, 'VIATICOS', 0, 1, 'L');
+    $pdf->SetFont('helvetica', 'B', 10);
+    if (!empty($listadoViatico)) {
+    $pdf->Cell(10, 10, '#', 1, 0, 'C');
+    $pdf->Cell($anchoColumna, 10, 'Fecha', 1, 0, 'C');
+    $pdf->Cell(40, 10, 'Tipo', 1, 0, 'C');
+    $pdf->Cell(40, 10, 'Monto', 1, 1, 'C');
+   
+
+    
+        // Agregar las licencias al PDF
+        foreach ($listadoViatico as $index => $viatico) {
+            $pdf->SetFont('helvetica', '', 8);
+            $pdf->Cell(10, 10, $index + 1, 1, 0, 'C');
+            $pdf->Cell($anchoColumna, 10, $viatico['FECHA_OTORGAMIENTO'], 1, 0, 'C');
+            $pdf->Cell(40, 10, $viatico['TIPO_VIATICO'], 1, 0, 'C');
+            $pdf->Cell(40, 10, $viatico['MONTO'], 1, 1, 'C');
+        }
+    } else {
+        // Si no hay Extras, muestra un mensaje indicando que no hay 
+        $pdf->SetFont('helvetica', 'I', 10);
+        $pdf->Cell(0, 10, 'El empleado seleccionado no tiene Viaticos.', 0, 1, 'C');
+    }
+}if ($tipo_reporte == '4') {
+      // Ajuste de la tabla para que ocupe el ancho completo de la página
+      $anchoTotal = $pdf->getPageWidth();
+      $anchoColumna = $anchoTotal / 4; // Ajustamos el número de columnas
+  
+      $pdf->Ln(5);
+      $pdf->SetFont('helvetica', 'B', 16);
+      $pdf->Cell(0, 10, 'ASISTENCIA', 0, 1, 'L');
+      $pdf->SetFont('helvetica', 'B', 10);
+  
+      if (!empty($listadoAsistencia)) {
+          // Encabezados de la tabla
+          $pdf->Cell(7, 10, '#', 1, 0, 'C');
+          $pdf->Cell(20, 10, 'Fecha', 1, 0, 'C');
+          $pdf->Cell(25, 10, 'Hora Entrada', 1, 0, 'C');
+          $pdf->Cell(25, 10, 'Hora Salida', 1, 0, 'C');
+          $pdf->Cell(15, 10, 'Estado', 1, 0, 'C');
+          $pdf->Cell(100, 10, 'Observaciones', 1, 1, 'C');
+  
+          // Agregar las asistencias al PDF
+          foreach ($listadoAsistencia as $index => $asistencia) {
+              $pdf->SetFont('helvetica', '', 8);
+              $pdf->Cell(7, 10, $index + 1, 1, 0, 'C');
+              $pdf->Cell(20, 10, $asistencia['FECHA'], 1, 0, 'C');
+              $pdf->Cell(25, 10, $asistencia['HORA_ENTRADA'], 1, 0, 'C');
+              $pdf->Cell(25, 10, $asistencia['HORA_SALIDA'], 1, 0, 'C');
+              $pdf->Cell(15, 10, $asistencia['ESTADO'], 1, 0, 'C');
+              $pdf->Cell(100, 10, $asistencia['OBSERVACIONES'], 1, 1, 'C');
+          }
+  
+          // Espacio antes de mostrar el total de horas trabajadas
+          $pdf->Ln(5);
+          $pdf->SetFont('helvetica', 'B', 12);
+          $pdf->Cell(0, 10, "Total de horas trabajadas en el mes actual: $totalHoras", 0, 1, 'L');
+  
+      } else {
+          // Si no hay asistencias, muestra un mensaje
+          $pdf->SetFont('helvetica', 'I', 10);
+          $pdf->Cell(0, 10, 'El empleado seleccionado no tiene asistencias registradas.', 0, 1, 'C');
+      }
+  }
 
 
 

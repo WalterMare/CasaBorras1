@@ -2,22 +2,24 @@
 if (isset($_GET['file_id'])) {
     // Conexión a la base de datos
     require_once 'conexiondb.php';
-// Conexión a la base de datos
     $conexion = ConexionBD(); // Ajusta el nombre de tu archivo de conexión
 
-    $file_id = intval($_GET['file_id']); // Sanitiza el parámetro recibido
+    $file_id = intval($_GET['file_id']); // Convierte a entero para mayor seguridad
 
-    // Consulta para obtener el documento
-    $query = "SELECT documentacion FROM detallelicencia WHERE idLicencia = $file_id";
-    $result = mysqli_query($conexion, $query);
+    // Consulta corregida: buscar en la tabla "documento"
+    $query = "SELECT Documentacion FROM documento WHERE iddetalleLicencia = ?";
+    $stmt = mysqli_prepare($conexion, $query);
+    mysqli_stmt_bind_param($stmt, "i", $file_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $documento);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
 
-    if ($result && mysqli_num_rows($result) > 0) {
-        $row = mysqli_fetch_assoc($result);
-
+    if ($documento) {
         // Configuración de cabeceras para la descarga
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename="documentacion_licencia_' . $file_id . '.pdf"');
-        echo $row['documentacion']; // Envía el contenido del archivo
+        echo $documento; // Envía el contenido del archivo
         exit;
     } else {
         echo "Documento no encontrado.";
@@ -26,3 +28,4 @@ if (isset($_GET['file_id'])) {
     echo "Parámetro no válido.";
 }
 ?>
+

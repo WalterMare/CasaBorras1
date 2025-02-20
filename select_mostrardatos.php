@@ -43,6 +43,29 @@ function Listar_Empleado($vConexion, $empleado)
         $Listado['DNI'] = $data['dni'];
         $Listado['FECHABAJA'] = $data['fecha_baja'];
     }
+
+    // Consulta para obtener el turno del empleado
+    $SQL_TURNO = "SELECT T.idturno, T.nombre, T.hora_inicio, T.hora_fin
+                  FROM empleado_turno ET
+                  JOIN turno T ON ET.idturno = T.idturno
+                  WHERE ET.idempleado = $empleado
+                  ORDER BY ET.fecha_asignacion DESC
+                  LIMIT 1";  // Obtiene el turno más reciente asignado al empleado
+
+    $rs_turno = mysqli_query($vConexion, $SQL_TURNO);
+    $turno = mysqli_fetch_array($rs_turno);
+
+    if (!empty($turno)) {
+        $Listado['IDTURNO'] = $turno['idturno'];
+        $Listado['TURNO'] = $turno['nombre'];
+        $Listado['HORA_INICIO'] = $turno['hora_inicio'];
+        $Listado['HORA_FIN'] = $turno['hora_fin'];
+    } else {
+        $Listado['IDTURNO'] = null;
+        $Listado['TURNO'] = "Sin asignar";
+        $Listado['HORA_INICIO'] = null;
+        $Listado['HORA_FIN'] = null;
+    }
     //devuelvo el listado generado en el array $Listado. (Podra salir vacio o con datos)..
     return $Listado;
 }

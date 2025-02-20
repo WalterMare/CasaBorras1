@@ -105,29 +105,33 @@ function Listar_Reporte_Empleado3_Detalle($vConexion, $idLicencia)
 
     //1) Genero la consulta que deseo
     $consulta = "SELECT 
-            dl.descripcion,
-            dl.documentacion,
-            dl.fechacreacion,
-            e.nombre AS empleado_nombre,
-            e.apellido AS empleado_apellido,
-            tl.descripcion AS tipo_licencia,
-            el.nombreEstado AS estado_licencia,
-            u.user
-        FROM 
-            detallelicencia dl
-        JOIN 
-            licencia l ON dl.idLicencia = l.idlicencia
-        JOIN 
-            empleado e ON l.idEmpleado = e.idempleado
-        JOIN 
-            tipolicencia tl ON l.IdTipo = tl.idtipoLicencia
-        JOIN 
-            estadolicencia el ON l.IdEstado = el.idestadoLicencia
-        JOIN 
-            usuario u ON dl.idUsuario = u.idusuario         
-        WHERE 
-            dl.idLicencia = $idLicencia
-    ";
+    dl.descripcion,
+    d.Documentacion,
+    d.FechaCreacion AS fecha_documento,
+    dl.FechaCreacion AS fecha_detalle,
+    e.nombre AS empleado_nombre,
+    e.apellido AS empleado_apellido,
+    tl.descripcion AS tipo_licencia,
+    el.nombreEstado AS estado_licencia,
+    u.user,
+    dl.iddetalleLicencia  -- Asegúrate de tomarlo de la tabla detallelicencia
+FROM 
+    detallelicencia dl
+LEFT JOIN 
+    documento d ON dl.iddetalleLicencia = d.iddetalleLicencia
+JOIN 
+    licencia l ON dl.idLicencia = l.idlicencia
+JOIN 
+    empleado e ON l.idEmpleado = e.idempleado
+JOIN 
+    tipolicencia tl ON l.IdTipo = tl.idtipoLicencia
+JOIN 
+    estadolicencia el ON l.IdEstado = el.idestadoLicencia
+JOIN 
+    usuario u ON dl.idUsuario = u.idusuario         
+WHERE 
+    dl.idLicencia = $idLicencia";
+
 
     //2) Ejecuto la consulta y obtengo el resultado
     $rs = mysqli_query($vConexion, $consulta);
@@ -137,13 +141,23 @@ function Listar_Reporte_Empleado3_Detalle($vConexion, $idLicencia)
     if ($rs && mysqli_num_rows($rs) > 0) {
         while ($data = mysqli_fetch_array($rs)) {
             $Listado[$i]['DESCRIPCION'] = $data['descripcion'];
-            $Listado[$i]['FECHACREACION'] = $data['fechacreacion'];
+            $Listado[$i]['FECHACREACION'] = $data['fecha_detalle']; // Fecha de creación del detalle de licencia
+            $Listado[$i]['FECHA_CREACION_DOCUMENTO'] = $data['fecha_documento'];
             $Listado[$i]['NOMBRE'] = $data['empleado_nombre'];
             $Listado[$i]['APELLIDO'] = $data['empleado_apellido'];
-            $Listado[$i]['DOCUMENTACION'] = "<a href='data:application/octet-stream; base64," . base64_encode($data['documentacion']) . "' download='documentacion_licencia'>Descargar Documentación</a>";
+           
+
+            
+            // Manejo de la documentación
+            if (!empty($data['Documentacion'])) {
+                $Listado[$i]['DOCUMENTACION'] = "<a href='data:application/octet-stream; base64," . base64_encode($data['Documentacion']) . "' download='documentacion_licencia'>Descargar Documentación</a>";
+            } else {
+                $Listado[$i]['DOCUMENTACION'] = "No hay documentación disponible.";
+            }
+            $Listado[$i]['IDDETALLELICENCIA'] = $data['iddetalleLicencia'];  // Asegúrate de incluir esta línea
             $Listado[$i]['TIPO_LICENCIA'] = $data['tipo_licencia'];
             $Listado[$i]['ESTADO_LICENCIA'] = $data['estado_licencia'];
-            $Listado[$i]['USUARIO']= $data['user'];
+            $Listado[$i]['USUARIO'] = $data['user'];
             $i++;
         }
     } else {
@@ -153,7 +167,8 @@ function Listar_Reporte_Empleado3_Detalle($vConexion, $idLicencia)
 
     //Devuelvo el listado con los detalles de la licencia
     return $Listado;
-} ?>
+}
+?>
 
 <?php
 function Listar_Reporte_Empleado3_Detalle_pdf($vConexion, $idLicencia)
@@ -163,25 +178,27 @@ function Listar_Reporte_Empleado3_Detalle_pdf($vConexion, $idLicencia)
     //1) Genero la consulta que deseo
     $consulta = "SELECT 
             dl.descripcion,
-            dl.documentacion,
-            dl.fechacreacion,
+            d.Documentacion, -- Ahora obtenemos documentacion desde la tabla 'documento'
+            d.FechaCreacion AS fecha_documento, -- Fecha de creación del documento
+            dl.FechaCreacion AS fecha_detalle, -- Fecha de creación del detalle de licencia
             e.nombre AS empleado_nombre,
             e.apellido AS empleado_apellido,
             tl.descripcion AS tipo_licencia,
             el.nombreEstado AS estado_licencia
         FROM 
             detallelicencia dl
+        LEFT JOIN 
+            documento d ON dl.iddetalleLicencia = d.iddetalleLicencia -- Unimos la tabla 'documento' con 'detallelicencia'
         JOIN 
             licencia l ON dl.idLicencia = l.idlicencia
         JOIN 
-            empleado e ON dl.idEmpleado = e.idempleado
+            empleado e ON l.idEmpleado = e.idempleado
         JOIN 
             tipolicencia tl ON l.IdTipo = tl.idtipoLicencia
         JOIN 
             estadolicencia el ON l.IdEstado = el.idestadoLicencia
         WHERE 
-            dl.idLicencia = $idLicencia
-    ";
+            dl.idLicencia = $idLicencia";
 
     //2) Ejecuto la consulta y obtengo el resultado
     $rs = mysqli_query($vConexion, $consulta);
@@ -191,10 +208,11 @@ function Listar_Reporte_Empleado3_Detalle_pdf($vConexion, $idLicencia)
     if ($rs && mysqli_num_rows($rs) > 0) {
         while ($data = mysqli_fetch_array($rs)) {
             $Listado[$i]['DESCRIPCION'] = $data['descripcion'];
-            $Listado[$i]['FECHACREACION'] = $data['fechacreacion'];
+            $Listado[$i]['FECHA_CREACION_DETALLE'] = $data['fecha_detalle'];
+            $Listado[$i]['FECHA_CREACION_DOCUMENTO'] = $data['fecha_documento'];
             $Listado[$i]['NOMBRE'] = $data['empleado_nombre'];
             $Listado[$i]['APELLIDO'] = $data['empleado_apellido'];
-            $Listado[$i]['DOCUMENTACION'] = $data['documentacion']; // Guardar el binario sin convertir a Base64
+            $Listado[$i]['DOCUMENTACION'] = $data['Documentacion']; // Ahora la obtienes desde la tabla 'documento'
             $Listado[$i]['TIPO_LICENCIA'] = $data['tipo_licencia'];
             $Listado[$i]['ESTADO_LICENCIA'] = $data['estado_licencia'];
             $i++;
@@ -206,7 +224,8 @@ function Listar_Reporte_Empleado3_Detalle_pdf($vConexion, $idLicencia)
 
     //Devuelvo el listado con los detalles de la licencia
     return $Listado;
-} ?>
+}
+?>
 
 
 <?php
@@ -242,3 +261,189 @@ WHERE
     return $Listado;
 }
 ?>
+
+<?php
+function Listar_Reporte_Empleado_Sancion($vConexion, $empleado)
+{
+    $Listado = array();
+
+    // 1) Genero la consulta
+    $consulta = "SELECT 
+        s.idsancion, 
+        s.fecha_inicio, 
+        s.fecha_fin, 
+        s.cantidadDias, 
+        ts.nombreTipo AS tipo_sancion, 
+        es.nombres AS estado_sancion
+    FROM sancion s
+    JOIN tiposancion ts ON s.IdTipoSancion = ts.idtipoSancion
+    JOIN estadosancion es ON s.idEstadoSancion = es.idestadoSancion
+    WHERE s.idEmpleado = $empleado
+    ORDER BY s.fecha_inicio";
+
+    // 2) Ejecuto la consulta
+    $rs = mysqli_query($vConexion, $consulta);
+
+    // 3) Recorro los resultados y los guardo en el array $Listado
+    $i = 0;
+    while ($data = mysqli_fetch_array($rs)) {
+        $Listado[$i]['ID'] = $data['idsancion'];
+        $Listado[$i]['FECHA_INICIO'] = $data['fecha_inicio'];
+        $Listado[$i]['FECHA_FIN'] = $data['fecha_fin'];
+        $Listado[$i]['CANTIDAD_DIAS'] = $data['cantidadDias'];
+        $Listado[$i]['TIPO'] = $data['tipo_sancion'];
+        $Listado[$i]['ESTADO'] = $data['estado_sancion'];
+        $i++;
+    }
+
+    // Devuelvo el listado generado
+    return $Listado;
+}
+?>
+<?php
+function Listar_Reporte_Empleado_HorasExtras($vConexion, $idEmpleado)
+{
+    $Listado = array();
+
+    // Genero la consulta para obtener las horas extras del empleado
+    $consulta = "SELECT 
+                    h.idhoraextra, 
+                    h.fecha, 
+                    h.cantidadHoras, 
+                    h.IdEmpleado
+                FROM horaextra h
+                WHERE h.IdEmpleado = ?
+                ORDER BY h.fecha";
+
+    // Preparar la consulta
+    $stmt = mysqli_prepare($vConexion, $consulta);
+
+    // Vincular los parámetros (el ID del empleado es un entero)
+    mysqli_stmt_bind_param($stmt, "i", $idEmpleado);
+
+    // Ejecutar la consulta
+    mysqli_stmt_execute($stmt);
+
+    // Obtener el resultado
+    $rs = mysqli_stmt_get_result($stmt);
+
+    // Verificar si la consulta devolvió datos y recorrerlos
+    $i = 0;
+    while ($data = mysqli_fetch_array($rs)) {
+        $Listado[$i]['ID'] = $data['idhoraextra'];
+        $Listado[$i]['FECHA'] = $data['fecha'];
+        $Listado[$i]['CANTIDAD_HORAS'] = $data['cantidadHoras'];
+        $Listado[$i]['IDEMPLEADO'] = $data['IdEmpleado'];
+        $i++;
+    }
+
+    // Devolver el listado generado (puede estar vacío si no se encuentran registros)
+    return $Listado;
+}
+?>
+<?php
+function Listar_Reporte_Viaticos_Empleado($vConexion, $idEmpleado)
+{
+    $Listado = array();
+
+    // Genero la consulta para obtener los viáticos del empleado con su tipo de viático
+    $consulta = "SELECT 
+                    v.idviatico, 
+                    v.fechaotorgamiento, 
+                    v.monto, 
+                    tv.descripcion AS tipo_viatico
+                FROM viatico v
+                JOIN tipo_viatico tv ON v.idTipo = tv.idTipo_viatico
+                WHERE v.idEmpleado = ?
+                ORDER BY v.fechaotorgamiento";
+
+    // Preparar la consulta
+    $stmt = mysqli_prepare($vConexion, $consulta);
+
+    // Vincular los parámetros (el ID del empleado es un entero)
+    mysqli_stmt_bind_param($stmt, "i", $idEmpleado);
+
+    // Ejecutar la consulta
+    mysqli_stmt_execute($stmt);
+
+    // Obtener el resultado
+    $rs = mysqli_stmt_get_result($stmt);
+
+    // Recorrer los resultados y guardarlos en el array
+    $i = 0;
+    while ($data = mysqli_fetch_array($rs)) {
+        $Listado[$i]['ID'] = $data['idviatico'];
+        $Listado[$i]['FECHA_OTORGAMIENTO'] = $data['fechaotorgamiento'];
+        $Listado[$i]['MONTO'] = $data['monto'];
+        $Listado[$i]['TIPO_VIATICO'] = $data['tipo_viatico'];
+        $i++;
+    }
+
+    // Devuelvo el listado generado
+    return $Listado;
+}
+?>
+
+<?php
+function Listar_Reporte_Asistencias_Empleado($vConexion, $idEmpleado)
+{
+    $Listado = array();
+    $totalHoras = 0;
+
+    // Consulta para obtener las asistencias del empleado en el mes actual
+    $consulta = "SELECT 
+                    idAsistencia, 
+                    fecha, 
+                    horaEntrada, 
+                    horaSalida, 
+                    estado, 
+                    observaciones,
+                    TIMESTAMPDIFF(SECOND, horaEntrada, horaSalida) AS segundos_trabajados
+                FROM asistencias
+                WHERE idEmpleado = ? 
+                AND MONTH(fecha) = MONTH(CURDATE()) 
+                AND YEAR(fecha) = YEAR(CURDATE())
+                ORDER BY fecha";
+
+    // Preparar la consulta
+    $stmt = mysqli_prepare($vConexion, $consulta);
+
+    // Vincular el ID del empleado
+    mysqli_stmt_bind_param($stmt, "i", $idEmpleado);
+
+    // Ejecutar la consulta
+    mysqli_stmt_execute($stmt);
+
+    // Obtener el resultado
+    $rs = mysqli_stmt_get_result($stmt);
+
+    // Recorrer los resultados y guardarlos en el array
+    $i = 0;
+    while ($data = mysqli_fetch_array($rs)) {
+        $Listado[$i]['ID'] = $data['idAsistencia'];
+        $Listado[$i]['FECHA'] = $data['fecha'];
+        $Listado[$i]['HORA_ENTRADA'] = $data['horaEntrada'];
+        $Listado[$i]['HORA_SALIDA'] = $data['horaSalida'];
+        $Listado[$i]['ESTADO'] = $data['estado'];
+        $Listado[$i]['OBSERVACIONES'] = $data['observaciones'];
+
+        // Sumar los segundos trabajados
+        $totalHoras += $data['segundos_trabajados'];
+        $i++;
+    }
+
+    // Convertir los segundos totales a horas y minutos
+    $horasTrabajadas = floor($totalHoras / 3600);
+    $minutosTrabajados = floor(($totalHoras % 3600) / 60);
+
+    // Devolver el listado junto con el total de horas trabajadas
+    return [
+        'asistencias' => $Listado,
+        'total_horas' => "{$horasTrabajadas}h {$minutosTrabajados}m"
+    ];
+}
+?>
+
+
+
+

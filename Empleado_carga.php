@@ -31,6 +31,9 @@ require_once 'select_cargo.php';
 $listadoCargo = Listar_cargo($conexion);
 $CantidadCargo = count($listadoCargo);
 
+require_once 'select_turno.php';
+$listadoTurno = Listar_Turno($conexion);
+$CantidadTurno = count($listadoTurno);
 
 require_once 'validacion_registro_empleado.php';
 require_once 'insertar_Empleado.php';
@@ -109,7 +112,7 @@ require_once 'insertar_Empleado.php';
               <h5 class="card-title">Ingresa los datos</h5>
               <div class="alert alert-info alert-dismissible fade show" role="alert">
                 <i class="bi bi-info-circle me-1"></i>
-                Los campos indicados con (*) son requeridos
+                Todos los campos indicados son requeridos
               </div>
 
               <?php
@@ -141,13 +144,13 @@ require_once 'insertar_Empleado.php';
               <form class="row g-3" method="post" enctype="multipart/form-data"> <!--se agrego el metodo post para la captura de datos -->
 
                 <div class="col-6">
-                  <label for="nombre" class="form-label">Nombre (*)</label>
+                  <label for="nombre" class="form-label">Nombre</label>
                   <input type="text" class="form-control" id="nombre" name="nombre">
                 </div>
 
 
                 <div class="col-6">
-                  <label for="apellido" class="form-label">Apellido (*)</label>
+                  <label for="apellido" class="form-label">Apellido</label>
                   <input type="text" class="form-control" id="apellido" name='apellido'>
                 </div>
 
@@ -156,7 +159,7 @@ require_once 'insertar_Empleado.php';
                   <input type="number" class="form-control" id="documento" name="documento">
                 </div>
                 <div class="col-6">
-                  <label for="direccion" class="form-label">Direccion(*)</label>
+                  <label for="direccion" class="form-label">Direccion</label>
                   <input type="text" class="form-control" id="direccion" name='direccion'>
                 </div>
 
@@ -166,7 +169,7 @@ require_once 'insertar_Empleado.php';
                 </div>
 
                 <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Provincia (*)</label>
+                  <label name="selector" for="selector" class="form-label">Provincia</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="provincia"> <!--combobox ya cargado con las marcas traidas desde la bd -->
                     <option value="">Selecciona una opcion</option>
                     <?php
@@ -197,12 +200,12 @@ require_once 'insertar_Empleado.php';
                 </div>
 
                 <div class="col-6">
-                  <label for="fechanacimiento" class="form-label">Fecha Nacimiento (*)</label>
+                  <label for="fechanacimiento" class="form-label">Fecha Nacimiento</label>
                   <input type="date" class="form-control" id="fechanacimiento" name="fechanacimiento">
                 </div>
 
                 <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Estado Civil (*)</label>
+                  <label name="selector" for="selector" class="form-label">Estado Civil</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="estadocivil"> <!--combobox ya cargado con las marcas traidas desde la bd -->
                     <option value="">Selecciona una opcion</option>
                     <?php
@@ -222,7 +225,7 @@ require_once 'insertar_Empleado.php';
                 </div>
 
                 <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Sexo (*)</label>
+                  <label name="selector" for="selector" class="form-label">Sexo</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="sexo"> <!--combobox ya cargado con las marcas traidas desde la bd -->
                     <option value="">Selecciona una opcion</option>
                     <?php
@@ -242,14 +245,14 @@ require_once 'insertar_Empleado.php';
                 </div>
 
                 <div class="col-6">
-                  <label for="fechainicio" class="form-label">Fecha Inicio (*)</label>
+                  <label for="fechainicio" class="form-label">Fecha Inicio</label>
                   <input type="date" class="form-control" id="fechainicio" name="fechainicio">
                 </div>
 
 
 
                 <div class="col-6">
-                  <label name="selector" for="selector" class="form-label">Cargo (*)</label>
+                  <label name="selector" for="selector" class="form-label">Cargo </label>
                   <select class="form-select" aria-label="Selector" id="selector" name="cargo"> <!--combobox ya cargado con las marcas traidas desde la bd -->
                     <option value="">Selecciona una opcion</option>
                     <?php
@@ -268,21 +271,51 @@ require_once 'insertar_Empleado.php';
                   </select>
                 </div>
 
-              
-
                 <div class="col-6">
+                  <label name="selector" for="selector" class="form-label">Turno</label>
+                  <select class="form-select" aria-label="Selector" id="selector" name="turno" require> <!--combobox ya cargado con las marcas traidas desde la bd -->
+                    <option value="">Selecciona una opcion</option>
+                    <?php
+                    $selected = '';
+                    for ($i = 0; $i < $CantidadTurno; $i++) {
+                      if (!empty($_POST['turno']) && $_POST['turno'] ==  $listadoTurno[$i]['ID']) { //recuerda el elemento seleccionado
+                        $selected = 'selected';
+                      } else {
+                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
+                      }
+                    ?>
+                      <option value="<?php echo $listadoTurno[$i]['ID']; ?>" <?php echo $selected; ?>>
+                        <?php echo $listadoTurno[$i]['NOMBRE']; ?>
+                      </option>
+                    <?php } ?>
+                  </select>
+                </div>
+
+
+                <div class="col-3">
                   <label class="form-label">Estado</label>
+
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1" name="estado" value='1' <?php echo (!empty($_POST['estado']) && $_POST['estado'] == '1') ? 'checked' : ''; ?>>
-                    <label class="form-check-label" for="gridCheck1"> Activo</label>
+                    <input class="form-check-input" type="checkbox" id="activo" name="estado" value="1"
+                      onchange="toggleEstado(this)"
+                      <?php echo (isset($_POST['estado']) && $_POST['estado'] == '1') ? 'checked' : ''; ?>>
+                    <label class="form-check-label" for="activo">Activo</label>
+                  </div>
+
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="inactivo" name="estado" value="0"
+                      onchange="toggleEstado(this)"
+                      <?php echo (isset($_POST['estado']) && $_POST['estado'] == '0') ? 'checked' : ''; ?>>
+                    <label class="form-check-label" for="inactivo">Inactivo</label>
                   </div>
                 </div>
+
                 <div class="col-6">
-                  <label for="imagen" class="form-label">Seleccione una imagen (*)</label>
+                  <label for="imagen" class="form-label">Seleccione una imagen</label>
                   <input type="file" class="form-control" id="imagen" name="imagen" accept=".jpg,.png" required>
                 </div>
-                <div class="col-6">
-                  <img width= '80px' height='80px'  src='assets/img/user.png' id="img" class="rounded-circle" >
+                <div class="col-3">
+                  <img width='80px' height='80px' src='assets/img/user.png' id="img" class="rounded-circle">
                 </div>
 
 
@@ -323,7 +356,16 @@ require_once 'insertar_Empleado.php';
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
   <script src="assets/js/imagen.js"></script>
-
+  <!-- Evitar que ambos checkboxes se marquen a la vez -->
+  <script> 
+    function toggleEstado(checkbox) { 
+      if (checkbox.id === "activo") {
+        document.getElementById("inactivo").checked = !checkbox.checked;
+      } else {
+        document.getElementById("activo").checked = !checkbox.checked;
+      }
+    }
+  </script>
 
 
 </body>

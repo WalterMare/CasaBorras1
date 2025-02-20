@@ -24,7 +24,6 @@ $estilo = 'info';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Casa Borras</title>
     <link href="assets/css/style.css" rel="stylesheet">
@@ -187,7 +186,7 @@ $estilo = 'info';
                                     </div>
                                 </div>
                                 <div class="text-center">
-                                    <button type="button" class="btn btn-secondary" onclick="agregarDetalle()">Agregar Otro Detalle</button><br><br>
+                                    <button type="button" class="btn btn-secondary" onclick="agregarDetalle()">Agregar Otro Items</button><br><br>
                                     <button class="btn btn-primary" name='BotonRegistrar' type="submit">Registrar Licencia</button>
                                 </div>
                             </form>

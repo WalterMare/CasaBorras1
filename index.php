@@ -16,7 +16,7 @@ try {
     die('Error en la conexión: ' . $e->getMessage());
 }
 
-require_once 'Actualizar_Estado_Empleado.php';
+require_once 'Actualizar_Estado_Empleado.php'; //actualiza el estado de los empleados con sanciones
 try {
     actualizarEstados($conexion);
 } catch (Exception $e) {
@@ -24,7 +24,7 @@ try {
     echo 'Error al actualizar los estados: ' . $e->getMessage();
 }
 
-require_once 'Actualizar_estado_licencia_empleado.php';
+require_once 'Actualizar_estado_licencia_empleado.php'; //Actualiza el estado de los empleados con licencias
 try {
     actualizarEstadoLicencia($conexion);
 } catch (Exception $e) {
@@ -32,7 +32,11 @@ try {
     echo 'Error al actualizar los estados de las Licencias: ' . $e->getMessage();
 }
 
-
+require_once 'Actualizar_Estado_Vacaciones_empleado.php';
+try{   
+actualizarEstadoEmpleadosEnVacaciones(); } catch(Exception $e){
+  echo 'Error al actualizar los estados de las vacaiones : ' . $e->getMessage();
+}
 
 require_once 'select_empleado.php';
 

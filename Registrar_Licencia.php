@@ -2,7 +2,8 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-$mensaje='';
+$mensaje = '';
+
 try {
     $pdo = new PDO('mysql:host=localhost;dbname=recursoshumanos', 'root', '12345');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -28,48 +29,66 @@ try {
                            VALUES (:fechainicio, :fechafin, :IdTipo, :idEmpleado, :IdEstado, DATEDIFF(:fechafin, :fechainicio))");
     $stmt->execute([
         ':fechainicio' => $_POST['fechainicio'],
-        ':fechafin' => $_POST['fechafin'],
-        ':IdTipo' => $_POST['IdTipo'],
-        ':idEmpleado' => $_POST['idEmpleado'],
-        ':IdEstado' => $_POST['IdEstado']
+        ':fechafin'    => $_POST['fechafin'],
+        ':IdTipo'      => $_POST['IdTipo'],
+        ':idEmpleado'  => $_POST['idEmpleado'],
+        ':IdEstado'    => $_POST['IdEstado']
     ]);
 
     $idLicencia = $pdo->lastInsertId();
-   
+
     // Actualizar estado del empleado a 0 (inactivo)
     $stmt = $pdo->prepare("UPDATE empleado SET estado = 0 WHERE idempleado = :idEmpleado");
     $stmt->execute([':idEmpleado' => $_POST['idEmpleado']]);
-    
+
+    // Insertar detalles de la licencia y la documentación en la tabla documento
     if (!empty($_POST['detalles_descripcion'])) {
-      foreach ($_POST['detalles_descripcion'] as $index => $descripcion) {
-          $documentacion = null;
-  
-          // Manejo correcto de archivos subidos
-          if (!empty($_FILES['detalles_documentacion']['tmp_name'][$index]) && is_uploaded_file($_FILES['detalles_documentacion']['tmp_name'][$index])) {
-              $documentacion = file_get_contents($_FILES['detalles_documentacion']['tmp_name'][$index]);
-          }
-  
-          $stmt = $pdo->prepare("INSERT INTO detallelicencia (idLicencia, descripcion, documentacion, FechaCreacion, idUsuario) 
-                                 VALUES (:idLicencia, :descripcion, :documentacion, :FechaCreacion, :idUsuario)");
-          $stmt->execute([
-              ':idLicencia' => $idLicencia,
-              ':descripcion' => $descripcion,
-              ':documentacion' => $documentacion,
-              ':FechaCreacion' => date('Y-m-d'),
-              ':idUsuario' => $_POST['usuario']
-          ]);
-      }
-  }
+        foreach ($_POST['detalles_descripcion'] as $index => $descripcion) {
+            $documentacion = null;
+
+            // Manejo correcto de archivos subidos
+            if (
+                !empty($_FILES['detalles_documentacion']['tmp_name'][$index]) &&
+                is_uploaded_file($_FILES['detalles_documentacion']['tmp_name'][$index])
+            ) {
+                $documentacion = file_get_contents($_FILES['detalles_documentacion']['tmp_name'][$index]);
+            }
+
+            // Insertar detalle sin la columna de documentación
+            $stmt = $pdo->prepare("INSERT INTO detallelicencia (idLicencia, descripcion, FechaCreacion, idUsuario) 
+                                   VALUES (:idLicencia, :descripcion, :FechaCreacion, :idUsuario)");
+            $stmt->execute([
+                ':idLicencia'   => $idLicencia,
+                ':descripcion'  => $descripcion,
+                ':FechaCreacion'=> date('Y-m-d'),
+                ':idUsuario'    => $_POST['usuario']
+            ]);
+
+            // Obtener el id del detalle insertado
+            $idDetalleLicencia = $pdo->lastInsertId();
+
+            // Insertar documentación en la tabla documento si existe
+            if ($documentacion !== null) {
+                $stmtDoc = $pdo->prepare("INSERT INTO documento (iddetalleLicencia, Documentacion, FechaCreacion) 
+                                          VALUES (:iddetalleLicencia, :Documentacion, :FechaCreacion)");
+                $stmtDoc->execute([
+                    ':iddetalleLicencia' => $idDetalleLicencia,
+                    ':Documentacion'     => $documentacion,
+                    ':FechaCreacion'     => date('Y-m-d')
+                ]);
+            }
+        }
+    }
 
     // Confirmar transacción
     $pdo->commit();
-    $mensaje= "Licencia y detalles registrados exitosamente.";
+    $mensaje = "Licencia y detalles registrados exitosamente.";
 } catch (Exception $e) {
     // Revertir transacción si está activa
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    $mensaje= "Error: " . $e->getMessage();
+    $mensaje = "Error: " . $e->getMessage();
 }
 echo "<script>alert('$mensaje'); window.location.href='Registro_Licencia.php';</script>";
 ?>

@@ -6,7 +6,7 @@ require_once('TCPDF-main/tcpdf.php'); // Asegúrate de tener TCPDF configurado c
 
 // Recibir los datos del filtro enviados por AJAX
 $grupo = isset($_POST['grupo']) ? $_POST['grupo'] : 1;  // Por defecto, 1 año
-$grupo1 = isset($_POST['grupo1']) ? $_POST['grupo1'] : 2;  // Filtro de estado (vacío para ambos)
+$grupo1 = isset($_POST['grupo1']) ? (int)$_POST['grupo1'] : 2;  // Filtro de estado (vacío para ambos)
 
 // Conexión a la base de datos
 $conexion = ConexionBD();
@@ -42,7 +42,16 @@ $pdf->AddPage();
 // Configurar fuente
 $pdf->SetFont('helvetica', '', 11);
 
-// Crear el contenido HTML
+// Determinar el texto del estado general según el filtro aplicado
+$estadoTexto = 'Ambos';
+if ($grupo1 === 1) {
+    $estadoTexto = 'Activo';
+} elseif ($grupo1 === 0 || 'null') {
+    $estadoTexto = 'Inactivo';
+} elseif ($grupo1 === 3 && 0) { // Inactivos por baja
+    $estadoTexto = 'Inactivo por baja';
+}
+
 $html = '
     <style>
         h1 { font-family: Arial, Helvetica, sans-serif; }
@@ -53,28 +62,77 @@ $html = '
     <img src="assets/img/LOGO2.jpg" alt="logo">
     <h1>Reporte de Últimos Empleados Registrados</h1>
     <p><strong>Período:</strong> ' . ($grupo == 1 ? '1 Año' : ($grupo == 3 ? '3 Años' : '5 Años')) . '</p>
-    <p><strong>Estado:</strong> ' . ($grupo1 == 2 ? 'Ambos' : ($grupo1 == 1 ? 'Activo' : 'Inactivo')) . '</p>
+    <p><strong>Estado:</strong> ' . $estadoTexto . '</p>
     <table>
         <tr>
-            <th>#</th>
-            <th>Empleado</th>
-            <th>Fecha de Inicio</th>
-            <th>Estado</th>
-            <th>Cargo</th>
+            <th><strong>#</strong></th>
+            <th><strong>Empleado</strong></th>
+            <th><strong>Fecha de Inicio</strong></th>
+            <th><strong>Fecha de Baja</strong></th>
+            <th><strong>Estado</strong></th>
+            <th><strong>Cargo</strong></th>
         </tr>';
 
+// Generar filas de empleados
 foreach ($datos as $i => $row) {
+    // Consideramos que no hay baja si FECHA_BAJA está vacío o es "N/A"
+    $noBaja = (empty($row['FECHA_BAJA']) || strtoupper(trim($row['FECHA_BAJA'])) == 'N/A');
+    
+    $estado = '';
+
+    // Filtrado según $grupo1:
+    if ($grupo1 == 1) { 
+        // Filtro Activo: mostrar solo empleados activos sin baja
+        if ($row['ESTADO'] == 1 && $noBaja) {
+            $estado = 'Activo';
+        } else {
+            continue; // Salta empleados que no cumplen
+        }
+    } elseif ($grupo1 == 0) {
+        // Filtro Inactivo: mostrar solo empleados inactivos (ESTADO == 0)
+        // Si NO tienen baja, se muestran como "Inactivo", si tienen baja, como "Inactivo por baja"
+        if ($row['ESTADO'] == 0) {
+            $estado = $noBaja ? 'Inactivo' : 'Inactivo por baja';
+        } else {
+            continue;
+        }
+    } elseif ($grupo1 == 3) {
+        // Filtro Inactivo por baja: mostrar solo empleados con baja
+        if (!$noBaja) {
+            $estado = 'Inactivo por baja';
+        } else {
+            continue;
+        }
+    } else { // Filtro Ambos (grupo1 == 2)
+        // Aquí mostramos todos: usamos el ESTADO para determinar
+        if ($row['ESTADO'] == 1 && $noBaja) {
+            $estado = 'Activo';
+        } elseif ($row['ESTADO'] == 0 && $noBaja) {
+            $estado = 'Inactivo';
+        } elseif (!$noBaja) {
+            $estado = 'Inactivo por baja';
+        }
+    }
+    
+    // Mostrar la fecha de baja solo si es válida, de lo contrario '-'
+    $fechaBaja = (!$noBaja) ? $row['FECHA_BAJA'] : '-';
+
     $html .= '
         <tr>
             <td>' . ($i + 1) . '</td>
-            <td>' . $row['NOMBRE'] . ' ' . $row['APELLIDO'] . '</td>
-            <td>' . $row['FECHA_INICIO'] . '</td>
-            <td>' . ($row['ESTADO'] == 1 ? 'Activo' : 'Inactivo') . '</td>
-            <td>' . $row['CARGO'] . '</td>
+            <td>' . htmlspecialchars($row['NOMBRE'] . ' ' . $row['APELLIDO']) . '</td>
+            <td>' . htmlspecialchars($row['FECHA_INICIO']) . '</td>
+            <td>' . $fechaBaja . '</td>
+            <td>' . $estado . '</td>
+            <td>' . htmlspecialchars($row['CARGO']) . '</td>
         </tr>';
 }
 
 $html .= '</table>';
+
+
+
+    
 
 // Escribir el contenido HTML en el PDF
 $pdf->writeHTML($html, true, false, false, false, 'C');
