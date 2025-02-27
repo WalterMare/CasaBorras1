@@ -90,7 +90,10 @@ try {
     }
     $mensaje = "Error: " . $e->getMessage();
 }
-echo "<script>alert('$mensaje'); window.location.href='Registro_Licencia.php';</script>";
+echo "<script>
+        alert(" . json_encode($mensaje) . ");
+        window.location.href='Registro_Licencia.php';
+      </script>";
 ?>
 
 

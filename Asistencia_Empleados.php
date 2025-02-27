@@ -1,8 +1,6 @@
 <?php
 session_start();
 
-//si tengo vacio mi elemento de sesion me tiene q redireccionar al login.. 
-//al cerrarsesion para que mate todo de la sesion y el se encarga de ubicar en el login
 if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;
@@ -10,12 +8,56 @@ if (empty($_SESSION['Usuario_Nombre'])) {
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
-// Obtener listado de empleados y su última asistencia
-$consulta = "SELECT e.idempleado, e.nombre, e.apellido, a.fecha, a.horaEntrada, a.horaSalida, a.estado, a.observaciones 
-             FROM empleado e
-             LEFT JOIN asistencias a ON e.idempleado = a.idEmpleado 
-             AND a.fecha = CURDATE()
-             ORDER BY e.apellido, e.nombre";
+// Procesar escaneo QR
+if (isset($_GET['idEmpleado'])) {
+    $idEmpleado = (int) $_GET['idEmpleado'];
+    $fechaHoy = date('Y-m-d');
+    $horaActual = date('H:i:s');
+    $diaSemana = date('l', strtotime($fechaHoy));
+
+    // Obtener horario asignado para hoy
+    $queryHorario = "SELECT hora_inicio FROM empleado_dia_horario WHERE idempleado = ? AND dia_semana = ?";
+    $stmtHorario = mysqli_prepare($conexion, $queryHorario);
+    mysqli_stmt_bind_param($stmtHorario, 'is', $idEmpleado, $diaSemana);
+    mysqli_stmt_execute($stmtHorario);
+    mysqli_stmt_bind_result($stmtHorario, $horaInicio);
+    mysqli_stmt_fetch($stmtHorario);
+    mysqli_stmt_close($stmtHorario);
+
+    // Verificar si ya registró entrada hoy
+    $queryAsistencia = "SELECT idAsistencia, horaEntrada FROM asistencias WHERE idEmpleado = ? AND fecha = ?";
+    $stmtAsistencia = mysqli_prepare($conexion, $queryAsistencia);
+    mysqli_stmt_bind_param($stmtAsistencia, 'is', $idEmpleado, $fechaHoy);
+    mysqli_stmt_execute($stmtAsistencia);
+    mysqli_stmt_bind_result($stmtAsistencia, $idAsistencia, $horaEntrada);
+    mysqli_stmt_fetch($stmtAsistencia);
+    mysqli_stmt_close($stmtAsistencia);
+
+    if ($idAsistencia) {
+        // Registrar salida
+        $updateSalida = "UPDATE asistencias SET horaSalida = ? WHERE idAsistencia = ?";
+        $stmtSalida = mysqli_prepare($conexion, $updateSalida);
+        mysqli_stmt_bind_param($stmtSalida, 'si', $horaActual, $idAsistencia);
+        mysqli_stmt_execute($stmtSalida);
+        mysqli_stmt_close($stmtSalida);
+        $mensaje = "Salida registrada correctamente.";
+    } else {
+        // Determinar estado
+        $estado = ($horaActual <= $horaInicio) ? 'Presente' : 'Tarde';
+        $observaciones = $estado === 'Tarde' ? 'Llegada fuera del horario asignado' : null;
+
+        // Registrar entrada
+        $insertAsistencia = "INSERT INTO asistencias (idEmpleado, fecha, horaEntrada, estado, observaciones) VALUES (?, ?, ?, ?, ?)";
+        $stmtEntrada = mysqli_prepare($conexion, $insertAsistencia);
+        mysqli_stmt_bind_param($stmtEntrada, 'issss', $idEmpleado, $fechaHoy, $horaActual, $estado, $observaciones);
+        mysqli_stmt_execute($stmtEntrada);
+        mysqli_stmt_close($stmtEntrada);
+        $mensaje = "Entrada registrada correctamente.";
+    }
+}
+
+// Obtener listado de empleados y asistencia de hoy
+$consulta = "SELECT e.idempleado, e.nombre, e.apellido, a.fecha, a.horaEntrada, a.horaSalida, a.estado, a.observaciones FROM empleado e LEFT JOIN asistencias a ON e.idempleado = a.idEmpleado AND a.fecha = CURDATE() ORDER BY e.apellido, e.nombre";
 $resultado = mysqli_query($conexion, $consulta);
 ?>
 
@@ -39,41 +81,24 @@ $resultado = mysqli_query($conexion, $consulta);
     <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  
-    <link href="assets/css/style.css" rel="stylesheet">
 
-  
+    <link href="assets/css/style.css" rel="stylesheet">
     <script>
         function escanearQR() {
-            window.location.href = "escanear_qr.php";
-        }
-
-        function generarQR(idEmpleado) {
-            window.location.href = "generar_qr.php?idEmpleado=" + idEmpleado;
+            const idEmpleado = prompt("Ingrese el ID del empleado para simular escaneo QR:");
+            if (idEmpleado) window.location.href = `?idEmpleado=${idEmpleado}`;
         }
     </script>
 </head>
 
 <body class="bg-light">
-    <!-- ======= Header ======= -->
-    <?php include_once 'partes/header.php' ?>
-    <!-- End Header -->
-    <!-- ======= Sidebar ======= -->
+    <?php include_once 'partes/header.php'; ?>
     <?php include_once 'partes/menu.php'; ?>
-    <!-- End Sidebar-->
-    <main id="main" class="main">
 
+    <main id="main" class="main">
         <div class="pagetitle">
             <h1>Asistencia de Empleados</h1>
-            <nav>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="index.php">Home</a></li>
-                    <li class="breadcrumb-item">Gestor de movimientos</li>
-                    <li class="breadcrumb-item active">Registro de asistencias</li>
-                </ol>
-            </nav>
-        </div><!-- End Page Title -->
-
+        </div>
         <section class="section">
             <div class="row">
                 <div class="col-lg-12">
@@ -81,10 +106,15 @@ $resultado = mysqli_query($conexion, $consulta);
                         <div class="card-body">
                             <h1 class="card-title text-center">Control de Asistencia</h1>
 
+                            <?php if (isset($mensaje)) { ?>
+                                <div class="alert alert-success text-center" role="alert">
+                                    <?= $mensaje ?>
+                                </div>
+                            <?php } ?>
+
                             <div class="d-flex justify-content-center my-3">
                                 <button class="btn btn-primary" onclick="escanearQR()">📷 Escanear QR</button>
                             </div>
-
                             <table class="table table-striped">
                                 <thead class="table-dark">
                                     <tr>
@@ -96,7 +126,6 @@ $resultado = mysqli_query($conexion, $consulta);
                                         <th>Hora Salida</th>
                                         <th>Estado</th>
                                         <th>Observaciones</th>
-                                        <th>QR</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -114,43 +143,34 @@ $resultado = mysqli_query($conexion, $consulta);
                                                 </span>
                                             </td>
                                             <td><?= $fila['observaciones'] ?: '---' ?></td>
-                                            <td>
-                                                <button class="btn btn-primary" onclick="generarQR(<?= $fila['idempleado'] ?>)">📄 Generar QR</button>
-                                            </td>
                                         </tr>
                                     <?php } ?>
                                 </tbody>
                             </table>
-
                         </div>
                     </div>
                 </div>
             </div>
         </section>
-    </main><!-- End #main -->
-
-
-    <!-- ======= Footer ======= -->
-    <?php include_once 'partes/footer.php' ?>
+    </main>
+    <?php include_once 'partes/footer.php'; ?>
     <!-- End Footer -->
 
     <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
     <!-- Vendor JS Files
-  <script src="assets/vendor/apexcharts/apexcharts.min.js"></script> -->
+<script src="assets/vendor/apexcharts/apexcharts.min.js"></script> -->
     <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <!-- <script src="assets/vendor/chart.js/chart.umd.js"></script>
-  <script src="assets/vendor/echarts/echarts.min.js"></script>
-  <script src="assets/vendor/quill/quill.js"></script>
-  <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
+<script src="assets/vendor/echarts/echarts.min.js"></script>
+<script src="assets/vendor/quill/quill.js"></script>
+<script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
     <script src="assets/vendor/tinymce/tinymce.min.js"></script>
 
     <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
 
     <!-- Template Main JS File -->
     <script src="assets/js/main.js"></script>
-
-
 </body>
 
 </html>

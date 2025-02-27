@@ -59,21 +59,21 @@ $estilo = 'info';
         function agregarDetalle() {
             const container = document.getElementById('detallesContainer');
             const detalleHTML = `
-            <br> </br>
-                <div class="detalle">
-                <div class="col-6">
-                    <label class="form-control">Descripción del Detalle:</label>
-                    <input class="form-control" type="text" name="detalles_descripcion[]" required>
-                </div>
-                <div class="col-6">
-                    <label class="form-control">Documentación:</label>
-                    <input class="form-control" type="file" name="detalles_documentacion[]" accept="application/pdf">
-                </div>
-                    
-                    <button class="btn btn-primary" type="button" onclick="eliminarDetalle(this)">Eliminar</button>
-                </div>`;
+        <br>
+        <div class="detalle">
+            <div class="col-6">
+                <label class="form-control">Descripción del Detalle:</label>
+                <input class="form-control" type="text" name="detalles_descripcion[]" required>
+            </div>
+            <div class="col-6">
+                <label class="form-control">Documentación:</label>
+                <input class="form-control" type="file" name="detalles_documentacion[]" accept="application/pdf">
+            </div>
+            <button class="btn btn-primary" type="button" onclick="eliminarDetalle(this)">Eliminar</button>
+        </div>`;
             container.insertAdjacentHTML('beforeend', detalleHTML);
         }
+
 
         function eliminarDetalle(button) {
             button.parentElement.remove();
@@ -137,17 +137,29 @@ $estilo = 'info';
                                     <label class="form-label" for="fechafin">Fecha de Fin:</label>
                                     <input class="form-control" type="date" id='fechafin' name="fechafin" required><br>
                                 </div>
+                                <div class="col-6">
+                                    <label class="form-label" for="diasLicencia">Cantidad de días:</label>
+                                    <input class="form-control" type="number" id="diasLicencia" name="diasLicencia" readonly>
+                                </div>
+                                <div id="errorDias" class="text-danger"></div>
 
                                 <div class="col-6">
                                     <label class="form-label" for="IdTipo">Tipo de Licencia:</label>
                                     <select class="form-select" id='IdTipo' name="IdTipo" required>
                                         <?php
-                                        $stmt = $pdo->query("SELECT idtipoLicencia, descripcion FROM tipolicencia");
+                                        $pdo = new PDO('mysql:host=localhost;dbname=recursoshumanos', 'root', '12345');
+                                        $stmt = $pdo->query("SELECT t.idtipoLicencia, t.descripcion, d.dias_maximos 
+                                 FROM tipolicencia t
+                                 LEFT JOIN dias_maximos_licencia d 
+                                 ON t.idtipoLicencia = d.idtipoLicencia");
                                         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                            echo "<option value='{$row['idtipoLicencia']}'>{$row['descripcion']}</option>";
+                                            echo "<option value='{$row['idtipoLicencia']}' data-dias-maximos='{$row['dias_maximos']}'>
+                        {$row['descripcion']}
+                      </option>";
                                         }
                                         ?>
                                     </select><br>
+                                    <div id="diasMaximosLeyenda" class="form-text text-primary"></div>
                                 </div>
 
                                 <div class="col-6">
@@ -187,7 +199,7 @@ $estilo = 'info';
                                 </div>
                                 <div class="text-center">
                                     <button type="button" class="btn btn-secondary" onclick="agregarDetalle()">Agregar Otro Items</button><br><br>
-                                    <button class="btn btn-primary" name='BotonRegistrar' type="submit">Registrar Licencia</button>
+                                    <button class="btn btn-primary" id="btnRegistrar" name='BotonRegistrar' type="submit">Registrar Licencia</button>
                                 </div>
                             </form>
                         </div>
@@ -196,6 +208,52 @@ $estilo = 'info';
             </div>
         </section>
 
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const fechaInicio = document.getElementById('fechainicio');
+                const fechaFin = document.getElementById('fechafin');
+                const diasLicencia = document.getElementById('diasLicencia');
+                const tipoLicenciaSelect = document.getElementById('IdTipo');
+                const leyendaDias = document.getElementById('diasMaximosLeyenda');
+                const btnRegistrar = document.getElementById('btnRegistrar');
+                const errorDias = document.getElementById('errorDias');
+
+                function calcularDias() {
+                    if (fechaInicio.value && fechaFin.value) {
+                        const inicio = new Date(fechaInicio.value);
+                        const fin = new Date(fechaFin.value);
+                        const diferencia = (fin - inicio) / (1000 * 60 * 60 * 24) + 1;
+                        diasLicencia.value = diferencia >= 0 ? diferencia : 0;
+                        validarDiasMaximos();
+                    }
+                }
+
+                function validarDiasMaximos() {
+                    const selectedOption = tipoLicenciaSelect.options[tipoLicenciaSelect.selectedIndex];
+                    const diasMaximos = parseInt(selectedOption.getAttribute('data-dias-maximos')) || 0;
+                    const diasSeleccionados = parseInt(diasLicencia.value) || 0;
+
+                    if (diasMaximos && diasSeleccionados > diasMaximos) {
+                        errorDias.textContent = `⚠️ La cantidad de días supera el máximo permitido de ${diasMaximos} día(s).`;
+                        btnRegistrar.disabled = true;
+                    } else {
+                        errorDias.textContent = '';
+                        btnRegistrar.disabled = false;
+                    }
+                }
+
+                tipoLicenciaSelect.addEventListener('change', function() {
+                    const diasMaximos = tipoLicenciaSelect.options[tipoLicenciaSelect.selectedIndex].getAttribute('data-dias-maximos');
+                    leyendaDias.textContent = diasMaximos ? `👉 Esta licencia permite un máximo de ${diasMaximos} día(s).` : '';
+                    validarDiasMaximos();
+                });
+
+                fechaInicio.addEventListener('change', calcularDias);
+                fechaFin.addEventListener('change', calcularDias);
+                tipoLicenciaSelect.dispatchEvent(new Event('change'));
+            });
+        </script>
 
         <?php include_once 'partes/footer.php'; ?>
         <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>

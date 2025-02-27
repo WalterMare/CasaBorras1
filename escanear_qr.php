@@ -1,103 +1,80 @@
 <?php
 session_start();
 
-// Si no hay sesión, redirige al login
 if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;
 }
-
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Obtener los datos del QR
     $qrData = $_POST['qrData'];
 
     if (strpos($qrData, 'empleado:') === 0) {
-        $idEmpleado = intval(str_replace('empleado:', '', $qrData));
-        $date = new DateTime('now', new DateTimeZone('America/Argentina/Buenos_Aires'));
-        $fecha = $date->format('Y-m-d');
-        $horaActual = $date->format('H:i:s');
+        $idEmpleado = (int) str_replace('empleado:', '', $qrData);
+        $fechaHoy = date('Y-m-d');
+        $horaActual = date('H:i:s');
+        $diaSemana = date('l', strtotime($fechaHoy));
 
-        // Verificar el turno del empleado
-        $consultaTurno = "SELECT T.hora_inicio, T.hora_fin 
-                          FROM turno T 
-                          JOIN empleado_turno ET ON T.idturno = ET.idturno 
-                          WHERE ET.idempleado = $idEmpleado LIMIT 1";
-        $resultadoTurno = mysqli_query($conexion, $consultaTurno);
-        $turnoData = mysqli_fetch_assoc($resultadoTurno);
+        // Obtener horario asignado para hoy
+        $queryHorario = "SELECT hora_inicio, hora_fin FROM empleado_dia_horario WHERE idempleado = ? AND dia_semana = ?";
+        $stmtHorario = mysqli_prepare($conexion, $queryHorario);
+        mysqli_stmt_bind_param($stmtHorario, 'is', $idEmpleado, $diaSemana);
+        mysqli_stmt_execute($stmtHorario);
+        mysqli_stmt_bind_result($stmtHorario, $horaInicio, $horaFin);
+        mysqli_stmt_fetch($stmtHorario);
+        mysqli_stmt_close($stmtHorario);
+
+        $horaActualSegundos = strtotime($horaActual);
+        $horaInicioSegundos = strtotime($horaInicio);
+        $horaFinSegundos = strtotime($horaFin);
 
         $estado = 'Presente';
         $observaciones = [];
 
-        if ($turnoData) {
-            $horaInicioTurno = $turnoData['hora_inicio'];
-            $horaFinTurno = $turnoData['hora_fin'];
-
-            $horaActualSegundos = strtotime($horaActual);
-            $horaInicioSegundos = strtotime($horaInicioTurno);
-            $horaFinSegundos = strtotime($horaFinTurno);
-
-            if ($horaActualSegundos > $horaInicioSegundos) {
-                $diferenciaSegundos = $horaActualSegundos - $horaInicioSegundos;
-                $diferenciaHoras = floor($diferenciaSegundos / 3600);
-                $diferenciaMinutos = floor(($diferenciaSegundos % 3600) / 60);
-                $estado = 'Tarde';
-                $observaciones[] = "Llegó tarde: $diferenciaHoras horas y $diferenciaMinutos minutos";
-            }
+        if ($horaActualSegundos > $horaInicioSegundos) {
+            $diferenciaSegundos = $horaActualSegundos - $horaInicioSegundos;
+            $diferenciaHoras = floor($diferenciaSegundos / 3600);
+            $diferenciaMinutos = floor(($diferenciaSegundos % 3600) / 60);
+            $estado = 'Tarde';
+            $observaciones[] = "Llegó tarde: $diferenciaHoras horas y $diferenciaMinutos minutos";
         }
 
-        $consulta = "SELECT idAsistencia, horaSalida, observaciones FROM asistencias 
-                     WHERE idEmpleado = $idEmpleado AND fecha = '$fecha' 
-                     LIMIT 1";
-        $resultado = mysqli_query($conexion, $consulta);
-        $fila = mysqli_fetch_assoc($resultado);
+        // Verificar asistencia
+        $queryAsistencia = "SELECT idAsistencia, horaSalida, observaciones FROM asistencias WHERE idEmpleado = ? AND fecha = ?";
+        $stmtAsistencia = mysqli_prepare($conexion, $queryAsistencia);
+        mysqli_stmt_bind_param($stmtAsistencia, 'is', $idEmpleado, $fechaHoy);
+        mysqli_stmt_execute($stmtAsistencia);
+        mysqli_stmt_bind_result($stmtAsistencia, $idAsistencia, $horaSalida, $obsPrevias);
+        mysqli_stmt_fetch($stmtAsistencia);
+        mysqli_stmt_close($stmtAsistencia);
 
-        if ($fila) {
-            if ($fila['horaSalida'] === NULL) {
-                $updateQuery = "UPDATE asistencias 
-                                SET horaSalida = '$horaActual' 
-                                WHERE idAsistencia = " . $fila['idAsistencia'];
-
-                if (mysqli_query($conexion, $updateQuery)) {
-                    echo "Salida registrada correctamente.";
-                    
-                    if ($horaActualSegundos < $horaFinSegundos) {
-                        $diferenciaSegundos = $horaFinSegundos - $horaActualSegundos;
-                        $diferenciaHoras = floor($diferenciaSegundos / 3600);
-                        $diferenciaMinutos = floor(($diferenciaSegundos % 3600) / 60);
-                        $observaciones[] = "Salida anticipada: $diferenciaHoras horas y $diferenciaMinutos minutos";
-                    }
-                    
-                    $observacionesPrevias = !empty($fila['observaciones']) ? [$fila['observaciones']] : [];
-                    $observacionesTexto = implode(' | ', array_filter(array_merge($observacionesPrevias, $observaciones)));
-                    
-                    if (!empty($observacionesTexto)) {
-                        $updateObsQuery = "UPDATE asistencias 
-                                           SET observaciones = '$observacionesTexto' 
-                                           WHERE idAsistencia = " . $fila['idAsistencia'];
-                        mysqli_query($conexion, $updateObsQuery);
-                    }
-                } else {
-                    echo "Error al registrar salida.";
+        if ($idAsistencia) {
+            if ($horaSalida === NULL) {
+                $updateSalida = "UPDATE asistencias SET horaSalida = ?, observaciones = ? WHERE idAsistencia = ?";
+                if ($horaActualSegundos < $horaFinSegundos) {
+                    $diferenciaSegundos = $horaFinSegundos - $horaActualSegundos;
+                    $diferenciaHoras = floor($diferenciaSegundos / 3600);
+                    $diferenciaMinutos = floor(($diferenciaSegundos % 3600) / 60);
+                    $observaciones[] = "Salida anticipada: $diferenciaHoras horas y $diferenciaMinutos minutos";
                 }
-            } else {
-                echo "La salida ya fue registrada previamente.";
+                $observacionesTexto = implode(' | ', array_filter([$obsPrevias, ...$observaciones]));
+
+                $stmtSalida = mysqli_prepare($conexion, $updateSalida);
+                mysqli_stmt_bind_param($stmtSalida, 'ssi', $horaActual, $observacionesTexto, $idAsistencia);
+                mysqli_stmt_execute($stmtSalida);
+                mysqli_stmt_close($stmtSalida);
             }
         } else {
-            $observacionesTexto = !empty($observaciones) ? implode(' | ', $observaciones) : '';
-            $insertQuery = "INSERT INTO asistencias (idEmpleado, fecha, horaEntrada, estado, observaciones) 
-                            VALUES ($idEmpleado, '$fecha', '$horaActual', '$estado', '$observacionesTexto')";
-            
-            if (mysqli_query($conexion, $insertQuery)) {
-                echo "Entrada registrada correctamente.";
-            } else {
-                echo "Error al registrar entrada.";
-            }
+            $observacionesTexto = implode(' | ', $observaciones);
+            $insertAsistencia = "INSERT INTO asistencias (idEmpleado, fecha, horaEntrada, estado, observaciones) VALUES (?, ?, ?, ?, ?)";
+            $stmtEntrada = mysqli_prepare($conexion, $insertAsistencia);
+            mysqli_stmt_bind_param($stmtEntrada, 'issss', $idEmpleado, $fechaHoy, $horaActual, $estado, $observacionesTexto);
+            mysqli_stmt_execute($stmtEntrada);
+            mysqli_stmt_close($stmtEntrada);
         }
-
-        header('Location: Asistencia_Empleados.php');
+        header('Location: asistencia.php');
         exit;
     } else {
         echo "QR no válido.";
@@ -105,27 +82,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escanear Código QR</title>
+    <title>Escanear Código QR - Asistencia</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
-
     <style>
         body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+
+        #qr-reader {
             width: 400px;
-            height: 400px;
-            margin-top: 50px; /* Ajusta el valor según lo que necesites */
         }
     </style>
 </head>
+
 <body>
     <h2>Escanear Código QR</h2>
     <div id="qr-reader"></div>
@@ -138,12 +117,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             document.getElementById("qrData").value = decodedText;
             document.getElementById("qr-form").submit();
         }
-        
-        let scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 100 });
+        const scanner = new Html5QrcodeScanner("qr-reader", {
+            fps: 10,
+            qrbox: 250
+        });
         scanner.render(onScanSuccess);
     </script>
 </body>
+
 </html>
-
-
-

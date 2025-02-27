@@ -1,60 +1,72 @@
 <?php
 require_once('TCPDF-main/tcpdf.php');
 
-function generarReportePDF($licencias_data)
+function generarReportePDF($licencias_data, $licencia_por_cargo, $fecha_inicio, $fecha_fin, $grafico_img = null)
 {
-    
-
-    ob_start(); // Inicia el almacenamiento en búfer de salida
-    ini_set('display_errors', 0); // Desactiva la visualización de errores
-    error_reporting(0);
-
-    // Crear objeto TCPDF
-    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-    
-    // Configuración de la página
-    $pdf->AddPage();
-    $pdf->Image('assets/img/LOGO2.jpg', 90, 0, 20, 20, 'JPG'); // Logo
-
-    // Título
-    $pdf->SetFont('helvetica', 'B', 16);
-    $pdf->Cell(0, 30, 'Reporte Estadístico de Licencias', 0, 1, 'C');
-
-    // Espaciado antes de la tabla
-    $pdf->Ln(20);
-    
-    // Definir encabezados de la tabla
-    $pdf->SetFont('helvetica', 'B', 10);
-    $pdf->Cell(50, 10, 'Tipo de Licencia', 1);
-    $pdf->Cell(40, 10, 'Estado', 1);
-    $pdf->Cell(50, 10, 'Total Licencias', 1);
-    $pdf->Cell(40, 10, 'Total Días', 1);
-    $pdf->Ln();
-
-    // Datos de la tabla
-    $pdf->SetFont('helvetica', '', 10);
-    foreach ($licencias_data as $data) {
-        $pdf->Cell(50, 10, $data['tipo_licencia'], 1);
-        $pdf->Cell(40, 10, $data['estado'], 1);
-        $pdf->Cell(50, 10, $data['total_licencias'], 1);
-        $pdf->Cell(40, 10, $data['total_dias'], 1);
-        $pdf->Ln();
+    // Limpiar el búfer de salida para evitar el error de TCPDF
+    if (ob_get_length()) {
+        ob_clean();
     }
 
-    // Calcular totales
-    $totalLicencias = array_sum(array_column($licencias_data, 'total_licencias'));
-    $totalDias = array_sum(array_column($licencias_data, 'total_dias'));
-    
-    // Mostrar los totales
-    $pdf->Cell(90, 10, 'Totales', 1, 0, 'C');
-    $pdf->Cell(50, 10, number_format(round($totalLicencias, 2), 2), 1, 0, 'C');
-    $pdf->Cell(40, 10, number_format(round($totalDias, 2), 2), 1, 1, 'C');
+    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+    // Configuración del documento
+    $pdf->SetCreator(PDF_CREATOR);
+    $pdf->SetAuthor('Casa Borras');
+    $pdf->SetTitle('Reporte Estadístico de Licencias');
+
+    $pdf->SetMargins(15, 20, 15);
+    $pdf->SetAutoPageBreak(TRUE, 10);
+
+    // Agregar una página
+    $pdf->AddPage('P', 'LEGAL');
+    $pdf->Image('assets/img/LOGO2.jpg', 95, 0, 0, 0);
+
+    // Fuente
+    $pdf->SetFont('helvetica', '', 12);
+
+    // Título
+    $pdf->Ln(5);
+    $pdf->Write(0, "Reporte estadístico de licencias por tipo, estado y cargo.", '', 0, 'L', true, 0, false, false, 0);
+$pdf->Ln(5); // Salto de línea de 5 mm
+$pdf->Write(0, "(Período: $fecha_inicio al $fecha_fin)", '', 0, 'L', true, 0, false, false, 0);
+    $pdf->Ln(5);
+
+    // Crear tabla HTML
+    $html = '<h3>Licencias por Cargo</h3>
+          <table border="1" cellpadding="4">
+            <thead>
+                <tr style="background-color:#f2f2f2;">
+                    <th><strong>Cargo</strong></th>
+                    <th><strong>Tipo de Licencia</strong></th>
+                    <th><strong>Estado</strong></th>
+                    <th><strong>Total Licencias</strong></th>
+                    <th><strong>Total Días</strong></th>
+                </tr>
+            </thead>
+            <tbody>';
+
+    foreach ($licencia_por_cargo as $row) {
+        $html .= '<tr>
+                <td>' . htmlspecialchars($row['cargo']) . '</td>
+                <td>' . htmlspecialchars($row['tipo_licencia']) . '</td>
+                <td>' . htmlspecialchars($row['estado']) . '</td>
+                <td align="center">' . $row['total_licencias'] . '</td>
+                <td align="center">' . $row['total_dias'] . '</td>
+              </tr>';
+    }
+
+    $html .= '</tbody></table>';
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->Ln(10); // 🛑 Espacio entre la tabla y el gráfico
+
+    // 🖼️ Insertar gráfico si se envió
+    if (isset($_POST['grafico_img'])) {
+        $imgData = $_POST['grafico_img'];
+        $pdf->Image('@' . base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $imgData)), '', '', 180, 90, 'PNG', '', '', false, 300, '', false, false, 0, false, false, false);
+    }
 
     // Salida del PDF
-    $pdf->Output('reporte_estadistico_licencias.pdf', 'D');
-    
-    ob_clean(); // Limpia el búfer de salida
-    exit;
+    $pdf->Output('Reporte_Estadistico_Licencias.pdf', 'I');
+    exit; // Asegura que no se envíe contenido adicional después
 }
-
-

@@ -12,6 +12,85 @@ if (empty($_SESSION['Usuario_Nombre'])) {
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
+
+if ($conexion->connect_error) {
+  die("Error de conexión: " . $conexion->connect_error);
+}
+
+// Validar ID del empleado
+$idEmpleado = isset($_GET['ID']) ? (int) $_GET['ID'] : 0;
+if ($idEmpleado <= 0) {
+  die("ID de empleado no válido.");
+}
+
+// Consulta SQL
+$sql = "SELECT 
+            e.estado,
+            e.fecha_baja,
+            l.fechainicio AS licencia_inicio,
+            l.fechafin AS licencia_fin,
+            tl.descripcion AS tipo_licencia,
+            s.fecha_inicio AS sancion_inicio,
+            s.fecha_fin AS sancion_fin,
+            ts.nombreTipo AS tipo_sancion,
+            v.fecha_inicio AS vacaciones_inicio,
+            v.fecha_fin AS vacaciones_fin
+        FROM empleado e
+        LEFT JOIN licencia l ON e.idempleado = l.idEmpleado 
+            AND CURDATE() BETWEEN l.fechainicio AND l.fechafin
+        LEFT JOIN tipolicencia tl ON l.IdTipo = tl.idtipoLicencia
+        LEFT JOIN sancion s ON e.idempleado = s.idEmpleado 
+            AND CURDATE() BETWEEN s.fecha_inicio AND s.fecha_fin
+        LEFT JOIN tiposancion ts ON s.IdTipoSancion = ts.idtipoSancion
+        LEFT JOIN vacaciones v ON e.idempleado = v.idempleado 
+            AND CURDATE() BETWEEN v.fecha_inicio AND v.fecha_fin
+        WHERE e.idempleado = ?";
+
+$stmt = $conexion->prepare($sql);
+$stmt->bind_param("i", $idEmpleado);
+$stmt->execute();
+$resultado = $stmt->get_result();
+
+if ($resultado->num_rows == 0) {
+  die("No se encontraron datos para el empleado con ID $idEmpleado.");
+}
+
+$datosEmpleado = $resultado->fetch_assoc() ?? [];
+
+// Asegurar que las claves existen antes de usarlas
+$estado = $datosEmpleado['estado'] ?? null;
+$fecha_baja = $datosEmpleado['fecha_baja'] ?? null;
+$licencia_inicio = $datosEmpleado['licencia_inicio'] ?? null;
+$licencia_fin = $datosEmpleado['licencia_fin'] ?? null;
+$tipo_licencia = $datosEmpleado['tipo_licencia'] ?? null;
+$sancion_inicio = $datosEmpleado['sancion_inicio'] ?? null;
+$sancion_fin = $datosEmpleado['sancion_fin'] ?? null;
+$tipo_sancion = $datosEmpleado['tipo_sancion'] ?? null;
+$vacaciones_inicio = $datosEmpleado['vacaciones_inicio'] ?? null;
+$vacaciones_fin = $datosEmpleado['vacaciones_fin'] ?? null;
+
+// Determinar la razón de inactividad
+$razonInactivo = "";
+if (!empty($fecha_baja)) {
+  $razonInactivo = "Baja el " . date("d/m/Y", strtotime($fecha_baja));
+} elseif (!empty($licencia_inicio)) {
+  $razonInactivo = "En licencia ({$tipo_licencia}) del " .
+    date("d/m/Y", strtotime($licencia_inicio)) .
+    " al " . date("d/m/Y", strtotime($licencia_fin));
+} elseif (!empty($sancion_inicio)) {
+  $razonInactivo = "Sancionado ({$tipo_sancion}) del " .
+    date("d/m/Y", strtotime($sancion_inicio)) .
+    " al " . date("d/m/Y", strtotime($sancion_fin));
+} elseif (!empty($vacaciones_inicio)) {
+  $razonInactivo = "En vacaciones del " .
+    date("d/m/Y", strtotime($vacaciones_inicio)) .
+    " al " . date("d/m/Y", strtotime($vacaciones_fin));
+}
+
+// Cerrar conexión
+$stmt->close();
+
+
 require_once 'select_familiar.php';
 $ListadoReporte = Listar_familiares($conexion, $_GET['ID']);
 $CantidadReportes = count($ListadoReporte);
@@ -24,7 +103,6 @@ if (!empty($_GET['ID'])) {
 }
 
 require_once 'funcion_calcularEdad.php';
-
 
 ?>
 
@@ -52,7 +130,7 @@ require_once 'funcion_calcularEdad.php';
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  
+
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
 </head>
@@ -158,18 +236,28 @@ require_once 'funcion_calcularEdad.php';
                   <input type="text" class="form-control" id="cargo" name="cargo" value="<?php echo $datosEmpleado['CARGO']; ?>" disabled>
                 </div>
 
-
                 <div class="col-3">
                   <label class="form-label">Estado</label>
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1" name="estado" value='1' <?php echo (!empty($datosEmpleado['ESTADO']) && $datosEmpleado['ESTADO'] == '1') ? 'checked' : ''; ?> disabled>
+                    <input class="form-check-input" type="checkbox" id="gridCheck1" name="estado" value="1"
+                      <?php echo ($estado === '1') ? 'checked' : ''; ?> disabled>
                     <label class="form-check-label" for="gridCheck1"> Activo</label>
                   </div>
+
+                  <?php if (!empty($razonInactivo)): ?>
+                    <div class="alert alert-warning mt-2">
+                      <strong>Motivo de inactividad:</strong> <?php echo $razonInactivo; ?>
+                    </div>
+                  <?php endif; ?>
                 </div>
+
+
 
                 <div class="col-3">
                   <label for="fechabaja" class="form-label">Fecha Baja</label>
-                  <input type="text" class="form-control" id="fechabaja" name="fechabaja" value="<?php echo $datosEmpleado['FECHABAJA']; ?>" disabled>
+                  <input type="text" class="form-control" id="fechabaja" name="fechabaja"
+                    value="<?php echo $datosEmpleado['FECHABAJA'] ?? 'No Aplica'; ?>" disabled>
+
                 </div>
 
                 <?php
