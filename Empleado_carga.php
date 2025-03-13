@@ -171,7 +171,7 @@ require_once 'insertar_Empleado.php';
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Provincia</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="provincia"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
+                    <option value="">Selecciona una opción</option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadProvincias; $i++) {
@@ -207,7 +207,7 @@ require_once 'insertar_Empleado.php';
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Estado Civil</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="estadocivil"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
+                    <option value="">Selecciona una opción</option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadEstadoCivil; $i++) {
@@ -227,7 +227,7 @@ require_once 'insertar_Empleado.php';
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Sexo</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="sexo"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
+                    <option value="">Selecciona una opción</option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadSexo; $i++) {
@@ -254,7 +254,7 @@ require_once 'insertar_Empleado.php';
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Cargo </label>
                   <select class="form-select" aria-label="Selector" id="selector" name="cargo"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
+                    <option value="">Selecciona una opción</option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadCargo; $i++) {
@@ -274,7 +274,7 @@ require_once 'insertar_Empleado.php';
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Turno</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="turno" require> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
+                    <option value="">Selecciona una opción</option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadTurno; $i++) {

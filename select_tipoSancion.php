@@ -74,6 +74,7 @@ function Listar_Sancion_Empleado($vConexion,$empleado) {
             $Listado[$i]['NOMBRETIPO'] = $data['nombreTipo'];
             $Listado[$i]['DIAS'] = $data['cantidadDias'];
             $Listado[$i]['ESTADO'] = $data['nombres'];
+            $Listado[$i]['IDSANCION']=$data['idsancion'];
             $i++;
     }
 

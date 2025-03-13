@@ -29,6 +29,8 @@
             <i class="bi bi-file-earmark-plus"></i><span>Usuario</span>
           </a>
         </li>
+        
+
         <li>
           <a href="Listado_empleados.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listado_empleados.php' ? 'active' : ''; ?>">
             <i class="bi bi-file-earmark-plus"></i><span>Listado de Empleados</span>

@@ -40,3 +40,35 @@ function Validar_Datos_Usuario()
 
     return $vMensaje;
 }
+
+
+function Validar_Datos_Usuario_bis($usuario_modificado, $tipo_modificado)
+{
+    $vMensaje = '';
+
+    // Validar que el campo de usuario no esté vacío
+    if (empty($usuario_modificado)) {
+        $vMensaje .= 'Debe ingresar un usuario. <br />';
+    }
+
+    // Validar que el tipo no esté vacío
+    if (empty($tipo_modificado)) {
+        $vMensaje .= 'Debe seleccionar un tipo. <br />';
+    }
+
+    // Limpiar los datos ingresados
+    $usuario_modificado = trim($usuario_modificado); // Eliminar espacios al inicio y final
+    $usuario_modificado = strip_tags($usuario_modificado); // Eliminar etiquetas HTML
+
+    $tipo_modificado = trim($tipo_modificado); // Eliminar espacios al inicio y final
+    $tipo_modificado = strip_tags($tipo_modificado); // Eliminar etiquetas HTML
+
+    return $vMensaje;
+}
+?>
+
+
+
+
+
+

@@ -22,4 +22,41 @@ function Listar_tipo($vConexion) {
     return $Listado;
 
 }
+
+
+
+
+
+function Listar_usuario($vConexion, $idusuario) {
+    $Listado = array();
+
+    // Consulta para obtener un solo usuario con su tipo
+    $consulta = "SELECT u.idusuario, u.user, t.descripcion AS tipo 
+                 FROM usuario u
+                 JOIN tipo t ON u.Idtipo = t.idtipo
+                 WHERE u.idusuario = ?";
+
+    // Preparar la sentencia
+    $stmt = mysqli_prepare($vConexion, $consulta);
+    mysqli_stmt_bind_param($stmt, "i", $idusuario);
+    mysqli_stmt_execute($stmt);
+    $resultado = mysqli_stmt_get_result($stmt);
+
+    // Obtener el usuario
+    if ($data = mysqli_fetch_array($resultado)) {
+        $Listado['ID'] = $data['idusuario'];
+        $Listado['USUARIO'] = $data['user'];
+        $Listado['TIPO'] = $data['tipo'];
+    }
+
+    // Devolver el usuario o un array vacío si no se encuentra
+    return $Listado;
+}
 ?>
+
+
+
+
+
+
+

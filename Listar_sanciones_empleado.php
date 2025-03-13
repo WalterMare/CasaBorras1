@@ -27,7 +27,7 @@ $CantidadEmpleado = count($listadoEmpleado);
 require_once 'select_tipoSancion.php';
 
 
-$CantidadSancion=0;
+$CantidadSancion = 0;
 require_once 'Validad_Datos_Busqueda.php';
 
 ?>
@@ -116,22 +116,26 @@ require_once 'Validad_Datos_Busqueda.php';
                                         $_POST = array();
                                         $Estilo = 'success';
                                     } ?>
-                                    <div id='cartel' class="alert alert-<?php echo $Estilo;?> alert-dismissible fade show" role="alert">
+                                    <div id='cartel' class="alert alert-<?php echo $Estilo; ?> alert-dismissible fade show" role="alert">
                                         <i class="bi bi-check-circle me-1"></i>
-                                        <?php  if ($Mensaje==''){ $Mensaje='No posee Sanciones registradas'; echo $Mensaje;} else{
+                                        <?php if ($Mensaje == '') {
+                                            $Mensaje = 'No posee Sanciones registradas';
+                                            echo $Mensaje;
+                                        } else {
                                             echo $Mensaje;
                                         } ?>
                                     </div>
-                                    <?php }} ?>
-                                   
-                                   
-                                
+                            <?php }
+                            } ?>
+
+
+
                             <form class="row g-6" method="post"> <!--se agrego el metodo post para la captura de datos -->
 
                                 <div class="col-6">
                                     <label name="selector" for="selector" class="form-label">Listado de Empleados</label>
                                     <select class="form-select" aria-label="Selector" id="selector" name="empleado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                                        <option value="">Selecciona una opcion</option>
+                                        <option value="">Selecciona una opción</option>
                                         <?php
                                         $selected = '';
                                         for ($i = 0; $i < $CantidadEmpleado; $i++) {
@@ -154,50 +158,60 @@ require_once 'Validad_Datos_Busqueda.php';
 
                             </form><!-- Vertical Form -->
                             <?php if ($CantidadSancion != 0 && $CantidadSancion != null) { ?>
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <h5 class="card-title">Sanciones del empleado</h5>
-                                            <!-- Default Table -->
-                                            
-                                            <table class="table table-striped">
-                                                <thead>
-                                                    <tr>
-                                                        <th scope="col">#</th>
-                                                        <th scope="col">Fecha Inicio</th>
-                                                        <th scope="col">Fecha Fin</th>
-                                                        <th scope="col">Empleado</th>
-                                                        <th scope="col">Tipo Sanción</th>
-                                                        <th scope="col">Cant. Días</th>
-                                                        <th scope="col">Estado</th>
-                                                    </tr>
-                                                </thead>
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Sanciones del empleado</h5>
+                                                <!-- Default Table -->
 
-                                                <?php if ($CantidadSancion != 0 && $CantidadSancion != null) { ?>
-                                                    <tbody>
-                                                        <?php for ($i = 0; $i < $CantidadSancion; $i++) { ?>
-                                                            <tr>
-                                                                <th scope="row"><?php echo $i + 1; ?></th>
-                                                                <td><?php echo $listadosancion[$i]['FECHAINICIO']; ?></td>
-                                                                <td><?php echo $listadosancion[$i]['FECHAFIN']; ?></td>
-                                                                <td><?php echo $listadosancion[$i]['NOMBRE']." ".$listadosancion[$i]['APELLIDO']; ?></td>
-                                                                <td><?php echo $listadosancion[$i]['NOMBRETIPO']; ?></td>
-                                                                <td><?php echo $listadosancion[$i]['DIAS']; ?></td>
-                                                                <td><?php echo $listadosancion[$i]['ESTADO']; ?></td>
-                                                            </tr>
-                                                        <?php }; ?>
-                                                    </tbody>
-                                                <?php }?>
-                                                    
-                                            </table>
-                                            <!-- End Default Table Example -->
-                                                           
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope="col">#</th>
+                                                            <th scope="col">Fecha Inicio</th>
+                                                            <th scope="col">Fecha Fin</th>
+                                                            <th scope="col">Empleado</th>
+                                                            <th scope="col">Tipo Sanción</th>
+                                                            <th scope="col">Cant. Días</th>
+                                                            <th scope="col">Estado</th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <?php if ($CantidadSancion != 0 && $CantidadSancion != null) { ?>
+                                                        <tbody>
+                                                            <?php for ($i = 0; $i < $CantidadSancion; $i++) { ?>
+                                                                <tr>
+                                                                    <th scope="row"><?php echo $i + 1; ?></th>
+                                                                    <td><?php echo $listadosancion[$i]['FECHAINICIO']; ?></td>
+                                                                    <td><?php echo $listadosancion[$i]['FECHAFIN']; ?></td>
+                                                                    <td><?php echo $listadosancion[$i]['NOMBRE'] . " " . $listadosancion[$i]['APELLIDO']; ?></td>
+                                                                    <td><?php echo $listadosancion[$i]['NOMBRETIPO']; ?></td>
+                                                                    <td><?php echo $listadosancion[$i]['DIAS']; ?></td>
+                                                                    <td><?php echo $listadosancion[$i]['ESTADO']; ?></td>
+                                                                    <td>
+                                                                        <a href="Modificar_Sancion.php?ID=<?php echo $listadosancion[$i]['IDSANCION']; ?>" role="button" title="Modificar">
+                                                                            <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i></span>
+                                                                        </a>
+                                                                        <a onclick="return confirm('¿Está seguro de que desea eliminar esta sanción?');"
+                                                                            href="Eliminar_Sancion.php?id=<?php echo $listadosancion[$i]['IDSANCION']; ?>" role="button" title="Eliminar">
+                                                                            <span class="badge bg-danger text-light"><i class="bi bi-x-circle me-1"></i></span>
+                                                                        </a>
+                                                                       
+                                                                    </td>
+                                                                </tr>
+                                                            <?php }; ?>
+                                                        </tbody>
+                                                    <?php } ?>
+
+                                                </table>
+                                                <!-- End Default Table Example -->
+
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <?php }?> 
+                            <?php } ?>
         </section>
 
     </main><!-- End #main -->

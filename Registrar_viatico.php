@@ -133,7 +133,7 @@ require_once 'insertar_viatico.php';
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Tipo (*)</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="tipo"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
+                    <option value="">Selecciona una opción</option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $Cantidadviatico; $i++) {
@@ -153,7 +153,7 @@ require_once 'insertar_viatico.php';
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Empleado al que se asignará(*)</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="empleado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="">Selecciona una opcion</option>
+                    <option value="">Selecciona una opción</option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadEmpleado; $i++) {
