@@ -11,10 +11,8 @@ if (empty($_SESSION['Usuario_Nombre'])) {
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
-
-
-
-
+require_once 'Insertar_Vacacion.php';
+require_once 'Validacion_vacaciones.php';
 require_once 'select_empleado.php';
 $listadoEmpleado = Listar_empleado($conexion);
 $CantidadEmpleado = count($listadoEmpleado);
@@ -99,8 +97,8 @@ $CantidadEmpleado = count($listadoEmpleado);
 
                 <form class="row g-3" method="POST">
                     <div class="col-6">
-                        <label  for="empleado" class="form-label">Empleado:</label>
-                        <select class="form-select" aria-label="Selector" id="empleado" name="empleado" onchange="calcularDiasVacaciones()"> 
+                        <label for="empleado" class="form-label">Empleado:</label>
+                        <select class="form-select" aria-label="Selector" id="empleado" name="empleado" onchange="calcularDiasVacaciones()">
                             <option value="">Selecciona una opcion</option>
                             <?php
                             $selected = '';
@@ -118,24 +116,24 @@ $CantidadEmpleado = count($listadoEmpleado);
                         </select>
                     </div>
                     <div class="col-6">
-                    <label for="dias" class="form-label">Cantidad de días que corresponde por la antiguedad</label>
-                    <input class="form-control" type="date" id="dias" name="dias" readonly >
+                        <label for="dias" class="form-label">Cantidad de días que corresponde por la antigüedad</label>
+                        <input class="form-control" type="text" id="dias" name="dias" readonly>
                     </div>
 
 
                     <div class="col-6">
                         <label for="fecha_inicio" class="form-label">Fecha de Inicio:</label>
-                        <input class="form-control" type="date" id="fecha_inicio" name="fecha_inicio" >
+                        <input class="form-control" type="date" id="fecha_inicio" name="fecha_inicio">
                     </div>
 
                     <div class="col-6">
                         <label for="fecha_fin" class="form-label">Fecha de Fin:</label>
-                        <input class="form-control" type="date" id="fecha_fin" name="fecha_fin" >
+                        <input class="form-control" type="date" id="fecha_fin" name="fecha_fin">
                     </div>
 
                     <div class="col-6">
                         <label for="año" class="form-label">Año:</label>
-                        <input class="form-control" type="date" id="año" name="año" >
+                        <input class="form-control" type="number" id="año" name="año">
                     </div>
                     <div class="col-6">
                         <label for="cantidad_dias" class="form-label">Cantidad de Días:</label>
@@ -147,12 +145,13 @@ $CantidadEmpleado = count($listadoEmpleado);
                         <input class="form-control" type="number" id="vacaciones_restantes" name="vacaciones_restantes">
                     </div>
                     <div class="col-6">
-                    <select class="form-select" name="estado" id="estado">
-                        <option value="Aprobado">Aprobado</option>
-                        <option value="Rechazado">Rechazado</option>
-                    </select>
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" name="estado" id="estado">
+                            <option value="Aprobado">Aprobado</option>
+                            <option value="Rechazado">Rechazado</option>
+                        </select>
                     </div>
-                 
+
                     <div class="col-6">
                         <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Registrar</button>
                     </div>
@@ -160,40 +159,210 @@ $CantidadEmpleado = count($listadoEmpleado);
             </div>
         </div>
     </main>
-<script>
-    function calcularDiasVacaciones() {
-    var empleadoId = document.getElementById('empleado').value;
+    <script>
+        function calcularDiasVacaciones() {
+            var empleadoId = document.getElementById('empleado').value;
+            console.log("ID Empleado seleccionado:", empleadoId);
 
-    // Verificamos que se haya seleccionado un empleado
-    if (empleadoId !== "") {
-        // Realizamos una solicitud AJAX para obtener la fecha de ingreso
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'obtener_fecha_ingreso.php?empleado_id=' + empleadoId, true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4 && xhr.status == 200) {
-                var fechaIngreso = xhr.responseText;
-                var diasVacaciones = calcularDias(fechaIngreso);
-                document.getElementById('dias').value = diasVacaciones;
+            if (empleadoId !== "") {
+                var xhr = new XMLHttpRequest();
+                var url = 'obtener_fecha_ingreso.php?empleado_id=' + empleadoId;
+                console.log("URL de solicitud:", url);
+
+                xhr.open('GET', url, true);
+                xhr.onreadystatechange = function() {
+                    console.log("Estado:", xhr.readyState, "Status:", xhr.status);
+
+                    if (xhr.readyState == 4) {
+                        if (xhr.status == 200) {
+                            console.log("Respuesta recibida:", xhr.responseText);
+
+                            try {
+                                var response = JSON.parse(xhr.responseText);
+                                console.log("JSON parseado:", response);
+
+                                if (response.success) {
+                                    console.log("Fecha ingreso:", response.fecha_inicio);
+                                    var diasVacaciones = calcularDias(response.fecha_inicio);
+                                    console.log("Días calculados:", diasVacaciones);
+
+                                    document.getElementById('dias').value = diasVacaciones + " días";
+                                } else {
+                                    console.error("Error del servidor:", response.message);
+                                    document.getElementById('dias').value = "Error: " + response.message;
+                                }
+                            } catch (e) {
+                                console.error("Error al parsear JSON:", e, "Respuesta:", xhr.responseText);
+                                document.getElementById('dias').value = "Error en formato de datos";
+                            }
+                        } else {
+                            console.error("Error HTTP:", xhr.status);
+                            document.getElementById('dias').value = "Error de conexión (" + xhr.status + ")";
+                        }
+                    }
+                };
+                xhr.onerror = function() {
+                    console.error("Error de red");
+                    document.getElementById('dias').value = "Error de red";
+                };
+                xhr.send();
+            } else {
+                document.getElementById('dias').value = "";
             }
-        };
-        xhr.send();
-    } else {
-        document.getElementById('dias').value = "";
-    }
-}
+        }
 
-function calcularDias(fechaIngreso) {
-    var fechaActual = new Date();
-    var fechaIngreso = new Date(fechaIngreso);
-    var antiguedad = fechaActual.getFullYear() - fechaIngreso.getFullYear();
-    
-    // Calcular los días de vacaciones según la antigüedad
-    if (antiguedad < 5) return 14;
-    if (antiguedad < 10) return 21;
-    if (antiguedad < 20) return 28;
-    return 35;
-}
-</script>
+        function calcularDias(fechaIngreso) {
+            if (!fechaIngreso) return 0;
+
+            try {
+                var fechaActual = new Date();
+                var fechaIngresoObj = new Date(fechaIngreso);
+
+                // Validar que la fecha sea correcta
+                if (isNaN(fechaIngresoObj.getTime())) {
+                    console.error("Fecha inválida:", fechaIngreso);
+                    return 0;
+                }
+
+                // Calcular diferencia en meses
+                var mesesTrabajados = (fechaActual.getFullYear() - fechaIngresoObj.getFullYear()) * 12;
+                mesesTrabajados += fechaActual.getMonth() - fechaIngresoObj.getMonth();
+
+                // Ajustar si el día actual es menor al día de ingreso
+                if (fechaActual.getDate() < fechaIngresoObj.getDate()) {
+                    mesesTrabajados--;
+                }
+
+                console.log("Meses trabajados:", mesesTrabajados);
+
+                // Calcular días según tiempo de servicio
+                if (mesesTrabajados < 6) {
+                    return 0; // Menos de 6 meses - no tiene vacaciones
+                } else if (mesesTrabajados <= 12) {
+                    return mesesTrabajados; // 6-12 meses - 1 día por mes
+                } else {
+                    // Más de 1 año - cálculo por antigüedad
+                    var antiguedad = Math.floor(mesesTrabajados / 12);
+
+                    if (antiguedad < 5) return 14; // 1-4 años
+                    if (antiguedad < 10) return 21; // 5-9 años
+                    if (antiguedad < 20) return 28; // 10-19 años
+                    return 35; // 20+ años
+                }
+            } catch (e) {
+                console.error("Error en cálculo de días:", e);
+                return 0;
+            }
+        }
+
+        // Función para calcular días entre fechas
+        function calcularDiasEntreFechas() {
+            var inicio = new Date(document.getElementById('fecha_inicio').value);
+            var fin = new Date(document.getElementById('fecha_fin').value);
+
+            // Validar que ambas fechas estén seleccionadas
+            if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+                return;
+            }
+
+            // Calcular diferencia en días (incluyendo ambos días)
+            var diffTiempo = fin - inicio;
+            var diffDias = Math.floor(diffTiempo / (1000 * 60 * 60 * 24)) + 1;
+
+            // Asignar el valor calculado
+            document.getElementById('cantidad_dias').value = diffDias > 0 ? diffDias : 0;
+
+            // Validar contra días disponibles
+            validarDiasDisponibles();
+        }
+
+        // Función para validar días disponibles
+        function validarDiasDisponibles() {
+            var diasDisponibles = parseInt(document.getElementById('dias').value) || 0;
+            var diasSolicitados = parseInt(document.getElementById('cantidad_dias').value) || 0;
+            var campoCantidad = document.getElementById('cantidad_dias');
+
+            // Resetear estilo
+            campoCantidad.style.color = '';
+            campoCantidad.style.borderColor = '';
+
+            // Validar si excede
+            if (diasSolicitados > diasDisponibles) {
+                campoCantidad.style.color = 'red';
+                campoCantidad.style.borderColor = 'red';
+
+                // Opcional: Mostrar mensaje de alerta
+                alert(`¡Atención! Está solicitando ${diasSolicitados} días pero sólo tiene ${diasDisponibles} disponibles.`);
+            }
+        }
+        // Función para calcular días restantes
+        function calcularDiasRestantes() {
+            var diasDisponibles = parseInt(document.getElementById('dias').value) || 0;
+            var diasSolicitados = parseInt(document.getElementById('cantidad_dias').value) || 0;
+            var campoRestantes = document.getElementById('vacaciones_restantes');
+
+            // Calcular días restantes
+            var diasRestantes = diasDisponibles - diasSolicitados;
+
+            // Asegurarnos que no sea negativo
+            diasRestantes = diasRestantes >= 0 ? diasRestantes : 0;
+
+            // Actualizar el campo
+            campoRestantes.value = diasRestantes;
+
+            // Validar si excede (mantenemos la función anterior)
+            validarDiasDisponibles();
+        }
+
+        // Modificar el evento de cantidad_dias para que llame a esta función
+        document.getElementById('cantidad_dias').addEventListener('input', function() {
+            calcularDiasRestantes();
+            validarDiasDisponibles();
+        });
+
+        // También actualizar cuando cambian las fechas
+        document.getElementById('fecha_inicio').addEventListener('change', function() {
+            calcularDiasEntreFechas();
+            calcularDiasRestantes();
+            var año = new Date(this.value).getFullYear();
+            document.getElementById('año').value = año;
+        });
+
+        document.getElementById('fecha_fin').addEventListener('change', function() {
+            calcularDiasEntreFechas();
+            calcularDiasRestantes();
+        });
+
+        // Asignar eventos a los campos de fecha
+        document.getElementById('fecha_inicio').addEventListener('change', function() {
+            calcularDiasEntreFechas();
+            // Actualizar año automáticamente
+            var año = new Date(this.value).getFullYear();
+            document.getElementById('año').value = año;
+        });
+
+        document.getElementById('fecha_fin').addEventListener('change', calcularDiasEntreFechas);
+
+        // Validar también cuando se modifica manualmente la cantidad
+        document.getElementById('cantidad_dias').addEventListener('input', validarDiasDisponibles);
+
+        // Al final de tu script, llama a la función para calcular valores iniciales
+        window.addEventListener('DOMContentLoaded', function() {
+            calcularDiasRestantes();
+        });
+
+        document.querySelector('form').addEventListener('submit', function(e) {
+            var diasDisponibles = parseInt(document.getElementById('dias').value) || 0;
+            var diasSolicitados = parseInt(document.getElementById('cantidad_dias').value) || 0;
+
+            if (diasSolicitados > diasDisponibles) {
+                e.preventDefault();
+                alert('No puede solicitar más días de los disponibles');
+            }
+        });
+
+        
+    </script>
     <!-- ======= Footer ======= -->
     <?php include_once 'partes/footer.php' ?>
     <!-- End Footer -->

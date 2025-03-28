@@ -2,59 +2,66 @@
 function Validar_Datos() {
     $vMensaje = '';
 
-    if (empty($_POST['estado'])) { // Verificar si se seleccionó el estado
-        $vMensaje .= 'Debes seleccionar el estado. <br />';
-    }
-
-    if (empty($_POST['empleado'])) { // Verificar si se seleccionó un empleado
-        $vMensaje .= 'Debes seleccionar un empleado. <br />';
-    }
-
-    if (empty($_POST['fecha_inicio'])) { // Verificar si se ingresó la fecha de inicio
-        $vMensaje .= 'Debes ingresar una fecha de inicio. <br />';
-    } else {
-        // Convertir la fecha de inicio a formato DateTime
-        $fechaInicio = new DateTime($_POST['fecha_inicio']);
-        $mesInicio = $fechaInicio->format('m');
-        $anioInicio = $fechaInicio->format('Y');
-
-        // Validar que la fecha de inicio esté entre octubre (10) y abril (4) del siguiente año
-        if ($mesInicio < 10 && $mesInicio > 4) {
-            $vMensaje .= 'La fecha de inicio debe estar entre octubre y abril del siguiente año. <br />';
+    // Campos obligatorios simplificados
+    $camposObligatorios = ['estado', 'empleado', 'fecha_inicio', 'fecha_fin', 'año', 'cantidad_dias'];
+    foreach ($camposObligatorios as $campo) {
+        if (empty($_POST[$campo])) {
+            $vMensaje .= "Complete el campo requerido: " . ucfirst(str_replace('_', ' ', $campo)) . "<br>";
         }
     }
 
-    if (empty($_POST['fecha_fin'])) { // Verificar si se ingresó la fecha de fin
-        $vMensaje .= 'Debes ingresar la fecha final. <br />';
-    } else {
-        // Convertir la fecha de fin a formato DateTime
-        $fechaFin = new DateTime($_POST['fecha_fin']);
-        $mesFin = $fechaFin->format('m');
-        $anioFin = $fechaFin->format('Y');
-
-        // Validar que la fecha de fin esté dentro del rango permitido (hasta el 30 de abril)
-        if ($mesFin > 4) {
-            $vMensaje .= 'La fecha de fin debe estar antes del 1 de mayo. <br />';
+    // Validación de fechas
+    if (!empty($_POST['fecha_inicio']) && !empty($_POST['fecha_fin'])) {
+        try {
+            $fechaInicio = new DateTime($_POST['fecha_inicio']);
+            $fechaFin = new DateTime($_POST['fecha_fin']);
+            
+            $mesInicio = $fechaInicio->format('m');
+            $mesFin = $fechaFin->format('m');
+            
+            if ($mesInicio < 10 && $mesInicio > 4) {
+                $vMensaje .= "Período vacacional no válido (octubre-abril)<br>";
+            }
+            
+            if ($mesFin > 4) {
+                $vMensaje .= "Las vacaciones deben finalizar antes de mayo<br>";
+            }
+            
+            if ($fechaFin < $fechaInicio) {
+                $vMensaje .= "Fecha final anterior a la inicial<br>";
+            }
+            
+            // Validación días calculados
+            $diasCalculados = (int)(($fechaFin->getTimestamp() - $fechaInicio->getTimestamp()) / (60 * 60 * 24)) + 1;
+            if ($_POST['cantidad_dias'] != $diasCalculados) {
+                $vMensaje .= "Inconsistencia en días solicitados<br>";
+            }
+            
+        } catch (Exception $e) {
+            $vMensaje .= "Error en formato de fechas<br>";
         }
+    }
 
-        // Validar que la fecha de fin no sea anterior a la fecha de inicio
-        if ($fechaFin < $fechaInicio) {
-            $vMensaje .= 'La fecha de fin no puede ser anterior a la fecha de inicio. <br />';
+    // Validación días disponibles
+    if (!empty($_POST['dias']) && !empty($_POST['cantidad_dias'])) {
+        $diasDisponibles = (int)$_POST['dias'];
+        $diasSolicitados = (int)$_POST['cantidad_dias'];
+        
+        if ($diasSolicitados > $diasDisponibles) {
+            $vMensaje .= "Días solicitados exceden los disponibles<br>";
+        }
+        
+        if (empty($_POST['vacaciones_restantes']) && $_POST['vacaciones_restantes'] !== '0') {
+            $vMensaje .= "Error en cálculo de días restantes<br>";
         }
     }
 
-    if (empty($_POST['año'])) { // Verificar si se ingresó el año de la licencia
-        $vMensaje .= 'Debes ingresar el año de la licencia. <br />';
-    }
-
-    // Limpiar los valores de $_POST de caracteres no deseados
-    foreach ($_POST as $Id => $Valor) {
-        $_POST[$Id] = trim($_POST[$Id]);
-        $_POST[$Id] = strip_tags($_POST[$Id]); // Limpiar caracteres especiales
-    }
+    // Limpieza básica de datos
+    array_walk($_POST, function(&$valor) {
+        $valor = trim(htmlspecialchars($valor, ENT_QUOTES, 'UTF-8'));
+    });
 
     return $vMensaje;
 }
-?>
 
 

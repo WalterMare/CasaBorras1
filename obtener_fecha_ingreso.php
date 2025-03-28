@@ -1,29 +1,50 @@
 <?php
 require_once 'conexiondb.php';
-$conexion = ConexionBD();
+header('Content-Type: application/json');
 
-if (isset($_GET['empleado_id'])) {
-    $empleadoId = $_GET['empleado_id'];
-
-    try {
-        // Preparar la consulta SQL
-        $query = "SELECT fecha_inicio FROM empleado WHERE idempleado = ?";
-        $stmt = $conexion->prepare($query);
-        $stmt->execute([$empleadoId]);
-
-        // Obtener el resultado de la consulta
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // Verificar si se obtuvo la fecha de inicio
-        if ($result) {
-            echo $result['fecha_inicio']; // Retornamos la fecha de ingreso
-        } else {
-            echo "Empleado no encontrado"; // Mensaje en caso de no encontrar el empleado
-        }
-    } catch (PDOException $e) {
-        // Manejo de excepciones si ocurre algún error en la consulta
-        echo "Error en la consulta: " . $e->getMessage();
+try {
+    $conexion = ConexionBD();
+    
+    if (!isset($_GET['empleado_id'])) {
+        throw new Exception("Parámetro empleado_id no proporcionado");
     }
+
+    $empleadoId = filter_var($_GET['empleado_id'], FILTER_VALIDATE_INT);
+    if ($empleadoId === false) {
+        throw new Exception("ID de empleado inválido");
+    }
+
+    // Preparar la consulta
+    $query = "SELECT fecha_inicio FROM empleado WHERE idempleado = ?";
+    $stmt = $conexion->prepare($query);
+    
+    if (!$stmt) {
+        throw new Exception("Error al preparar la consulta: " . $conexion->error);
+    }
+    
+    // Vincular parámetros (nota: esto es diferente a PDO)
+    $stmt->bind_param("i", $empleadoId);
+    $stmt->execute();
+    $stmt->bind_result($fecha_inicio);
+    
+    if ($stmt->fetch()) {
+        echo json_encode([
+            'success' => true,
+            'fecha_inicio' => $fecha_inicio
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Empleado no encontrado'
+        ]);
+    }
+    
+    $stmt->close();
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error: ' . $e->getMessage()
+    ]);
 }
 ?>
 

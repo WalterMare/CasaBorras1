@@ -55,7 +55,7 @@ try {
 
 require_once 'Actualizar_Estado_Vacaciones_empleado.php';
 try {
-  actualizarEstadoEmpleadosEnVacaciones();
+  actualizarEstadosVacacionales($conexion);
   } catch (Exception $e) {
   $mensaje = 'Error al actualizar los estados de las vacaiones : ' . $e->getMessage();
 }
