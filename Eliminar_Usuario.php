@@ -36,7 +36,7 @@ if (isset($_GET['id'])) {
         $_SESSION['mensaje'] = "El usuario no existe.";
     }
     
-    header("Location: Listado_Usuarios.php");
+    header("Location: Usuarios.php");
     exit;
 }
 ?>

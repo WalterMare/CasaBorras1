@@ -166,7 +166,7 @@ require_once 'Modificar_extra.php';
                 <div class="text-center">
                   <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Guardar</button>
                   <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
-                  <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
+                  <a href="HorasExtras.php" class="text-primary fw-bold">Volver</a>
                 </div>
               </form><!-- Vertical Form -->
 

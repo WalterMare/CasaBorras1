@@ -48,6 +48,9 @@ else if ($tipo_reporte == 4) {
     $listadoAsistencia = $reporte['asistencias'];
     $totalHoras = $reporte['total_horas']; // Total de horas trabajadas en el mes
 }
+else if ($tipo_reporte == 7) {
+    $listadoVacaciones = Listar_Reporte_Empleado_Vacaciones($conexion, $empleado_id);
+} 
 
 
 
@@ -301,7 +304,44 @@ if ($tipo_reporte == '5') {
           $pdf->SetFont('helvetica', 'I', 10);
           $pdf->Cell(0, 10, 'El empleado seleccionado no tiene asistencias registradas.', 0, 1, 'C');
       }
-  }
+  }if ($tipo_reporte == '7') {
+    // Ajuste de la tabla para que ocupe el ancho completo de la página
+    $anchoTotal = $pdf->getPageWidth();
+    $anchoColumna = $anchoTotal / 4; // Ajustamos el número de columnas
+
+    $pdf->Ln(5);
+    $pdf->SetFont('helvetica', 'B', 16);
+    $pdf->Cell(0, 10, 'VACACIONES', 0, 1, 'L');
+    $pdf->SetFont('helvetica', 'B', 10);
+
+    if (!empty($listadoVacaciones)) {
+        // Encabezados de la tabla
+        $pdf->Cell(7, 10, '#', 1, 0, 'C');
+        $pdf->Cell(21, 10, 'Fecha Inicio', 1, 0, 'C');
+        $pdf->Cell(18, 10, 'Fecha Fin', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'Cantidad de Días', 1, 0, 'C');
+        $pdf->Cell(10, 10, 'Año', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'Días Restantes', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'Estado', 1, 1, 'C');
+
+        // Agregar las asistencias al PDF
+        foreach ($listadoVacaciones as $index => $vacaciones) {
+            $pdf->SetFont('helvetica', '', 8);
+            $pdf->Cell(7, 10, $index + 1, 1, 0, 'C');
+            $pdf->Cell(21, 10, $vacaciones['FECHA_INICIO'], 1, 0, 'C');
+            $pdf->Cell(18, 10, $vacaciones['FECHA_FIN'], 1, 0, 'C');
+            $pdf->Cell(30, 10, $vacaciones['CANTIDAD_DIAS'], 1, 0, 'C');
+            $pdf->Cell(10, 10, $vacaciones['AÑO'], 1, 0, 'C');
+            $pdf->Cell(30, 10, $vacaciones['VACACIONES_RESTANTES'], 1, 0, 'C');
+            $pdf->Cell(30, 10, $vacaciones['ESTADO'], 1, 1, 'C');
+        }
+
+    } else {
+        // Si no hay asistencias, muestra un mensaje
+        $pdf->SetFont('helvetica', 'I', 10);
+        $pdf->Cell(0, 10, 'El empleado seleccionado no tiene vacaciones registradas.', 0, 1, 'C');
+    }
+}
 
 
 

@@ -2,7 +2,7 @@
 function InsertarObraSocial($vConexion){
   
 
-    $SQL_Insert="INSERT INTO obrasocial(idobraSocial, nombre, IdEmpleado) 
+    $SQL_Insert="INSERT INTO obrasocial(idobraSocial, descripcion, IdEmpleado) 
     VALUES (null,'".$_POST['nombre']."' ,  '".$_POST['empleado']."')";
 
 

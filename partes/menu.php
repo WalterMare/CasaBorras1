@@ -14,142 +14,153 @@
         <i class="bi bi-truck"></i><span>Gestor de personal</span><i class="bi bi-chevron-down ms-auto"></i>
       </a>
       <ul id="forms-nav-personal" class="nav-content collapse <?php echo (basename($_SERVER['PHP_SELF']) == 'Empleado_carga.php' || basename($_SERVER['PHP_SELF']) == 'Familiar_carga.php' || basename($_SERVER['PHP_SELF']) == 'Usuario.php' || basename($_SERVER['PHP_SELF']) == 'Listado_empleados.php') ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
-        <li>
+      <li>
+          <a href="Listado_empleados.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listado_empleados.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Listado de Empleados</span>
+          </a>
+        </li>  
+      <li>
           <a href="Empleado_carga.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Empleado_carga.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Cargar nuevo Empleado</span>
+            <i class="bi bi-file-earmark-plus"></i><span>Registrar Empleado</span>
           </a>
         </li>
         <li>
           <a href="Familiar_carga.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Familiar_carga.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Cargar Familiar</span>
-          </a>
-        </li>
-        <li>
-          <a href="Usuario.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Usuario.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Usuario</span>
+            <i class="bi bi-file-earmark-plus"></i><span>RegistrarFamiliar</span>
           </a>
         </li>
         
-
         <li>
-          <a href="Listado_empleados.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listado_empleados.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Listado de Empleados</span>
+          <a href="Usuarios.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Usuarios.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Usuarios</span>
           </a>
         </li>
+
+       
       </ul>
     </li><!-- End Gestor de Personal -->
 
     <!-- Gestor Movimientos -->
     <li class="nav-item">
-      <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'Registrar_viatico.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Viatico_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Anticipo.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Anticipo_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'RegistrarHoraExtra.php' || basename($_SERVER['PHP_SELF']) == 'Listado_HorasExtra_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Obrasocial.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Obrasocial_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Embargo.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Embargo_empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Sanciones.php' || basename($_SERVER['PHP_SELF']) == 'Listar_sanciones_empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Licencia.php' || basename($_SERVER['PHP_SELF']) == 'Listar_Licencias.php') ? 'active' : ''; ?>" data-bs-target="#forms-nav-movimientos" data-bs-toggle="collapse" href="#">
+
+      <a href="#forms-nav-movimientos" class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), [
+                                                          'Asistencia_Empleados.php',
+                                                          'Viaticos.php',
+                                                          'Anticipo.php',
+                                                          'HorasExtras.php',
+                                                          'ObraSocial.php',
+                                                          'Embargos.php',
+                                                          'Sanciones.php',
+                                                          'Registrar_Vacaciones.php',
+                                                          'Licencias.php'
+                                                        ]) ? 'active' : ''; ?>" data-bs-toggle="collapse" aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), [
+                                                                      'Asistencia_Empleados.php',
+                                                                      'Viaticos.php',
+                                                                      'Anticipo.php',
+                                                                      'HorasExtras.php',
+                                                                      'ObraSocial.php',
+                                                                      'Embargos.php',
+                                                                      'Sanciones.php',
+                                                                      'Registrar_Vacaciones.php',
+                                                                      'Licencias.php'
+                                                                    ]) ? 'true' : 'false'; ?>">
         <i class="bi bi-globe2"></i><span>Gestor Movimientos</span><i class="bi bi-chevron-down ms-auto"></i>
       </a>
-      <ul id="forms-nav-movimientos" class="nav-content collapse <?php echo (basename($_SERVER['PHP_SELF']) == 'Registrar_viatico.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Viatico_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Anticipo.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Anticipo_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'RegistrarHoraExtra.php' || basename($_SERVER['PHP_SELF']) == 'Listado_HorasExtra_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Obrasocial.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Obrasocial_Empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Embargo.php' || basename($_SERVER['PHP_SELF']) == 'Listado_Embargo_empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Sanciones.php' || basename($_SERVER['PHP_SELF']) == 'Listar_sanciones_empleado.php' || basename($_SERVER['PHP_SELF']) == 'Registrar_Licencia.php' || basename($_SERVER['PHP_SELF']) == 'Listar_Licencias.php') ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
-      <li>
+      <ul id="forms-nav-movimientos" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), [
+                                                                    'Asistencia_Empleados.php',
+                                                                    'Viaticos.php',
+                                                                    'Anticipo.php',
+                                                                    'HorasExtras.php',
+                                                                    'ObraSocial.php',
+                                                                    'Embargos.php',
+                                                                    'Sanciones.php',
+                                                                    'Registrar_Vacaciones.php',
+                                                                    'Licencias.php'
+                                                                  ]) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
+        <li>
           <a href="Asistencia_Empleados.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Asistencia_Empleados.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Asistencia de Empleados </span>
-          </a>
-        </li>
-      <li>
-          <a href="Registrar_viatico.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_viatico.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Viáticos</span>
+            <i class="bi bi-file-earmark-plus"></i><span>Asistencia de Empleados</span>
           </a>
         </li>
         <li>
-          <a href="Listado_Viatico_Empleado.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listado_Viatico_Empleado.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Consultar Viaticos</span>
+          <a href="Viaticos.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Viaticos.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Viáticos</span>
           </a>
         </li>
         <li>
-          <a href="Registrar_Anticipo.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Anticipo.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Anticipos</span>
+          <a href="Anticipo.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Anticipo.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Anticipos</span>
           </a>
         </li>
         <li>
-          <a href="Listado_Anticipo_Empleado.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listado_Anticipo_Empleado.php' ? 'active' : ''; ?>">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Anticipo</span>
+          <a href="HorasExtras.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'HorasExtras.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Horas Extras</span>
           </a>
         </li>
         <li>
-          <a href="RegistrarHoraExtra.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'RegistrarHoraExtra.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Horas Extras</span>
+          <a href="ObraSocial.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'ObraSocial.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Obra Social</span>
           </a>
         </li>
         <li>
-          <a href="Listado_HorasExtra_Empleado.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listado_HorasExtra_Empleado.php' ? 'active' : ''; ?>">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Horas Extras</span>
+          <a href="Embargos.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Embargos.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Embargos</span>
           </a>
         </li>
         <li>
-          <a href="Registrar_Obrasocial.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Obrasocial.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Obra Social</span>
-          </a>
-        </li>
-        <li>
-          <a href="Listado_Obrasocial_Empleado.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listado_Obrasocial_Empleado.php' ? 'active' : ''; ?>">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Prepaga</span>
-          </a>
-        </li>
-        <li>
-          <a href="Registrar_Embargo.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Embargo.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Embargos Judiciales</span>
-          </a>
-        </li>
-        <li>
-          <a href="Listado_Embargo_empleado.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listado_Embargo_empleado.php' ? 'active' : ''; ?>">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Embargo Judicial</span>
-          </a>
-        </li>
-        <li>
-          <a href="Registrar_Sanciones.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Sanciones.php' ? 'active' : ''; ?>">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Registrar Sanciones</span>
-          </a>
-        </li>
-        <li>
-          <a href="Listar_sanciones_empleado.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Listar_sanciones_empleado.php' ? 'active' : ''; ?>">
-            <i class="bi bi-layout-text-window-reverse"></i><span>Consultar Sanciones</span>
+          <a href="Sanciones.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Sanciones.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Sanciones</span>
           </a>
         </li>
         <li>
           <a href="Registrar_Vacaciones.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Vacaciones.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Vacaciones </span>
+            <i class="bi bi-file-earmark-plus"></i><span>Registrar Vacaciones</span>
           </a>
         </li>
         <li>
-          <a href="Registro_Licencia.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registro_Licencia.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Registrar Licencias </span>
+          <a href="Licencias.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Licencias.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Licencias</span>
           </a>
         </li>
       </ul>
-    </li><!-- End Gestor Movimientos -->
+    </li>
 
     <!-- Gestor de Reportes -->
     <li class="nav-item">
-      <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'Informe_Ultimos_e.php' ? 'active' : ''; ?>" data-bs-target="#forms-nav-reportes" data-bs-toggle="collapse" href="#">
+      <a class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php','Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'active' : ''; ?>"
+        href="#forms-nav-reportes"
+        data-bs-toggle="collapse"
+        aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php','Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'true' : 'false'; ?>">
         <i class="bi bi-file-earmark"></i><span>Gestor de Reportes</span><i class="bi bi-chevron-down ms-auto"></i>
       </a>
-      <ul id="forms-nav-reportes" class="nav-content collapse <?php echo basename($_SERVER['PHP_SELF']) == 'Informe_Ultimos_e.php' ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
+      <ul id="forms-nav-reportes" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php','Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
         <li>
           <a href="Informe_Ultimos_e.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Informe_Ultimos_e.php' ? 'active' : ''; ?>">
             <i class="bi bi-file-earmark-plus"></i><span>Últimos empleados registrados</span>
           </a>
         </li>
+        <li>
           <a href="Reportes.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reportes.php' ? 'active' : ''; ?>">
             <i class="bi bi-file-earmark-plus"></i><span>Generar Reportes </span>
           </a>
         </li>
         <li>
           <a href="reporte_estadistico.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'reporte_estadistico.php' ? 'active' : ''; ?>">
-            <i class="bi bi-file-earmark-plus"></i><span>Generar Reporte Estadistico Licencias </span>
+            <i class="bi bi-file-earmark-plus"></i><span>Reporte Estadístico Licencias </span>
           </a>
         </li>
-        
-
+        <li>
+          <a href="Reporte_Ausencias_Empleados.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reporte_Ausencias_Empleados.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Reporte Asistencia </span>
+          </a>
+        </li>
+        <li>
+          <a href="Preliquidacion.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Preliquidacion.php' ? 'active' : ''; ?>">
+            <i class="bi bi-file-earmark-plus"></i><span>Preliquidación </span>
+          </a>
+        </li>
       </ul>
-    </li><!-- End Gestor de Reportes -->
+    </li>
+
   </ul>
 </aside>
-
-
-
-

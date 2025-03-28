@@ -24,9 +24,6 @@ function Listar_tipo($vConexion) {
 }
 
 
-
-
-
 function Listar_usuario($vConexion, $idusuario) {
     $Listado = array();
 

@@ -90,15 +90,15 @@ $listarUsuarios = Listar_usuario($MiConexion, $_GET['id']);
                                         $Mensaje = 'Se ha actualizado correctamente.';
                                         $_POST = array();
                                         $Estilo = 'success';
-                                        
+
                                         // Mostrar el mensaje de éxito
                                         echo "<div class='alert alert-success alert-dismissible fade show' role='alert'>
                                                 <i class='bi bi-check-circle me-1'></i>
                                                 $Mensaje
                                               </div>";
-                            
+
                                         // Redirigir a Listado_Usuarios.php después de 2 segundos (o puedes usar 0 para redirección inmediata)
-                                        header("refresh:2;url=Listado_Usuarios.php");
+                                        header("refresh:2;url=Usuarios.php");
                                         exit; // Termina el script para que no siga ejecutándose
                                     } else {
                                         // Si no se puede actualizar el usuario, mostrar mensaje de error
@@ -114,8 +114,8 @@ $listarUsuarios = Listar_usuario($MiConexion, $_GET['id']);
                                             $Mensaje
                                           </div>";
                                 }
-
-                            }ob_end_flush(); ?>
+                            }
+                            ob_end_flush(); ?>
 
                             <form class="row g-3" method="post">
                                 <div class="mb-3">
@@ -127,18 +127,18 @@ $listarUsuarios = Listar_usuario($MiConexion, $_GET['id']);
                                     <label for="selector" class="form-label">Tipo</label>
                                     <select class="form-select" aria-label="Selector" id="selector" name="Idtipo" required>
                                         <!-- Opción por defecto para el tipo actual del usuario -->
-                                        <option value="<?php echo $listarUsuarios['ID']; ?>" selected>
-                                            <?php echo $listarUsuarios['TIPO']; ?>
-                                        </option>
-
+                                        <option value="<?php echo $listarUsuarios['ID']; ?>"><?php echo $listarUsuarios['TIPO']; ?> </option>
                                         <?php
-                                        // Recorremos el array $Listartipos para mostrar las demás opciones
-                                        foreach ($Listartipos as $tipo) {
-                                            // Determinamos si el tipo de usuario debe estar seleccionado
-                                            $selected = (!empty($_POST['Idtipo']) && $_POST['Idtipo'] == $tipo['ID']) ? 'selected' : '';
+                                        $selected = '';
+                                        for ($i = 0; $i < $CantidadTipo; $i++) {
+                                            if (!empty($_POST['Idtipo']) && $_POST['Idtipo'] == $Listartipos['ID']) {
+                                                $selected = 'selected';
+                                            } else {
+                                                $selected = '';
+                                            }
                                         ?>
-                                            <option value="<?php echo $tipo['ID']; ?>" <?php echo $selected; ?>>
-                                                <?php echo $tipo['NOMBRE']; ?>
+                                            <option value="<?php echo $Listartipos[$i]['ID']; ?>" <?php echo $selected; ?>>
+                                                <?php echo $Listartipos[$i]['NOMBRE']; ?>
                                             </option>
                                         <?php } ?>
                                     </select>
@@ -146,7 +146,7 @@ $listarUsuarios = Listar_usuario($MiConexion, $_GET['id']);
 
                                 <div class="text-center">
                                     <button class="btn btn-primary" type="submit" value="Registrar" name="BotonModificar">Modificar</button>
-                                    <a href="Listado_Usuarios.php" class="text-primary fw-bold">Volver al panel</a>
+                                    <a href="Usuarios.php" class="text-primary fw-bold">Volver al panel</a>
                                 </div>
                             </form>
                         </div>
@@ -158,6 +158,7 @@ $listarUsuarios = Listar_usuario($MiConexion, $_GET['id']);
     <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
     <!-- Template Main JS File -->
     <script src="assets/js/main.js"></script>
+    <script src="assets/js/cartel.js"></script>
 </body>
 
 </html>

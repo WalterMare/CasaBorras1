@@ -1,92 +1,96 @@
-
 <?php
 function actualizarEstadoSancion($conexion)
 {
-    $hoy = date('Y-m-d');
+    // Obtener la fecha de ayer (un día antes de hoy)
+    $ayer = date('Y-m-d', strtotime('-1 day'));
 
-    // Consulta para obtener las sanciones que vencen hoy y tienen ciertos tipos
-    $query = "SELECT * FROM sancion WHERE fecha_fin = ? AND (IdTipoSancion = 3 OR IdTipoSancion = 4 OR IdTipoSancion = 5)";
+    // Consulta para obtener las sanciones que vencieron ayer y son de tipo suspensión (IdTipoSancion = 3)
+    $query = "SELECT idsancion, idEmpleado FROM sancion WHERE fecha_fin = ? AND IdTipoSancion = 3";
     $stmt = mysqli_prepare($conexion, $query);
-    
-    // Enlazamos la fecha actual como parámetro
-    mysqli_stmt_bind_param($stmt, 's', $hoy);
-    
-    // Ejecutamos la consulta
-    mysqli_stmt_execute($stmt);
-    
-    // Obtenemos los resultados de la consulta
-    $result = mysqli_stmt_get_result($stmt);
 
-    // Verificamos si la consulta fue exitosa
-    if (!$result) {
+    // Verificar si la preparación de la consulta fue exitosa
+    if (!$stmt) {
+        $_SESSION['Mensaje'] = 'Error al preparar la consulta: ' . mysqli_error($conexion);
+        $_SESSION['Estilo'] = 'danger';
         return false;
     }
 
-    // Recorremos cada sanción obtenida
-    while ($suspension = mysqli_fetch_assoc($result)) {
-        $sancion_id = $suspension['idsancion'];
+    // Enlazar la fecha de ayer como parámetro
+    mysqli_stmt_bind_param($stmt, 's', $ayer);
 
-        // Realizamos la actualización del estado de la sanción
-        $updateQuery = "UPDATE sancion SET idEstadoSancion = 3 WHERE idsancion = ?";
-        $updateStmt = mysqli_prepare($conexion, $updateQuery);
+    // Ejecutar la consulta
+    mysqli_stmt_execute($stmt);
 
-        // Enlazamos el ID de la sanción
-        mysqli_stmt_bind_param($updateStmt, 'i', $sancion_id);
+    // Obtener los resultados de la consulta
+    $result = mysqli_stmt_get_result($stmt);
 
-        // Ejecutamos la consulta de actualización
-        $updateResult = mysqli_stmt_execute($updateStmt);
+    // Verificar si la consulta fue exitosa
+    if (!$result) {
+        $_SESSION['Mensaje'] = 'Error al obtener las sanciones: ' . mysqli_error($conexion);
+        $_SESSION['Estilo'] = 'danger';
+        return false;
+    }
 
-        // Si alguna actualización falla, retornamos false
-        if (!$updateResult) {
+    // Recorrer cada sanción obtenida
+    while ($sancion = mysqli_fetch_assoc($result)) {
+        $sancion_id = $sancion['idsancion'];
+        $empleado_id = $sancion['idEmpleado'];
+
+        // Actualizar el estado del empleado a 1 (activo)
+        $updateEmpleadoQuery = "UPDATE empleado SET estado = 1 WHERE idempleado = ?";
+        $updateEmpleadoStmt = mysqli_prepare($conexion, $updateEmpleadoQuery);
+
+        // Verificar si la preparación de la consulta fue exitosa
+        if (!$updateEmpleadoStmt) {
+            $_SESSION['Mensaje'] = 'Error al preparar la consulta de actualización del empleado: ' . mysqli_error($conexion);
+            $_SESSION['Estilo'] = 'danger';
+            return false;
+        }
+
+        // Enlazar el ID del empleado
+        mysqli_stmt_bind_param($updateEmpleadoStmt, 'i', $empleado_id);
+
+        // Ejecutar la consulta de actualización del empleado
+        $updateEmpleadoResult = mysqli_stmt_execute($updateEmpleadoStmt);
+
+        // Si la actualización del empleado falla, retornar false
+        if (!$updateEmpleadoResult) {
+            $_SESSION['Mensaje'] = 'Error al actualizar el estado del empleado: ' . mysqli_error($conexion);
+            $_SESSION['Estilo'] = 'danger';
+            return false;
+        }
+
+        // Actualizar el estado de la sanción a 3 (finalizada)
+        $updateSancionQuery = "UPDATE sancion SET idEstadoSancion = 3 WHERE idsancion = ?";
+        $updateSancionStmt = mysqli_prepare($conexion, $updateSancionQuery);
+
+        // Verificar si la preparación de la consulta fue exitosa
+        if (!$updateSancionStmt) {
+            $_SESSION['Mensaje'] = 'Error al preparar la consulta de actualización de la sanción: ' . mysqli_error($conexion);
+            $_SESSION['Estilo'] = 'danger';
+            return false;
+        }
+
+        // Enlazar el ID de la sanción
+        mysqli_stmt_bind_param($updateSancionStmt, 'i', $sancion_id);
+
+        // Ejecutar la consulta de actualización de la sanción
+        $updateSancionResult = mysqli_stmt_execute($updateSancionStmt);
+
+        // Si la actualización de la sanción falla, retornar false
+        if (!$updateSancionResult) {
+            $_SESSION['Mensaje'] = 'Error al actualizar el estado de la sanción: ' . mysqli_error($conexion);
+            $_SESSION['Estilo'] = 'danger';
             return false;
         }
     }
 
-    // Si todas las actualizaciones fueron exitosas, retornamos true
-    return true;
-}
-?>
-
-
-<?php
-function actualizarEstados($conexion)
-{
-    $hoy = date('Y-m-d');
-    
-    // Consulta para obtener las sanciones que vencen hoy
-    $query = "SELECT * FROM sancion WHERE fecha_fin = '$hoy' AND (IdTipoSancion = 3 OR IdTipoSancion = 4 OR IdTipoSancion = 5)";
-    $suspensiones = mysqli_query($conexion, $query);
-    
-    // Verificamos si la consulta fue exitosa
-    if (!$suspensiones) {
-        return false; // Si hubo un error en la consulta
-    }
-
-    // Recorremos todas las sanciones obtenidas
-    while ($suspension = mysqli_fetch_assoc($suspensiones)) {
-        $empleado_id = $suspension['idEmpleado'];
-
-        // Actualizamos el estado del empleado
-        $SQL = "UPDATE empleado SET estado = 1 WHERE idempleado = $empleado_id";
-        $resultado = mysqli_query($conexion, $SQL);
-        
-        // Verificamos si la actualización fue exitosa
-        if (!$resultado) {
-            return false; // Si alguna actualización falla, devolvemos false
-        }
-    }
-
-    // Si todas las actualizaciones fueron exitosas, actualizamos el estado de la sanción
-    actualizarEstadoSancion($conexion);
-
-    // Guardamos el mensaje y el estilo para la sesión
-    $_SESSION['Mensaje'] = 'Los estados de los empleados se han actualizado correctamente.';
+    // Si todas las actualizaciones fueron exitosas, retornar true
+    $_SESSION['Mensaje'] = 'Los estados de los empleados y sanciones se han actualizado correctamente.';
     $_SESSION['Estilo'] = 'success';
-
     return true;
 }
 ?>
-
 
 
 

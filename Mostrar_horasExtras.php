@@ -73,12 +73,12 @@ if (!empty($_GET['ID'])){
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Ver Hora Extra</h1>
+      <h1>Ver Extras</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.php">Home</a></li>
           <li class="breadcrumb-item">Gestor de movimientos</li>
-          <li class="breadcrumb-item active">Ver Hora Extra</li>
+          <li class="breadcrumb-item active">Ver Horas Extras</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -92,7 +92,7 @@ if (!empty($_GET['ID'])){
               </div>
 
 
-              <form class="row g-3" method="post"> <!--se agrego el metodo post para la captura de datos -->
+              <form class="row g-2 " method="post"> <!--se agrego el metodo post para la captura de datos -->
 
               <div class="col-6">
                   <label for="empleadoN" class="form-label">Empleado Nombre</label>
@@ -103,7 +103,6 @@ if (!empty($_GET['ID'])){
                 <label for="empleadoA" class="form-label">Empleado Apellido</label>
                   <input type="text" class="form-control" id="empleadoA" name="empleadoA" value="<?php echo $datosObtenidos['APELLIDO'];?>" disabled>
                 </div>
-
 
                 <div class="col-6">
                   <label for="fecha" class="form-label">Fecha</label>
@@ -116,7 +115,7 @@ if (!empty($_GET['ID'])){
                 </div>
 
                 <div class="text-center">
-                  <a href="Listado_HorasExtra_Empleado.php" class="text-primary fw-bold">Volver</a>
+                  <a href="HorasExtras.php" class="text-primary fw-bold">Volver</a>
                 </div>
                 <div>
 

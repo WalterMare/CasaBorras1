@@ -12,8 +12,10 @@ function Validar_Datos() {
     if (empty($_POST['fecha'])) {//strlen cuenta la cantidad de caracteres de la cadena
         $vMensaje='Debes ingresar una fecha. <br />';
     }
-    if (empty($_POST['dias'])) {//strlen cuenta la cantidad de caracteres de la cadena
-        $vMensaje='Debes ingresar la cantidad de días. <br />';
+    if ($_POST['tipo'] != '1' && $_POST['tipo'] != '2') {
+        if (empty($_POST['dias']) || $_POST['dias'] <= 0) {
+            $vMensaje .= 'Este tipo de sanción requiere una cantidad de días mayor que 0.<br>';
+        }
     }
     if (empty($_POST['descripcion'])) {//strlen cuenta la cantidad de caracteres de la cadena
         $vMensaje='Debes ingresar una breve descripcion de la sanción. <br />';

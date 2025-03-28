@@ -20,9 +20,6 @@ function Validar_Datos_Familiar()
     if (empty($_POST['fechanacimiento'])) {
         $vMensaje .= 'Para continuar debes Ingresar la Fecha de Nacimiento. <br />';
     }
-    if (empty($_POST['tel'])) {
-        $vMensaje .= 'Para continuar debes Ingresar un telefono. <br />';
-    }
     if (empty($_POST['empleado'])) {
         $vMensaje .= 'Para continuar debes seleccionar un empleado al cual se asociara el familiar. <br />';
     }
@@ -63,9 +60,7 @@ function Validar_Datos_Familiar_bis()
     if (empty($_POST['fechanacimiento'])) {
         $vMensaje .= 'Para continuar debes Ingresar la Fecha de Nacimiento. <br />';
     }
-    if (empty($_POST['tel'])) {
-        $vMensaje .= 'Para continuar debes Ingresar un telefono. <br />';
-    }
+  
    
 
     //con esto aseguramos que limpiamos espacios y limpiamos de caracteres de codigo ingresados

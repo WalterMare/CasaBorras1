@@ -13,32 +13,19 @@ if (isset($_GET['idempleado'])) {
         $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // Consulta para obtener la fecha de inicio del empleado
-        $stmt = $pdo->prepare("SELECT fecha_inicio FROM empleado WHERE idempleado = ?");
-        $stmt->execute([$idempleado]);
-        $empleado = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Obtener el año actual
+        $añoActual = date('Y');
 
-        if ($empleado) {
-            $fechaIngreso = new DateTime($empleado['fecha_inicio']);
-            $añoIngreso = $fechaIngreso->format('Y');
-            $añoActual = date('Y');
-
-            // Crear un array con los años desde el año de ingreso hasta el año actual
-            $añosDisponibles = [];
-            for ($año = $añoIngreso; $año <= $añoActual; $año++) {
-                $añosDisponibles[] = $año;
-            }
-
-            echo json_encode($añosDisponibles);
-        } else {
-            echo json_encode([]);
-        }
+        // Devolver solo el año actual
+        echo json_encode([$añoActual]);
+        
     } catch (PDOException $e) {
         error_log("Error de conexión: " . $e->getMessage());
         echo json_encode([]);
     }
 }
 ?>
+
 
 
 

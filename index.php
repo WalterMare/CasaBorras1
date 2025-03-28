@@ -1,4 +1,4 @@
-<?php 
+<?php
 session_start();
 
 // Verificación si la sesión está vacía y redirigir al login si es necesario
@@ -11,48 +11,71 @@ require_once 'conexiondb.php';
 
 // Manejo de errores en la conexión a la base de datos
 try {
-    $conexion = ConexionBD();
+  $conexion = ConexionBD();
 } catch (Exception $e) {
-    die('Error en la conexión: ' . $e->getMessage());
+  die('Error en la conexión: ' . $e->getMessage());
 }
 
-require_once 'Actualizar_Estado_Empleado.php'; //actualiza el estado de los empleados con sanciones
-try {
-    actualizarEstados($conexion);
-} catch (Exception $e) {
-    // Manejar errores de actualización de estado
-    echo 'Error al actualizar los estados: ' . $e->getMessage();
+
+// Obtener la fecha de preliquidación configurada
+$sqlFecha = "SELECT fecha_preliquidacion FROM configuracion WHERE idconfiguracion = 1";
+$result = $conexion->query($sqlFecha);
+$fechaPreliquidacion = $result->fetch_assoc()['fecha_preliquidacion'];
+
+$mensaje = "";
+
+// Compara la fecha configurada con la fecha actual
+if (date('Y-m-d') === $fechaPreliquidacion) {
+  // Ejecuta la preliquidación (puedes incluir la lógica de tu preliquidación aquí)
+  require_once 'PreliquidacionSueldo.php';
+
+  // Calcular la fecha de preliquidación para el próximo mes
+  $nuevaFecha = date('Y-m-d', strtotime('next month', strtotime($fechaPreliquidacion)));
+
+  // Actualiza la fecha de preliquidación para el siguiente mes
+  $sqlActualizar = "UPDATE configuracion SET fecha_preliquidacion = '$nuevaFecha' WHERE idconfiguracion = 1";
+  if ($conexion->query($sqlActualizar) === TRUE) {
+    $mensaje = "Preliquidación ejecutada y fecha actualizada para el próximo mes: $nuevaFecha.";
+  } else {
+    $mensaje = "Error al actualizar la fecha: " . $conexion->error;
+  }
 }
+
+
+require_once 'Actualizar_Estado_Empleado.php'; //actualiza el estado de los empleados con sanciones
+actualizarEstadoSancion($conexion);
 
 require_once 'Actualizar_estado_licencia_empleado.php'; //Actualiza el estado de los empleados con licencias
 try {
-    actualizarEstadoLicencia($conexion);
+  actualizarEstadoLicencia($conexion);
 } catch (Exception $e) {
-    // Manejar errores de actualización de estado
-    echo 'Error al actualizar los estados de las Licencias: ' . $e->getMessage();
+  // Manejar errores de actualización de estado
+  $mensaje = 'Error al actualizar los estados de las Licencias: ' . $e->getMessage();
 }
 
 require_once 'Actualizar_Estado_Vacaciones_empleado.php';
-try{   
-actualizarEstadoEmpleadosEnVacaciones(); } catch(Exception $e){
-  echo 'Error al actualizar los estados de las vacaiones : ' . $e->getMessage();
+try {
+  actualizarEstadoEmpleadosEnVacaciones();
+  } catch (Exception $e) {
+  $mensaje = 'Error al actualizar los estados de las vacaiones : ' . $e->getMessage();
 }
+
 
 require_once 'select_empleado.php';
 
 try {
-    // Listado de empleados y su cantidad
-    $ListadoReporte = Listar_empleado($conexion);
-    $CantidadEmpleados = count($ListadoReporte);
+  // Listado de empleados y su cantidad
+  $ListadoReporte = Listar_empleado($conexion);
+  $CantidadEmpleados = count($ListadoReporte);
 
-    // Listado de empleados activos e inactivos
-    $ListadoReporte = Listar_empleado_activos($conexion);
-    $CantidadEmpleadosActivos = count($ListadoReporte);
+  // Listado de empleados activos e inactivos
+  $ListadoReporte = Listar_empleado_activos($conexion);
+  $CantidadEmpleadosActivos = count($ListadoReporte);
 
-    $ListadoReporte = Listar_empleado_inactivos($conexion);
-    $CantidadEmpleadosInactivos = count($ListadoReporte);
+  $ListadoReporte = Listar_empleado_inactivos($conexion);
+  $CantidadEmpleadosInactivos = count($ListadoReporte);
 } catch (Exception $e) {
-    die('Error al obtener los empleados: ' . $e->getMessage());
+  die('Error al obtener los empleados: ' . $e->getMessage());
 }
 
 ?>
@@ -162,7 +185,7 @@ try {
                     </div>
                     <div class="ps-3">
                       <h6><?php echo $CantidadEmpleadosActivos ?></h6>
-                      <span class="text-danger small pt-1 fw-bold"><?php echo number_format((($CantidadEmpleadosActivos * 100) / $CantidadEmpleados), 2); ?>%</span> 
+                      <span class="text-danger small pt-1 fw-bold"><?php echo number_format((($CantidadEmpleadosActivos * 100) / $CantidadEmpleados), 2); ?>%</span>
                       <span class="text-muted small pt-2 ps-1">de empleados activos</span>
                     </div>
                   </div>
@@ -205,6 +228,15 @@ try {
   <!-- Archivos JS -->
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/js/main.js"></script>
+
+  <script>
+    window.onload = function() {
+      let mensaje = "<?php echo $mensaje; ?>";
+      if (mensaje !== "") {
+        alert(mensaje); // Muestra la alerta emergente
+      }
+    };
+  </script>
 
 </body>
 

@@ -104,7 +104,7 @@ require_once 'validacion_Modificar_sanciones.php';
                                         $_POST = array();
                                         $Estilo = 'success';
                                         // Agregar redirección automática después de 2 segundos
-                                        echo "<script>setTimeout(function() {window.location.href = 'Listar_sanciones_empleado.php';}, 2000);</script>";
+                                        echo "<script>setTimeout(function() {window.location.href = 'Sanciones.php';}, 2000);</script>";
                                     } ?>
                                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                                         <i class="bi bi-check-circle me-1"></i>
@@ -198,7 +198,7 @@ require_once 'validacion_Modificar_sanciones.php';
 
                                 <div class="text-center">
                                     <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Guardar</button>
-                                    <a href="Listar_sanciones_empleado.php" class="btn btn-secondary">Cancelar</a>
+                                    <a href="Sanciones.php" class="btn btn-secondary">Cancelar</a>
                                 </div>
                             </form>
                         </div>

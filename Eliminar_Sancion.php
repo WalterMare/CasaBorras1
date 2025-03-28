@@ -38,7 +38,7 @@ if (isset($_GET['id'])) {
     }
 
     // Redireccionar a la lista de sanciones
-    header("Location: Listar_sanciones_empleado.php");
+    header("Location: Sanciones.php");
     exit;
 }
 

@@ -53,21 +53,8 @@ require_once 'Modificar_Embargo.php';
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <!--<link href="assets/vendor/quill/quill.snow.css" rel="stylesheet">
-  <link href="assets/vendor/quill/quill.bubble.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-  <link href="assets/vendor/simple-datatables/style.css" rel="stylesheet">
--->
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
-
-  <!-- =======================================================
-  * Template Name: NiceAdmin
-  * Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
-  * Updated: Apr 20 2024 with Bootstrap v5.3.3
-  * Author: BootstrapMade.com
-  * License: https://bootstrapmade.com/license/
-  ======================================================== -->
 </head>
 
 <body>
@@ -168,7 +155,7 @@ require_once 'Modificar_Embargo.php';
                 <div class="text-center">
                   <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Guardar</button>
                
-                  <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
+                  <a href="Embargos.php" class="text-primary fw-bold">Volver al panel</a>
                 </div>
               </form><!-- Vertical Form -->
 

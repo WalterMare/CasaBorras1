@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+date_default_timezone_set('America/Argentina/Buenos_Aires');
 if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;

@@ -1,6 +1,8 @@
 <?php
 
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+  session_start();
+}
 
 //si tengo vacio mi elemento de sesion me tiene q redireccionar al login.. 
 //al cerrarsesion para que mate todo de la sesion y el se encarga de ubicar en el login
@@ -52,50 +54,13 @@ require_once 'insertar_viatico.php';
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <!--<link href="assets/vendor/quill/quill.snow.css" rel="stylesheet">
-  <link href="assets/vendor/quill/quill.bubble.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-  <link href="assets/vendor/simple-datatables/style.css" rel="stylesheet">
--->
-  <!-- Template Main CSS File -->
+  
   <link href="assets/css/style.css" rel="stylesheet">
 
-  <!-- =======================================================
-  * Template Name: NiceAdmin
-  * Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
-  * Updated: Apr 20 2024 with Bootstrap v5.3.3
-  * Author: BootstrapMade.com
-  * License: https://bootstrapmade.com/license/
-  ======================================================== -->
 </head>
 
 <body>
 
-  <!-- ======= Header ======= -->
-  <?php include_once 'partes/header.php' ?>
-  <!-- End Header -->
-  <!-- ======= Sidebar ======= -->
-  <?php include_once 'partes/menu.php'; ?>
-
-  <!-- End Sidebar-->
-  <main id="main" class="main">
-
-    <div class="pagetitle">
-      <h1>Cargar Viático</h1>
-      <nav>
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.php">Home</a></li>
-          <li class="breadcrumb-item">Gestor de movimientos</li>
-          <li class="breadcrumb-item active">Cargar Viático</li>
-        </ol>
-      </nav>
-    </div><!-- End Page Title -->
-
-    <section class="section">
-      <div class="row">
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
               <h5 class="card-title">Ingresa los datos</h5>
               <div class="alert alert-info alert-dismissible fade show" role="alert">
                 <i class="bi bi-info-circle me-1"></i>
@@ -180,48 +145,13 @@ require_once 'insertar_viatico.php';
                   <input type="number" step="0.01" class="form-control" id="monto" name='monto'>
                 </div>
 
-
-        
-
                 <div class="text-center">
                   <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Registrar</button>
                   <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
                   <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
                 </div>
               </form><!-- Vertical Form -->
-
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main><!-- End #main -->
-
-
-  <!-- ======= Footer ======= -->
-  <?php include_once 'partes/footer.php' ?>
-  <!-- End Footer -->
-
-  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-
-  <!-- Vendor JS Files
-  <script src="assets/vendor/apexcharts/apexcharts.min.js"></script> -->
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <!-- <script src="assets/vendor/chart.js/chart.umd.js"></script>
-  <script src="assets/vendor/echarts/echarts.min.js"></script>
-  <script src="assets/vendor/quill/quill.js"></script>
-  <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
-  <script src="assets/vendor/tinymce/tinymce.min.js"></script>
-
-  <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
-
-  <!-- Template Main JS File -->
-  <script src="assets/js/main.js"></script>
-
-
-
-
+ 
 </body>
 
 </html>

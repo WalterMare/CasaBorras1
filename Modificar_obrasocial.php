@@ -159,7 +159,7 @@ require_once 'Modificar_datos_ObraSocial.php';
                 <div class="text-center">
                   <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Guardar</button>
                
-                  <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
+                  <a href="ObraSocial.php" class="text-primary fw-bold">Volver al panel</a>
                 </div>
               </form><!-- Vertical Form -->
 
@@ -186,6 +186,7 @@ require_once 'Modificar_datos_ObraSocial.php';
   <script src="assets/vendor/quill/quill.js"></script>
   <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
   <script src="assets/vendor/tinymce/tinymce.min.js"></script>
+  <script src="assets/js/cartel.js"></script>
 
   <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
 

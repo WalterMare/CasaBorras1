@@ -240,7 +240,7 @@ require_once 'funcion_calcularEdad.php';
                   <label class="form-label">Estado</label>
                   <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="gridCheck1" name="estado" value="1"
-                      <?php echo ($estado === '1') ? 'checked' : ''; ?> disabled>
+                      <?php echo ($estado == 1) ? 'checked' : ''; ?> disabled>
                     <label class="form-check-label" for="gridCheck1"> Activo</label>
                   </div>
 
@@ -330,7 +330,6 @@ require_once 'funcion_calcularEdad.php';
                       <th scope="col">Fecha Nacimiento</th>
                       <th scope="col">Edad</th>
                       <th scope="col">Tel</th>
-                      <th scope="col">Fecha Baja</th>
 
                     </tr>
                   </thead>
@@ -345,7 +344,6 @@ require_once 'funcion_calcularEdad.php';
                         <td><?php echo $ListadoReporte[$i]['FECHANACIMIENTO']; ?></td>
                         <td><?php echo edad($ListadoReporte[$i]['FECHANACIMIENTO']) . " " . "años"; ?></td>
                         <td><?php echo $ListadoReporte[$i]['TEL']; ?></td>
-                        <td><?php echo $ListadoReporte[$i]['FECHABAJA']; ?></td>
                         <td>
                           <a href="Mostrar_familiar.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>&IDEMPLEADO=<?php echo $ListadoReporte[$i]['IDEMPLEADO']; ?>" role="button" title="Modificar" <span class="badge bg-info"><i class="bi bi-info-circle me-1"></i></span> </a>
                           <a onclick="if (confirm('Esta seguro que desea eliminar?')){return true;}else {return false;}"

@@ -1,40 +1,41 @@
-<?php 
+<?php
+function InsertarSancion($vConexion)
+{
+    // Obtener la fecha de inicio y la cantidad de días
+    $fechainicio = $_POST['fecha'];
+    $dias = $_POST['dias'];
 
+    // Calcular la fecha final de la sanción
+    $fechainicial = new DateTime($fechainicio);
+    $fecha_final = $fechainicial->modify("+$dias days");
+    $fecha_finalicima = $fecha_final->format('Y-m-d');
 
+    // Insertar la sanción en la base de datos
+    $SQL_Insert = "INSERT INTO sancion (idsancion, fecha_inicio, IdTipoSancion, descripcion, idEmpleado, cantidadDias, idEstadoSancion, fecha_fin) 
+                   VALUES (null, '" . $_POST['fecha'] . "', '" . $_POST['tipo'] . "', '" . $_POST['descripcion'] . "', '" . $_POST['empleado'] . "', '" . $_POST['dias'] . "', '" . $_POST['estado'] . "', '" . $fecha_finalicima . "')";
 
-function InsertarSancion($vConexion){
-  
-    $fechainicio=$_POST['fecha'];
-    $dias=$_POST['dias'];
-$fechainicial=new DateTime($fechainicio);
-$fecha_final=$fechainicial->modify("+$dias days");
-$fecha_finalicima= $fecha_final->format('Y-m-d');
-
-
-
-    $SQL_Insert="INSERT INTO sancion (idsancion, fecha_inicio, IdTipoSancion, descripcion, idEmpleado, cantidadDias, idEstadoSancion,fecha_fin) 
-    VALUES (null,'".$_POST['fecha']."' , '".$_POST['tipo']."' , '".$_POST['descripcion']."' , '".$_POST['empleado']."', '".$_POST['dias']."', '".$_POST['estado']."', '".$fecha_finalicima."')";
-
-
+    // Ejecutar la consulta de inserción
     if (!mysqli_query($vConexion, $SQL_Insert)) {
-        //si surge un error, finalizo la ejecucion del script con un mensaje
+        // Si surge un error, finalizar la ejecución del script con un mensaje
         die('<h4>Error al intentar insertar el registro.</h4>');
-    }else{
-        if($_POST['tipo']>=3 || $_POST['tipo']<=5){
+    } else {
+        // Verificar si el tipo de sanción es 3, 4 o 5 (suspensiones)
+        if ($_POST['tipo'] >= 3 && $_POST['tipo'] <= 5) {
+            // Modificar el estado del empleado a 0 (inactivo)
             Modificar_Estado_Empleado($_POST['empleado'], 0, $vConexion);
         }
     }
 
     return true;
-
 }
-?>
 
-<?php
-function Modificar_Estado_Empleado($Id, $Estado, $conexion){
-    $SQL="UPDATE empleado AS E SET E.estado=$Estado WHERE E.idempleado=$Id ";
+function Modificar_Estado_Empleado($Id, $Estado, $conexion)
+{
+    // Actualizar el estado del empleado
+    $SQL = "UPDATE empleado AS E SET E.estado = $Estado WHERE E.idempleado = $Id";
 
-    if(!mysqli_query($conexion,$SQL)){
+    // Ejecutar la consulta de actualización
+    if (!mysqli_query($conexion, $SQL)) {
         return false;
     }
     return true;

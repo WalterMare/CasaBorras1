@@ -33,9 +33,12 @@ $Cantidadhorasextras = count($listadoHorasExtras);
 $listadoViaticos = Listar_Reporte_Viaticos_Empleado($conexion, $empleado_id);
 $CantidadViaticos = count($listadoViaticos);
 
-$reporte= Listar_Reporte_Asistencias_Empleado($conexion, $empleado_id);
-$listadoAsistencia= $reporte['asistencias'];
-$totalHoras=$reporte['total_horas'];
+$listadoVacaciones = Listar_Reporte_Empleado_Vacaciones($conexion, $empleado_id);
+$CantidadVacaciones = count($listadoVacaciones);
+
+$reporte = Listar_Reporte_Asistencias_Empleado($conexion, $empleado_id);
+$listadoAsistencia = $reporte['asistencias'];
+$totalHoras = $reporte['total_horas'];
 $CantidadAsistencia = count($listadoAsistencia);
 
 $listadoDetalle = 0;
@@ -71,10 +74,10 @@ require_once('TCPDF-main/tcpdf.php');
     <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-   
+
     <link href="assets/css/style.css" rel="stylesheet">
 
-   
+
 </head>
 
 <body>
@@ -488,18 +491,66 @@ require_once('TCPDF-main/tcpdf.php');
                 </div>
             </section>
         <?php } ?>
+        <?php
+        if ($tipo_reporte == '7') { ?>
+            <section class="section">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Vacaciones</h5>
+                                <?php if ($CantidadVacaciones != 0 && $CantidadVacaciones != null) { ?>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">#</th>
+                                                <th scope="col">Fecha Inicio</th>
+                                                <th scope="col">Fecha Fin</th>
+                                                <th scope="col">Cantidad de días</th>
+                                                <th scope="col">Año</th>
+                                                <th scope="col">Días restantes</th>
+                                                <th scope="col">Estado</th>
+                                            </tr>
+                                        </thead>
+
+                                        <?php if ($CantidadVacaciones != 0 && $CantidadVacaciones != null) { ?>
+                                            <tbody>
+                                                <?php for ($i = 0; $i < $CantidadVacaciones; $i++) { ?>
+                                                    <tr>
+                                                        <th scope="row"><?php echo $i + 1; ?></th>
+                                                        <td><?php echo $listadoVacaciones[$i]['FECHA_INICIO']; ?></td>
+                                                        <td><?php echo $listadoVacaciones[$i]['FECHA_FIN']; ?></td>
+                                                        <td><?php echo $listadoVacaciones[$i]['CANTIDAD_DIAS']; ?></td>
+                                                        <td><?php echo $listadoVacaciones[$i]['AÑO']; ?></td>
+                                                        <td><?php echo $listadoVacaciones[$i]['VACACIONES_RESTANTES']; ?></td>
+                                                        <td><?php echo $listadoVacaciones[$i]['ESTADO']; ?></td>
+                                                    </tr>
+                                                <?php } ?>
+                                            </tbody>
+                                        <?php } ?>
+                                    </table>
+                                <?php } else {
+                                    echo "No se encontraron registros";
+                                } ?> <!-- End Default Table Example -->
+                                <form action="generar_pdf_Reporte_Licencia.php" method="get">
+                                    <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
+                                    <input type="hidden" name="tipo_reporte" value="7">
+
+                                    <button type="submit" class="btn btn-primary">Generar PDF</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        <?php } ?>
         <br>
         <a href="Reportes.php" class="text-primary fw-bold">Regresar</a>
-
-
     </main>
-
     <!-- ======= Footer ======= -->
     <?php include_once 'partes/footer.php'; ?>
     <!-- End Footer -->
-
     <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-
     <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/main.js"></script>
     <script src="assets/vendor/tinymce/tinymce.min.js"></script>

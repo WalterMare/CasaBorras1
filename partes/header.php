@@ -35,26 +35,7 @@
             <h6><?php echo $_SESSION['Usuario_Nombre'] . " " . $_SESSION['Usuario_Apellido']; ?></h6>
             <span><?php echo $_SESSION['Usuario_Nombre_Nivel'] ?></span>
           </li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
-
-          <li>
-            <a class="dropdown-item d-flex align-items-center" href="users-profile.html">
-              <i class="bi bi-person"></i>
-              <span>Mi perfil</span>
-            </a>
-          </li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
-
-          <li>
-            <a class="dropdown-item d-flex align-items-center" href="users-profile.html">
-              <i class="bi bi-gear"></i>
-              <span>Configuraciones</span>
-            </a>
-          </li>
+        
           <li>
             <hr class="dropdown-divider">
           </li>

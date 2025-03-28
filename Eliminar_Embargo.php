@@ -21,6 +21,6 @@ require_once 'select_embargo.php';
         $_SESSION['Estilo'] = 'warning';
     }
 
-header('Location: Listado_Embargo_empleado.php'); //redirecciona a otra pagina
+header('Location: Embargos.php'); //redirecciona a otra pagina
 exit;
 ?>
