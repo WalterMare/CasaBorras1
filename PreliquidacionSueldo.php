@@ -50,14 +50,13 @@ function generarPreliquidacion($conn, $idUsuario)
             $resultHorasExtras = $conn->query($sqlHorasExtras);
             $totalHorasExtras = $resultHorasExtras->fetch_assoc()['totalHoras'] ?? 0;
 
-            // Obtener sanciones
+            // Sanciones
             $sqlSanciones = "SELECT CAST(s.cantidadDias AS UNSIGNED) AS cantidadDias, ts.nombreTipo AS tipoSancion 
-            FROM sancion s
-            JOIN tiposancion ts ON s.IdTipoSancion = ts.idtipoSancion
-            WHERE s.idEmpleado = $idEmpleado
-            AND s.fecha_inicio BETWEEN '$primerDiaMesAnterior' AND '$ultimoDiaMesAnterior'";
+             FROM sancion s
+             JOIN tiposancion ts ON s.IdTipoSancion = ts.idtipoSancion
+             WHERE s.idEmpleado = $idEmpleado
+             AND s.fecha_inicio BETWEEN '$primerDiaMesAnterior' AND '$ultimoDiaMesAnterior'";
             $resultSanciones = $conn->query($sqlSanciones);
-
             $totalSanciones = 0;
             $tiposSanciones = [];
 
@@ -67,10 +66,9 @@ function generarPreliquidacion($conn, $idUsuario)
                     $tiposSanciones[] = $sancion['tipoSancion'];
                 }
             } else {
-                $totalSanciones = "No Registra";
+                $totalSanciones = 0;
                 $tiposSanciones[] = "No Registra";
             }
-
 
             // Obtener embargos
             $sqlEmbargos = "SELECT SUM(monto) AS totalEmbargos FROM embargo

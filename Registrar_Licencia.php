@@ -26,13 +26,14 @@ try {
 
     // Insertar licencia
     $stmt = $pdo->prepare("INSERT INTO licencia (fechainicio, fechafin, IdTipo, idEmpleado, IdEstado, cantidaddias) 
-                           VALUES (:fechainicio, :fechafin, :IdTipo, :idEmpleado, :IdEstado, DATEDIFF(:fechafin, :fechainicio))");
+                           VALUES (:fechainicio, :fechafin, :IdTipo, :idEmpleado, :IdEstado, :cantidaddias)");
     $stmt->execute([
         ':fechainicio' => $_POST['fechainicio'],
         ':fechafin'    => $_POST['fechafin'],
         ':IdTipo'      => $_POST['IdTipo'],
         ':idEmpleado'  => $_POST['idEmpleado'],
-        ':IdEstado'    => $_POST['IdEstado']
+        ':IdEstado'    => $_POST['IdEstado'],
+        ':cantidaddias'=> $_POST['diasLicencia']
     ]);
 
     $idLicencia = $pdo->lastInsertId();
@@ -92,7 +93,7 @@ try {
 }
 echo "<script>
         alert(" . json_encode($mensaje) . ");
-        window.location.href='Registro_Licencia.php';
+        window.location.href='Licencias.php';
       </script>";
 ?>
 

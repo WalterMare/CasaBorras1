@@ -19,8 +19,8 @@ function Obtener_Detalles_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
                     dp.idObraSocial, dp.idFamiliar, dp.idSancion, 
                     dp.idEmbargo, dp.idViatico,
                     dp.diasTrabajados,
-                    ts.nombreTipo AS tipoSancion, 
-                    tl.descripcion AS tipoLicencia
+                    dp.tiposSanciones AS tipoSancion, 
+                    dp.tiposLicencias AS tipoLicencia
                 FROM 
                     detallepreliquidacion dp
                 INNER JOIN 
@@ -28,11 +28,10 @@ function Obtener_Detalles_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
                 LEFT JOIN
                     cargo c ON e.idCargo = c.idcargo
                 LEFT JOIN
-                    tiposancion ts ON dp.tiposSanciones = ts.idtipoSancion
-                LEFT JOIN
                     tipolicencia tl ON dp.tiposLicencias = tl.idtipoLicencia
                 WHERE 
                     dp.idEmpleado = ? AND dp.idPreliquidacion = ?";
+
 
     $stmt = mysqli_prepare($vConexion, $consulta);
     mysqli_stmt_bind_param($stmt, "ii", $idEmpleado, $idPreliquidacion);
@@ -72,11 +71,13 @@ $detalle = Obtener_Detalles_Empleado($conexion, $idEmpleado, $idPreliquidacion);
     <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
 
     <link href="assets/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 
 <body>
-<?php include 'partes/header.php'; ?>
-<?php include 'partes/menu.php'; ?>
+    <?php include 'partes/header.php'; ?>
+    <?php include 'partes/menu.php'; ?>
 
     <main id="main" class="main">
 
@@ -98,61 +99,86 @@ $detalle = Obtener_Detalles_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                     <div class="card">
                         <div class="card-body">
 
-                        <h2>Detalles de <?php echo $detalle['nombre'] . " " . $detalle['apellido']; ?></h2>
-                            <p><strong>DNI:</strong> <?php echo $detalle['dni']; ?></p>
-                            <p><strong>Cargo:</strong> <?php echo $detalle['cargo']; ?></p>
+                            <!-- Encabezado de Detalles del Empleado -->
+                            <div class="mb-4 p-3 bg-light border rounded">
+                                <h4 class="mb-2">Detalles de <strong><?php echo $detalle['nombre'] . " " . $detalle['apellido']; ?></strong></h4>
+                                <p class="mb-1"><strong>DNI:</strong> <?php echo $detalle['dni']; ?></p>
+                                <p class="mb-1"><strong>Cargo:</strong> <?php echo $detalle['cargo']; ?></p>
+                            </div>
 
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Descripción</th>
-                                        <th>Valor</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Horas Extras</strong></td>
-                                        <td><?php echo $detalle['idHorasExtras'] > 0 ? $detalle['idHorasExtras'] . " horas" : "No Registra"; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Licencias</strong></td>
-                                        <td><?php echo $detalle['idLicencia'] > 0 ? $detalle['idLicencia'] . " días" : "No Registra"; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Tipos de Licencias</strong></td>
-                                        <td><?php echo $detalle['tipoLicencia'] ?? 'No Registra'; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Anticipos</strong></td>
-                                        <td>$<?php echo number_format($detalle['idAnticipo'], 2); ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Obra Social</strong></td>
-                                        <td><?php echo $detalle['idObraSocial'] ?? 'No Registra'; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Viáticos</strong></td>
-                                        <td>$<?php echo number_format($detalle['idViatico'], 2); ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Embargos</strong></td>
-                                        <td>$<?php echo number_format($detalle['idEmbargo'], 2); ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Sanción</strong></td>
-                                        <td><?php echo $detalle['idSancion'] > 0 ? $detalle['idSancion'] . " días" : "No Registra"; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Tipos de Sanciones</strong></td>
-                                        <td><?php echo $detalle['tipoSancion'] ?? 'No Registra'; ?></td>
-                                    </tr>
-                                    
-                                    <tr>
-                                        <td><strong>Días Trabajados</strong></td>
-                                        <td><?php echo $detalle['diasTrabajados']; ?></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <!-- Contenido distribuido en tarjetas -->
+                            <div class="row g-3">
+
+                                <!-- Horas Extras -->
+                                <div class="col-md-6">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white"><i class="fas fa-clock"></i> Horas Extras</div>
+                                        <div class="card-body">
+                                            <p><strong>Horas Extras:</strong> <?php echo $detalle['idHorasExtras'] > 0 ? $detalle['idHorasExtras'] . " horas" : "No Registra"; ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Licencias -->
+                                <div class="col-md-6">
+                                    <div class="card border-warning">
+                                        <div class="card-header bg-warning text-dark"><i class="fas fa-file-medical"></i> Licencias</div>
+                                        <div class="card-body">
+                                            <p><strong>Licencias:</strong> <?php echo $detalle['idLicencia'] > 0 ? $detalle['idLicencia'] . " días" : "No Registra"; ?></p>
+                                            <p><strong>Tipos de Licencias:</strong> <?php echo $detalle['tipoLicencia'] ?? 'No Registra'; ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Movimientos Económicos -->
+                                <div class="col-md-6">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-success text-white"><i class="fas fa-dollar-sign"></i> Movimientos Económicos</div>
+                                        <div class="card-body">
+                                            <p><strong>Anticipos:</strong> $<?php echo number_format($detalle['idAnticipo'], 2); ?></p>
+                                            <p><strong>Obra Social:</strong> <?php echo $detalle['idObraSocial'] ?? 'No Registra'; ?></p>
+                                            <p><strong>Viáticos:</strong> $<?php echo number_format($detalle['idViatico'], 2); ?></p>
+                                            <p><strong>Embargos:</strong> $<?php echo number_format($detalle['idEmbargo'], 2); ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Sanciones -->
+                                <div class="col-md-6">
+                                    <div class="card border-danger">
+                                        <div class="card-header bg-danger text-white"><i class="fas fa-exclamation-triangle"></i> Sanciones</div>
+                                        <div class="card-body">
+                                            <p><strong>Sanción:</strong>
+                                                <?php
+                                                $tipo = strtolower(trim($detalle['tipoSancion']));
+                                                if (($tipo === 'apercibimiento verbal' || $tipo === 'apercibimiento escrito') && $detalle['idSancion'] == 0) {
+                                                    echo "Solo notificación";
+                                                } elseif ($detalle['idSancion'] > 0) {
+                                                    echo $detalle['idSancion'] . " días";
+                                                } elseif (!empty($tipo)) {
+                                                    echo ucfirst($tipo);
+                                                } else {
+                                                    echo "No Registra";
+                                                }
+                                                ?>
+                                            </p>
+                                            <p><strong>Tipos de Sanciones:</strong> <?php echo $detalle['tipoSancion'] ?? 'No Registra'; ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Jornada -->
+                                <div class="col-md-6">
+                                    <div class="card border-secondary">
+                                        <div class="card-header bg-secondary text-white"><i class="fas fa-calendar-check"></i> Jornada</div>
+                                        <div class="card-body">
+                                            <p><strong>Días Trabajados:</strong> <?php echo $detalle['diasTrabajados']; ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
 
                             <a href="detalle_preliquidacion.php?id=<?php echo $idPreliquidacion; ?>" class="btn btn-secondary">Volver</a>
                         </div>
