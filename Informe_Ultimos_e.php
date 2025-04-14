@@ -6,7 +6,7 @@ unset($_SESSION['RadioSeleccionado2']);
 
 //si tengo vacio mi elemento de sesion me tiene q redireccionar al login.. 
 //al cerrarsesion para que mate todo de la sesion y el se encarga de ubicar en el login
-if (empty($_SESSION['Usuario_Nombre'])) {
+if (empty($_SESSION['Usuario_Nombre'])|| $_SESSION['Usuario_Id']!=1) {
     header('Location: cerrarsesion.php');
     exit;
 }
@@ -116,7 +116,7 @@ require_once 'select_UltimosEmpleados.php';
                             <?php
                             $Mensaje = '';
                             $Estilo = 'warning';
-                            $CantidadEmpleados = "";
+                            $CantidadEmpleados = 0;
                             if (!empty($_POST['BotonBuscar'])) {
                                 //estoy en condiciones de poder validar los datos
 
@@ -134,12 +134,13 @@ require_once 'select_UltimosEmpleados.php';
                                 } ?>
                                 <div class="alert alert-<?php echo $Estilo; ?> alert-dismissible fade show" role="alert">
                                     <i class="bi bi-check-circle me-1"></i>
-                                    <?php if ($Mensaje == '') {
+                                    <?php if ($CantidadEmpleados == 0) {
                                         $Mensaje = 'No existen empleados registrados en el período analizado';
                                         echo $Mensaje;
-                                    } else {
+                                    } else{ 
                                         echo $Mensaje;
-                                    } ?>
+                                    }
+                                    ?>
                                 </div>
                             <?php } ?>
 
@@ -220,6 +221,7 @@ require_once 'select_UltimosEmpleados.php';
                                         </div>
                                     </div>
                                 </div>
+                                
                         <?php }
                                                 } ?>
         </section>

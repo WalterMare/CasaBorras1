@@ -5,37 +5,45 @@ require_once 'conexiondb.php';
 $MiConexion = ConexionBD();
 
 
-
 $Mensaje = '';
 if (!empty($_POST['BotonEnviar'])) {
 
   require_once 'datos_Login.php';
   $UsuarioLogueado = DatosLogin($_POST['usuario'], $_POST['clave'], $MiConexion);
-  
+
   //la consulta con la BD para que encuentre un usuario registrado con el usuario y clave brindados
 
   if ($UsuarioLogueado) {
     // Verificar el estado del usuario
     if ($UsuarioLogueado['ESTADO'] == 0) {
-        $Mensaje = 'Ud. no se encuentra activo en el sistema.';
+      $Mensaje = 'Ud. no se encuentra activo en el sistema.';
     } else if ($UsuarioLogueado['ESTADO'] == 1) {
-        // Si el usuario está activo, guardamos los datos en la sesión
-        $_SESSION['Usuario_Nombre']     =   $UsuarioLogueado['NOMBRE'];
-        $_SESSION['Usuario_Apellido']   =   $UsuarioLogueado['APELLIDO'];
-        $_SESSION['Usuario_Nivel']      =   $UsuarioLogueado['TIPO'];
-        $_SESSION['Usuario_Img']        =   $UsuarioLogueado['IMG'];
-        $_SESSION['Usuario_Id']         =   $UsuarioLogueado['ID'];
-        $_SESSION['Usuario_Nombre_Nivel'] = $UsuarioLogueado['NOMBRE_TIPO'];
-        $_SESSION['Usuario_IdEmpleado'] =$UsuarioLogueado['IDEMPLEADO'];
-        
-        // Redirigir al index si el login es correcto
-        header('Location: index.php');
-        exit;
+      // Si el usuario está activo, guardamos los datos en la sesión
+      $_SESSION['Usuario_Nombre']     =   $UsuarioLogueado['NOMBRE'];
+      $_SESSION['Usuario_Apellido']   =   $UsuarioLogueado['APELLIDO'];
+      $_SESSION['Usuario_Nivel']      =   $UsuarioLogueado['TIPO'];
+      $_SESSION['Usuario_Img']        =   $UsuarioLogueado['IMG'];
+      $_SESSION['Usuario_Id']         =   $UsuarioLogueado['ID'];
+      $_SESSION['Usuario_Nombre_Nivel'] = $UsuarioLogueado['NOMBRE_TIPO'];
+      $_SESSION['Usuario_IdEmpleado'] = $UsuarioLogueado['IDEMPLEADO'];
+
+      // Redirigir al index si el login es correcto
+      header('Location: index.php');
+      exit;
     }
-} else {
+  } else {
+    if (!isset($_SESSION['intentos'])) {
+      $_SESSION['intentos'] = 0;
+    }
+    if ($_SESSION['intentos'] >= 5) {
+      die("Demasiados intentos fallidos. Intenta más tarde.");
+    }
+    
+    // Incrementar después de cada fallo:
+    $_SESSION['intentos']++;
     // Si no se encuentra el usuario, mostramos el mensaje de error
     $Mensaje = 'Datos incorrectos, ingresa nuevamente.';
-}
+  }
 }
 
 ?>
@@ -115,43 +123,38 @@ if (!empty($_POST['BotonEnviar'])) {
                       </div>
                     <?php } ?>
 
-                <div class="col-12">
-                  <label for="yourUsername" class="form-label">Usuario</label>
-                  <div class="input-group has-validation">
-                    <span class="input-group-text" id="inputGroupPrepend">@</span>
-                    <input class="form-control" id="yourUsername" name="usuario" type="email" required>
-                    <div class="invalid-feedback">Ingresa tu usuario.</div>
+                    <div class="col-12">
+                      <label for="yourUsername" class="form-label">Usuario</label>
+                      <div class="input-group has-validation">
+                        <span class="input-group-text" id="inputGroupPrepend">@</span>
+                        <input class="form-control" id="yourUsername" name="usuario" type="email" required>
+                        <div class="invalid-feedback">Ingresa tu usuario.</div>
+                      </div>
+                    </div>
+
+                    <div class="col-12">
+                      <label for="yourPassword" class="form-label">Clave</label>
+                      <input class="form-control" id="yourPassword" name="clave" type="password">
+                      <div class="invalid-feedback">Ingresa tu clave</div>
+                    </div>
+
+
+                    <div class="col-12">
+                      <button class="btn btn-primary w-100" value="Login" type="submit" name="BotonEnviar">Login</button>
+                    </div>
+                  </form>
+                  <div class="col-12 text-center">
+                    <a href="recuperar_contrasena.php" class="small">¿Olvidaste tu contraseña?</a>
                   </div>
                 </div>
-
-                <div class="col-12">
-                  <label for="yourPassword" class="form-label">Clave</label>
-                  <input class="form-control" id="yourPassword" name="clave"  type="password">
-                  <div class="invalid-feedback">Ingresa tu clave</div>
-                </div>
-
-
-                <div class="col-12">
-                  <button class="btn btn-primary w-100" value="Login" type="submit" name="BotonEnviar">Login</button>
-                </div>
-                </form>
-
               </div>
-            </div>
 
-            <div class="credits">
-              <!-- All the links in the footer should remain intact. -->
-              <!-- You can delete the links only if you purchased the pro version. -->
-              <!-- Licensing information: https://bootstrapmade.com/license/ -->
-              <!-- Purchase the pro version with working PHP/AJAX contact form: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/ -->
-              Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
-            </div>
 
+            </div>
           </div>
         </div>
-    </div>
 
-    </section>
+      </section>
 
     </div>
   </main><!-- End #main -->

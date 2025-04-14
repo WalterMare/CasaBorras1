@@ -1,13 +1,22 @@
 <?php
 session_start();
 
-if (empty($_SESSION['Usuario_Nombre'])) {
+if (empty($_SESSION['Usuario_Nombre'])|| $_SESSION['Usuario_Id']!=1) {
     header('Location: cerrarsesion.php');
     exit;
 }
 
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
+// Al inicio del script, después de la conexión a la BD
+$resultado_resumen = null;
+$resultado_detalle = null;
+$resultado_asistencia = null;
+$resultado_inasistencia = null;
+$stmt_resumen = null;
+$stmt_detalle = null;
+$stmt_asistencia = null;
+$stmt_inasistencia = null;
 
 // Variables para el filtro de fechas
 $fechaInicio = isset($_GET['fechaInicio']) ? $_GET['fechaInicio'] : '';
@@ -442,8 +451,8 @@ if (isset($_POST['generar_pdf'])) {
 
 <?php
 // Cerrar conexiones
-if ($resultado_resumen) mysqli_stmt_close($stmt_resumen);
-if ($resultado_detalle) mysqli_stmt_close($stmt_detalle);
-if ($resultado_asistencia) mysqli_stmt_close($stmt_asistencia);
+if (isset($resultado_resumen)) mysqli_stmt_close($stmt_resumen);
+if (isset($resultado_detalle)) mysqli_stmt_close($stmt_detalle);
+if (isset($resultado_asistencia)) mysqli_stmt_close($stmt_asistencia);
 mysqli_close($conexion);
 ?>

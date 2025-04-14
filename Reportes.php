@@ -3,7 +3,7 @@
 session_start();
 
 // Si el elemento de sesión 'Usuario_Nombre' está vacío, redirigir al login
-if (empty($_SESSION['Usuario_Nombre'])) {
+if (empty($_SESSION['Usuario_Nombre'])|| $_SESSION['Usuario_Id']!=1) {
     header('Location: cerrarsesion.php');
     exit;
 }

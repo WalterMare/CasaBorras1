@@ -11,4 +11,3 @@ function ConexionBD($Host = 'localhost' ,  $User = 'root',  $Password = '12345',
         die ('No se pudo establecer la conexión.');
 
 }
-?>

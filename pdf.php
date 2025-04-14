@@ -1,144 +1,70 @@
 <?php
-// Incluir las librerías necesarias
-require_once('conexiondb.php');
-require_once('select_UltimosEmpleados.php');
-require_once('TCPDF-main/tcpdf.php'); // Asegúrate de tener TCPDF configurado correctamente
+require_once 'TCPDF-main/tcpdf.php'; // Asegúrate de que TCPDF está instalado y en la ruta correcta
+require_once 'conexiondb.php';
+require_once 'select_UltimosEmpleados.php';
 
-// Recibir los datos del filtro enviados por AJAX
-$grupo = isset($_POST['grupo']) ? $_POST['grupo'] : 1;  // Por defecto, 1 año
-$grupo1 = isset($_POST['grupo1']) ? (int)$_POST['grupo1'] : 2;  // Filtro de estado (vacío para ambos)
+session_start();
 
-// Conexión a la base de datos
-$conexion = ConexionBD();
+// Verifica si hay filtros almacenados en la sesión
+$lapsoTiempo = isset($_SESSION['RadioSeleccionado']) ? $_SESSION['RadioSeleccionado'] : 'No especificado';
+$estadoEmpleado = isset($_SESSION['RadioSeleccionado2']) ? $_SESSION['RadioSeleccionado2'] : 'No especificado';
 
-// Obtener los datos según los filtros seleccionados
-if ($grupo1 !== 2) {
-    $datos = Listar_ultimosEmpleados($conexion, $grupo, $grupo1); // Si hay estado (activo/inactivo)
-} else {
-    $datos = Listar_ultimosEmpleados2($conexion, $grupo); // Solo por tiempo
-}
+// Mapea los valores de los filtros a descripciones
+$lapsoTiempoTexto = [
+    "1" => "1 año",
+    "3" => "3 años",
+    "5" => "5 años"
+][$lapsoTiempo] ?? "No especificado";
 
-// Verifica que se obtienen datos
-if (empty($datos)) {
-    echo "No se encontraron datos para el reporte.";
-    exit;
-}
+$estadoEmpleadoTexto = [
+    "1" => "Activo",
+    "4" => "Inactivo",
+    "2" => "Activos e Inactivos",
+    "3" => "Inactivo por Baja"
+][$estadoEmpleado] ?? "No especificado";
 
-// Generación del PDF con TCPDF
-$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+$MiConexion = ConexionBD();
+$listadoEmpleados = Listar_ultimosEmpleados($MiConexion, $lapsoTiempo, $estadoEmpleado);
 
-// Configuración del PDF
+// Crea una nueva instancia de TCPDF
+$pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
 $pdf->SetCreator(PDF_CREATOR);
-$pdf->SetAuthor('Casa Borras S.A');
-$pdf->SetTitle('Reporte de Últimos Empleados');
-$pdf->setPrintHeader(false);
-$pdf->setPrintFooter(false);
-$pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
-$pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
-
-// Agregar una página
+$pdf->SetAuthor('Sistema de Recursos Humanos');
+$pdf->SetTitle('Listado de Últimos Empleados Registrados');
+$pdf->SetMargins(10, 10, 10);
 $pdf->AddPage();
+$pdf->Image('assets/img/LOGO2.jpg', 95, 0, 0, 0);
 
-// Configurar fuente
-$pdf->SetFont('helvetica', '', 11);
+// Título
+$pdf->SetFont('helvetica', 'B', 14);
+$pdf->Cell(0, 30, 'Listado de Últimos Empleados Registrados', 0, 1, 'C');
+$pdf->Ln(-5);
 
-// Determinar el texto del estado general según el filtro aplicado
-$estadoTexto = 'Ambos';
-if ($grupo1 === 1) {
-    $estadoTexto = 'Activo';
-} elseif ($grupo1 === 0 || 'null') {
-    $estadoTexto = 'Inactivo';
-} elseif ($grupo1 === 3 && 0) { // Inactivos por baja
-    $estadoTexto = 'Inactivo por baja';
+// Filtros utilizados
+$pdf->SetFont('helvetica', '', 12);
+$pdf->Cell(0, 10, "Filtro aplicado - Tiempo: $lapsoTiempoTexto | Estado: $estadoEmpleadoTexto", 0, 1, 'C');
+$pdf->Ln(5);
+
+// Encabezado de la tabla
+$pdf->SetFont('helvetica', 'B', 10);
+$pdf->Cell(10, 10, '#', 1, 0, 'C');
+$pdf->Cell(30, 10, 'Empleado', 1, 0, 'C');
+$pdf->Cell(30, 10, 'Fecha Inicio', 1, 0, 'C');
+$pdf->Cell(30, 10, 'Fecha Baja', 1, 0, 'C');
+$pdf->Cell(25, 10, 'Estado', 1, 0, 'C');
+$pdf->Cell(60, 10, 'Cargo', 1, 1, 'C');
+
+// Contenido de la tabla
+$pdf->SetFont('helvetica', '', 10);
+foreach ($listadoEmpleados as $index => $empleado) {
+    $pdf->Cell(10, 10, $index + 1, 1, 0, 'C');
+    $pdf->Cell(30, 10, $empleado['NOMBRE'] . ' ' . $empleado['APELLIDO'], 1, 0, 'L');
+    $pdf->Cell(30, 10, $empleado['FECHA_INICIO'], 1, 0, 'C');
+    $pdf->Cell(30, 10, $empleado['FECHA_BAJA'], 1, 0, 'C');
+    $estadoTexto = $empleado['ESTADO'] == 1 ? 'Activo' : 'Inactivo';
+    $pdf->Cell(25, 10, $estadoTexto, 1, 0, 'C');
+    $pdf->Cell(60, 10, $empleado['CARGO'], 1, 1, 'L');
 }
 
-$html = '
-    <style>
-        h1 { font-family: Arial, Helvetica, sans-serif; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid black; padding: 8px; text-align: center; }
-        th { background-color: #f2f2f2; }
-    </style>
-    <img src="assets/img/LOGO2.jpg" alt="logo">
-    <h1>Reporte de Últimos Empleados Registrados</h1>
-    <p><strong>Período:</strong> ' . ($grupo == 1 ? '1 Año' : ($grupo == 3 ? '3 Años' : '5 Años')) . '</p>
-    <p><strong>Estado:</strong> ' . $estadoTexto . '</p>
-    <table>
-        <tr>
-            <th><strong>#</strong></th>
-            <th><strong>Empleado</strong></th>
-            <th><strong>Fecha de Inicio</strong></th>
-            <th><strong>Fecha de Baja</strong></th>
-            <th><strong>Estado</strong></th>
-            <th><strong>Cargo</strong></th>
-        </tr>';
-
-// Generar filas de empleados
-foreach ($datos as $i => $row) {
-    // Consideramos que no hay baja si FECHA_BAJA está vacío o es "N/A"
-    $noBaja = (empty($row['FECHA_BAJA']) || strtoupper(trim($row['FECHA_BAJA'])) == 'N/A');
-    
-    $estado = '';
-
-    // Filtrado según $grupo1:
-    if ($grupo1 == 1) { 
-        // Filtro Activo: mostrar solo empleados activos sin baja
-        if ($row['ESTADO'] == 1 && $noBaja) {
-            $estado = 'Activo';
-        } else {
-            continue; // Salta empleados que no cumplen
-        }
-    } elseif ($grupo1 == 0) {
-        // Filtro Inactivo: mostrar solo empleados inactivos (ESTADO == 0)
-        // Si NO tienen baja, se muestran como "Inactivo", si tienen baja, como "Inactivo por baja"
-        if ($row['ESTADO'] == 0) {
-            $estado = $noBaja ? 'Inactivo' : 'Inactivo por baja';
-        } else {
-            continue;
-        }
-    } elseif ($grupo1 == 3) {
-        // Filtro Inactivo por baja: mostrar solo empleados con baja
-        if (!$noBaja) {
-            $estado = 'Inactivo por baja';
-        } else {
-            continue;
-        }
-    } else { // Filtro Ambos (grupo1 == 2)
-        // Aquí mostramos todos: usamos el ESTADO para determinar
-        if ($row['ESTADO'] == 1 && $noBaja) {
-            $estado = 'Activo';
-        } elseif ($row['ESTADO'] == 0 && $noBaja) {
-            $estado = 'Inactivo';
-        } elseif (!$noBaja) {
-            $estado = 'Inactivo por baja';
-        }
-    }
-    
-    // Mostrar la fecha de baja solo si es válida, de lo contrario '-'
-    $fechaBaja = (!$noBaja) ? $row['FECHA_BAJA'] : '-';
-
-    $html .= '
-        <tr>
-            <td>' . ($i + 1) . '</td>
-            <td>' . htmlspecialchars($row['NOMBRE'] . ' ' . $row['APELLIDO']) . '</td>
-            <td>' . htmlspecialchars($row['FECHA_INICIO']) . '</td>
-            <td>' . $fechaBaja . '</td>
-            <td>' . $estado . '</td>
-            <td>' . htmlspecialchars($row['CARGO']) . '</td>
-        </tr>';
-}
-
-$html .= '</table>';
-
-
-
-    
-
-// Escribir el contenido HTML en el PDF
-$pdf->writeHTML($html, true, false, false, false, 'C');
-
-// Salvar el PDF en la respuesta
-$pdf->lastPage();
-ob_end_clean();
-$pdf->Output('Reporte_Empleados.pdf', 'I'); // Esto lo envía al navegador para su visualización
-?>
+// Salida del PDF
+$pdf->Output('Listado_Ultimos_Empleados.pdf', 'I');

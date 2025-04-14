@@ -8,7 +8,8 @@ if (empty($_SESSION['Usuario_Nombre'])) {
     exit;
 }
 
-function generarPreliquidacion($conn, $idUsuario) {
+function generarPreliquidacion($conn, $idUsuario)
+{
     $todoCorrecto = true; // Variable de control
 
     // Obtener el primer y último día del mes anterior
@@ -50,17 +51,26 @@ function generarPreliquidacion($conn, $idUsuario) {
             $totalHorasExtras = $resultHorasExtras->fetch_assoc()['totalHoras'] ?? 0;
 
             // Obtener sanciones
-            $sqlSanciones = "SELECT s.cantidadDias, ts.nombreTipo AS tipoSancion FROM sancion s
-                             JOIN tiposancion ts ON s.IdTipoSancion = ts.idtipoSancion
-                             WHERE s.idEmpleado = $idEmpleado
-                             AND s.fecha_inicio BETWEEN '$primerDiaMesAnterior' AND '$ultimoDiaMesAnterior'";
+            $sqlSanciones = "SELECT CAST(s.cantidadDias AS UNSIGNED) AS cantidadDias, ts.nombreTipo AS tipoSancion 
+            FROM sancion s
+            JOIN tiposancion ts ON s.IdTipoSancion = ts.idtipoSancion
+            WHERE s.idEmpleado = $idEmpleado
+            AND s.fecha_inicio BETWEEN '$primerDiaMesAnterior' AND '$ultimoDiaMesAnterior'";
             $resultSanciones = $conn->query($sqlSanciones);
+
             $totalSanciones = 0;
             $tiposSanciones = [];
-            while ($sancion = $resultSanciones->fetch_assoc()) {
-                $totalSanciones += $sancion['cantidadDias'];
-                $tiposSanciones[] = $sancion['tipoSancion'];
+
+            if ($resultSanciones && $resultSanciones->num_rows > 0) {
+                while ($sancion = $resultSanciones->fetch_assoc()) {
+                    $totalSanciones += (int)$sancion['cantidadDias'];
+                    $tiposSanciones[] = $sancion['tipoSancion'];
+                }
+            } else {
+                $totalSanciones = "No Registra";
+                $tiposSanciones[] = "No Registra";
             }
+
 
             // Obtener embargos
             $sqlEmbargos = "SELECT SUM(monto) AS totalEmbargos FROM embargo

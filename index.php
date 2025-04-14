@@ -17,6 +17,9 @@ try {
 }
 
 
+
+
+
 // Obtener la fecha de preliquidación configurada
 $sqlFecha = "SELECT fecha_preliquidacion FROM configuracion WHERE idconfiguracion = 1";
 $result = $conexion->query($sqlFecha);
