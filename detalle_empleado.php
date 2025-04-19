@@ -13,25 +13,32 @@ $idPreliquidacion = intval($_GET['preliquidacion']);
 function Obtener_Detalles_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
 {
     $consulta = "SELECT 
-                    e.nombre, e.apellido, e.dni, 
-                    c.descripcion AS cargo,  
-                    dp.idHorasExtras, dp.idLicencia, dp.idAnticipo, 
-                    dp.idObraSocial, dp.idFamiliar, dp.idSancion, 
-                    dp.idEmbargo, dp.idViatico,
-                    dp.diasTrabajados,
-                    dp.tiposSanciones AS tipoSancion, 
-                    dp.tiposLicencias AS tipoLicencia
-                FROM 
-                    detallepreliquidacion dp
-                INNER JOIN 
-                    empleado e ON dp.idEmpleado = e.idempleado
-                LEFT JOIN
-                    cargo c ON e.idCargo = c.idcargo
-                LEFT JOIN
-                    tipolicencia tl ON dp.tiposLicencias = tl.idtipoLicencia
-                WHERE 
-                    dp.idEmpleado = ? AND dp.idPreliquidacion = ?";
-
+    e.nombre, e.apellido, e.dni, 
+    c.descripcion AS cargo,  
+    dp.idHorasExtras, dp.idLicencia, dp.idAnticipo, 
+    dp.idObraSocial, dp.idFamiliar, dp.idSancion, 
+    dp.idEmbargo, dp.idViatico,
+    dp.diasTrabajados,
+    dp.tiposSanciones AS tipoSancion, 
+    dp.tiposLicencias AS tipoLicencia,
+    dp.vacacionesTomadas AS vacacionesTomadas,
+    COALESCE(MAX(v.vacaciones_restantes), 0) AS vacacionesRestantes
+FROM 
+    detallepreliquidacion dp
+INNER JOIN 
+    empleado e ON dp.idEmpleado = e.idempleado
+LEFT JOIN
+    cargo c ON e.idCargo = c.idcargo
+LEFT JOIN
+    tipolicencia tl ON dp.tiposLicencias = tl.idtipoLicencia
+LEFT JOIN
+    vacaciones v ON v.idempleado = e.idempleado AND v.año = YEAR(CURDATE())
+WHERE 
+    dp.idEmpleado = ? AND dp.idPreliquidacion = ?
+GROUP BY 
+    e.idempleado, c.descripcion, dp.idHorasExtras, dp.idLicencia, dp.idAnticipo, 
+    dp.idObraSocial, dp.idFamiliar, dp.idSancion, dp.idEmbargo, dp.idViatico, 
+    dp.diasTrabajados, dp.tiposSanciones, dp.tiposLicencias, dp.vacacionesTomadas";
 
     $stmt = mysqli_prepare($vConexion, $consulta);
     mysqli_stmt_bind_param($stmt, "ii", $idEmpleado, $idPreliquidacion);
@@ -129,6 +136,21 @@ $detalle = Obtener_Detalles_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Vacaciones -->
+                                <div class="col-md-6">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-light text-black"><i class="fas fa-sun"></i> Vacaciones</div>
+                                        <div class="card-body">
+                                            <p><strong>Días computados en esta preliquidación:</strong>
+                                                <?php echo !empty($detalle['vacacionesTomadas']) && $detalle['vacacionesTomadas'] > 0
+                                                    ? $detalle['vacacionesTomadas'] . " días"
+                                                    : "No registra vacaciones en este período"; ?>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
 
                                 <!-- Movimientos Económicos -->
                                 <div class="col-md-6">

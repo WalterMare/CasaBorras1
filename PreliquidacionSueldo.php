@@ -103,6 +103,41 @@ function generarPreliquidacion($conn, $idUsuario)
                 $tiposLicencias[] = $licencia['tipoLicencia'];
             }
 
+            // Obtener vacaciones tomadas en el período (aunque hayan comenzado antes)
+            $sqlVacaciones = "SELECT 
+                                fecha_inicio, 
+                                fecha_fin, 
+                                cantidad_dias 
+                                FROM vacaciones 
+                                WHERE idempleado = $idEmpleado
+                                AND (
+                                    (fecha_inicio BETWEEN '$primerDiaMesAnterior' AND '$ultimoDiaMesAnterior') OR
+                                    (fecha_fin BETWEEN '$primerDiaMesAnterior' AND '$ultimoDiaMesAnterior') OR
+                                    (fecha_inicio <= '$primerDiaMesAnterior' AND fecha_fin >= '$ultimoDiaMesAnterior')
+                                )";
+
+            $resultVacaciones = $conn->query($sqlVacaciones);
+            $totalDiasVacaciones = 0;
+
+            while ($vacacion = $resultVacaciones->fetch_assoc()) {
+                $inicio = new DateTime($vacacion['fecha_inicio']);
+                $fin = new DateTime($vacacion['fecha_fin']);
+
+                // Asegurar que los días sumados sean solo los del período actual
+                $inicioPeriodo = new DateTime($primerDiaMesAnterior);
+                $finPeriodo = new DateTime($ultimoDiaMesAnterior);
+
+                // Obtener el rango de intersección entre la vacación y el período
+                $inicioReal = $inicio > $inicioPeriodo ? $inicio : $inicioPeriodo;
+                $finReal = $fin < $finPeriodo ? $fin : $finPeriodo;
+
+                if ($inicioReal <= $finReal) {
+                    $intervalo = $inicioReal->diff($finReal);
+                    $diasEnPeriodo = $intervalo->days + 1; // +1 para incluir ambos extremos
+                    $totalDiasVacaciones += $diasEnPeriodo;
+                }
+            }
+
             // Obtener anticipos
             $sqlAnticipos = "SELECT SUM(monto) AS totalAnticipos FROM anticipo
                      WHERE IdEmpleado = $idEmpleado
@@ -126,9 +161,9 @@ function generarPreliquidacion($conn, $idUsuario)
 
             // Insertar el detalle de la preliquidación
             $sqlDetallePreliquidacion = "INSERT INTO detallepreliquidacion
-                (idPreliquidacion, idEmpleado, idHorasExtras, idLicencia, idAnticipo, idObraSocial, idFamiliar, idSancion, idEmbargo, idViatico, tiposSanciones, tiposLicencias, diasTrabajados)
+                (idPreliquidacion, idEmpleado, idHorasExtras, idLicencia, idAnticipo, idObraSocial, idFamiliar, idSancion, idEmbargo, idViatico, tiposSanciones, tiposLicencias, diasTrabajados,vacacionesTomadas)
                 VALUES
-                ($idPreliquidacion, $idEmpleado, $totalHorasExtras, $totalDiasLicencia, $totalAnticipos, '$descripcionObraSocial', '$familiaresString', $totalSanciones, $totalEmbargos, $totalViaticos, '" . implode(", ", $tiposSanciones) . "', '" . implode(", ", $tiposLicencias) . "', $diasTrabajados)";
+                ($idPreliquidacion, $idEmpleado, $totalHorasExtras, $totalDiasLicencia, $totalAnticipos, '$descripcionObraSocial', '$familiaresString', $totalSanciones, $totalEmbargos, $totalViaticos, '" . implode(", ", $tiposSanciones) . "', '" . implode(", ", $tiposLicencias) . "', $diasTrabajados, $totalDiasVacaciones)";
 
             if ($conn->query($sqlDetallePreliquidacion) !== TRUE) {
                 $todoCorrecto = false; // Si hay un error, marcar como falso

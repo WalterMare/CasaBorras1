@@ -6,6 +6,18 @@ if (session_status() == PHP_SESSION_NONE) {
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
+// Parámetros de paginación
+$porPagina = 10;
+$paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+$offset = ($paginaActual - 1) * $porPagina;
+
+// Obtener total de preliquidaciones
+$totalConsulta = "SELECT COUNT(*) AS total FROM preliquidacion";
+$rsTotal = mysqli_query($conexion, $totalConsulta);
+$totalFilas = mysqli_fetch_assoc($rsTotal)['total'];
+$totalPaginas = ceil($totalFilas / $porPagina);
+
+
 // Función para obtener preliquidaciones
 function Listar_Preliquidaciones($vConexion)
 {
@@ -81,6 +93,16 @@ $preliquidaciones = Listar_Preliquidaciones($conexion);
                 <?php } ?>
             </tbody>
         </table>
+        <!-- Paginación -->
+        <nav>
+            <ul class="pagination justify-content-center">
+                <?php for ($i = 1; $i <= $totalPaginas; $i++) { ?>
+                    <li class="page-item <?php echo $i == $paginaActual ? 'active' : ''; ?>">
+                        <a class="page-link" href="?pagina=<?php echo $i; ?>"> <?php echo $i; ?> </a>
+                    </li>
+                <?php } ?>
+            </ul>
+        </nav>
     </div>
 </body>
 </html>

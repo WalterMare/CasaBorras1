@@ -7,6 +7,17 @@ if (empty($_SESSION['Usuario_Nombre'])) {
 }
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
+// Paginación
+$registrosPorPagina = 10; // Cambia este número si querés más o menos filas
+$paginaActual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+$offset = ($paginaActual - 1) * $registrosPorPagina;
+
+// Contar total de empleados
+$totalConsulta = "SELECT COUNT(*) as total FROM empleado";
+$resultTotal = mysqli_query($conexion, $totalConsulta);
+$filaTotal = mysqli_fetch_assoc($resultTotal);
+$totalRegistros = $filaTotal['total'];
+$totalPaginas = ceil($totalRegistros / $registrosPorPagina);
 
 // Procesar escaneo QR
 if (isset($_GET['idEmpleado'])) {
@@ -57,7 +68,12 @@ if (isset($_GET['idEmpleado'])) {
 }
 
 // Obtener listado de empleados y asistencia de hoy
-$consulta = "SELECT e.idempleado, e.nombre, e.apellido, a.fecha, a.horaEntrada, a.horaSalida, a.estado, a.observaciones FROM empleado e LEFT JOIN asistencias a ON e.idempleado = a.idEmpleado AND a.fecha = CURDATE() ORDER BY e.apellido, e.nombre";
+$consulta = "SELECT e.idempleado, e.nombre, e.apellido, a.fecha, a.horaEntrada, a.horaSalida, a.estado, a.observaciones 
+FROM empleado e 
+LEFT JOIN asistencias a ON e.idempleado = a.idEmpleado AND a.fecha = CURDATE() 
+ORDER BY e.idempleado, e.apellido 
+LIMIT $registrosPorPagina OFFSET $offset";
+
 $resultado = mysqli_query($conexion, $consulta);
 ?>
 
@@ -147,6 +163,31 @@ $resultado = mysqli_query($conexion, $consulta);
                                     <?php } ?>
                                 </tbody>
                             </table>
+                            <nav aria-label="Paginación">
+                                <ul class="pagination justify-content-center">
+                                    <?php if ($paginaActual > 1): ?>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?pagina=<?= $paginaActual - 1 ?>" aria-label="Anterior">
+                                                <span aria-hidden="true">&laquo; Anterior</span>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+
+                                    <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+                                        <li class="page-item <?= $i == $paginaActual ? 'active' : '' ?>">
+                                            <a class="page-link" href="?pagina=<?= $i ?>"><?= $i ?></a>
+                                        </li>
+                                    <?php endfor; ?>
+
+                                    <?php if ($paginaActual < $totalPaginas): ?>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?pagina=<?= $paginaActual + 1 ?>" aria-label="Siguiente">
+                                                <span aria-hidden="true">Siguiente &raquo;</span>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+                                </ul>
+                            </nav>
                         </div>
                     </div>
                 </div>

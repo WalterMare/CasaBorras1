@@ -109,6 +109,8 @@ try {
 
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
 
 </head>
 
@@ -219,6 +221,7 @@ try {
         </div>
 
       </div>
+    <?php require_once 'chatFrontEnd.php';?>
     </section>
 
   </main>
@@ -240,6 +243,41 @@ try {
       }
     };
   </script>
+
+<script>
+  const boton = document.getElementById("abrirChat");
+  const ventana = document.getElementById("chatVentana");
+  const form = document.getElementById("formulario");
+  const input = document.getElementById("mensaje");
+  const chat = document.getElementById("chat");
+
+  boton.onclick = () => {
+    ventana.style.display = 'flex';
+  };
+
+  function cerrarChat() {
+    ventana.style.display = 'none';
+  }
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const mensaje = input.value;
+    if (!mensaje.trim()) return;
+
+    chat.innerHTML += `<div style="margin-bottom: 10px;"><b>Tú:</b> ${mensaje}</div>`;
+    input.value = "";
+
+    const res = await fetch("chat.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "mensaje=" + encodeURIComponent(mensaje)
+    });
+
+    const respuesta = await res.text();
+    chat.innerHTML += `<div style="margin-bottom: 10px; color: green;"><b>Bot:</b> ${respuesta}</div>`;
+    chat.scrollTop = chat.scrollHeight;
+  };
+</script>
 
 </body>
 

@@ -24,6 +24,15 @@ $filtro_estado = isset($_GET['filtro_estado']) ? $_GET['filtro_estado'] : 'todos
 $ListadoReporte = Listar_Reporte_2($MiConexion, $_SESSION['Usuario_Nivel'], $filtro_estado);
 $CantidadReportes = count($ListadoReporte);
 
+// Paginación
+$porPagina = 10; // registros por página
+$paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+$totalRegistros = count($ListadoReporte);
+$totalPaginas = ceil($totalRegistros / $porPagina);
+$inicio = ($paginaActual - 1) * $porPagina;
+
+// Cortar array para mostrar solo los registros de esta página
+$ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
 
 //se incluye la funcion para calcular las fechas asi obtener el color que le corresponde a la tabla
 //require_once 'testFechas.php';
@@ -138,51 +147,73 @@ $CantidadReportes = count($ListadoReporte);
                   </tr>
                 </thead>
                 <tbody>
-                  <?php for ($i = 0; $i < $CantidadReportes; $i++) {
-                    $estaDadoDeBaja = !empty($ListadoReporte[$i]['FECHABAJA']) && $ListadoReporte[$i]['FECHABAJA'] != 'N/A';
+                  <?php
+                  $indice = $inicio + 1;
+                  foreach ($ListadoReportePagina as $item) {
+                    $estaDadoDeBaja = !empty($item['FECHABAJA']) && $item['FECHABAJA'] != 'N/A';
                   ?>
                     <tr class="<?php echo $estaDadoDeBaja ? 'table-info' : ''; ?>">
-                      <th scope="row"><?php echo $i + 1; ?></th>
-                      <td><?php echo $ListadoReporte[$i]['ID']; ?></td>
-                      <td><?php echo $ListadoReporte[$i]['NOMBRE']; ?></td>
-                      <td><?php echo $ListadoReporte[$i]['APELLIDO']; ?></td>
-                      <td><?php echo $ListadoReporte[$i]['CIUDAD']; ?></td>
-                      <td><?php echo $ListadoReporte[$i]['PROVINCIA']; ?></td>
-                      <td><?php echo $ListadoReporte[$i]['TEL']; ?></td>
-                      <td><?php echo $ListadoReporte[$i]['FECHAINICIO']; ?></td>
-                      <td><?php echo $ListadoReporte[$i]['FECHABAJA']; ?></td>
+                      <th scope="row"><?php echo $indice++; ?></th>
+                      <td><?php echo $item['ID']; ?></td>
+                      <td><?php echo $item['NOMBRE']; ?></td>
+                      <td><?php echo $item['APELLIDO']; ?></td>
+                      <td><?php echo $item['CIUDAD']; ?></td>
+                      <td><?php echo $item['PROVINCIA']; ?></td>
+                      <td><?php echo $item['TEL']; ?></td>
+                      <td><?php echo $item['FECHAINICIO']; ?></td>
+                      <td><?php echo $item['FECHABAJA']; ?></td>
                       <td>
                         <?php if (!$estaDadoDeBaja) { ?>
-                          <a onclick="if (confirm('Está seguro que desea cambiar el Estado?')){return true;}else {return false;}"
-                            href="cambiar_estado.php?ESTADO=<?php echo $ListadoReporte[$i]['ESTADO']; ?>&ID=<?php echo $ListadoReporte[$i]['ID']; ?> "
-                            role='button' title='Modificar estado'>
-                            <span class="badge bg-<?php echo $ListadoReporte[$i]['ESTADO'] == 1 ? 'success' : 'danger'; ?>">
+                          <a onclick="return confirm('Está seguro que desea cambiar el Estado?');"
+                            href="cambiar_estado.php?ESTADO=<?php echo $item['ESTADO']; ?>&ID=<?php echo $item['ID']; ?>" title="Modificar estado">
+                            <span class="badge bg-<?php echo $item['ESTADO'] == 1 ? 'success' : 'danger'; ?>">
                               <i class="bi bi-check-circle me-1"></i>
                             </span>
                           </a>
                         <?php } ?>
                       </td>
-                      <td><?php echo $ListadoReporte[$i]['CARGO']; ?></td>
+                      <td><?php echo $item['CARGO']; ?></td>
                       <td>
-                        <a href="Mostrar_datos.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Ver">
+                        <a href="Mostrar_datos.php?ID=<?php echo $item['ID']; ?>" title="Ver">
                           <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i></span>
                         </a>
-                        <a href="Modificar_datos.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Modificar">
-                            <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i></span>
-                          </a>
+                        <a href="Modificar_datos.php?ID=<?php echo $item['ID']; ?>" title="Modificar">
+                          <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i></span>
+                        </a>
                         <?php if (!$estaDadoDeBaja) { ?>
                           <a onclick="return confirm('¿Está seguro de que desea dar de baja a este empleado?');"
-                            href="dar_baja_empleado.php?ID=<?php echo $ListadoReporte[$i]['ID']; ?>" role="button" title="Dar de baja">
+                            href="dar_baja_empleado.php?ID=<?php echo $item['ID']; ?>" title="Dar de baja">
                             <span class="badge bg-danger text-light"><i class="bi bi-x-circle me-1"></i></span>
                           </a>
                         <?php } ?>
                       </td>
                     </tr>
-                  <?php }; ?>
+                  <?php } ?>
                 </tbody>
 
               </table>
               <!-- End Default Table Example -->
+              <nav>
+                <ul class="pagination justify-content-center">
+                  <?php if ($paginaActual > 1) { ?>
+                    <li class="page-item">
+                      <a class="page-link" href="?pagina=<?php echo $paginaActual - 1; ?>&filtro_estado=<?php echo $filtro_estado; ?>">Anterior</a>
+                    </li>
+                  <?php } ?>
+
+                  <?php for ($i = 1; $i <= $totalPaginas; $i++) { ?>
+                    <li class="page-item <?php echo ($i == $paginaActual) ? 'active' : ''; ?>">
+                      <a class="page-link" href="?pagina=<?php echo $i; ?>&filtro_estado=<?php echo $filtro_estado; ?>"><?php echo $i; ?></a>
+                    </li>
+                  <?php } ?>
+
+                  <?php if ($paginaActual < $totalPaginas) { ?>
+                    <li class="page-item">
+                      <a class="page-link" href="?pagina=<?php echo $paginaActual + 1; ?>&filtro_estado=<?php echo $filtro_estado; ?>">Siguiente</a>
+                    </li>
+                  <?php } ?>
+                </ul>
+              </nav>
             </div>
           </div>
         </div>
