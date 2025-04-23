@@ -19,9 +19,11 @@ $MiConexion = ConexionBD();
 require_once 'select_Trans_Dest_Usu_Via.php';
 // Obtener el filtro del estado desde el formulario (si está definido)
 $filtro_estado = isset($_GET['filtro_estado']) ? $_GET['filtro_estado'] : 'todos';
+$filtro_documento = isset($_GET['filtro_documento']) ? trim($_GET['filtro_documento']) : '';
+
 
 // Llamar a la función con el filtro seleccionado
-$ListadoReporte = Listar_Reporte_2($MiConexion, $_SESSION['Usuario_Nivel'], $filtro_estado);
+$ListadoReporte = Listar_Reporte_2($MiConexion, $_SESSION['Usuario_Nivel'], $filtro_estado,$filtro_documento);
 $CantidadReportes = count($ListadoReporte);
 
 // Paginación
@@ -63,21 +65,11 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <!--<link href="assets/vendor/quill/quill.snow.css" rel="stylesheet">
-  <link href="assets/vendor/quill/quill.bubble.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-  <link href="assets/vendor/simple-datatables/style.css" rel="stylesheet">
--->
+
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
 
-  <!-- =======================================================
-  * Template Name: NiceAdmin
-  * Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
-  * Updated: Apr 20 2024 with Bootstrap v5.3.3
-  * Author: BootstrapMade.com
-  * License: https://bootstrapmade.com/license/
-  ======================================================== -->
+
 </head>
 
 <body>
@@ -119,8 +111,14 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
                       <option value="baja" <?php echo (isset($_GET['filtro_estado']) && $_GET['filtro_estado'] == 'baja') ? 'selected' : ''; ?>>Dados de baja</option>
                     </select>
                   </div>
+                  <div class="col-md-4">
+                    <label for="filtro_documento" class="form-label">Filtrar por documento:</label>
+                    <input type="number" name="filtro_documento" id="filtro_documento" class="form-control"
+                      value="<?php echo isset($_GET['filtro_documento']) ? htmlspecialchars($_GET['filtro_documento']) : ''; ?>"
+                      min="0" step="1" pattern="\d*">
+                  </div>
                   <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">Aplicar</button>
+                    <button type="submit" class="btn btn-primary">Buscar</button>
                   </div>
                 </div>
               </form>
@@ -136,9 +134,9 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
                     <th scope="col">Id</th>
                     <th scope="col">Nombre</th>
                     <th scope="col">Apellido</th>
+                    <th scope="col">Documento</th>
                     <th scope="col">Ciudad</th>
                     <th scope="col">Provincia</th>
-                    <th scope="col">Tel</th>
                     <th scope="col">Fecha Inicio</th>
                     <th scope="col">Fecha de Baja</th>
                     <th scope="col">Estado</th>
@@ -157,9 +155,9 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
                       <td><?php echo $item['ID']; ?></td>
                       <td><?php echo $item['NOMBRE']; ?></td>
                       <td><?php echo $item['APELLIDO']; ?></td>
+                      <td><?php echo $item['DOCUMENTO']; ?></td>
                       <td><?php echo $item['CIUDAD']; ?></td>
                       <td><?php echo $item['PROVINCIA']; ?></td>
-                      <td><?php echo $item['TEL']; ?></td>
                       <td><?php echo $item['FECHAINICIO']; ?></td>
                       <td><?php echo $item['FECHABAJA']; ?></td>
                       <td>
@@ -228,18 +226,8 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
   <!-- End Footer -->
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-
-  <!-- Vendor JS Files
-  <script src="assets/vendor/apexcharts/apexcharts.min.js"></script> -->
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <!-- <script src="assets/vendor/chart.js/chart.umd.js"></script>
-  <script src="assets/vendor/echarts/echarts.min.js"></script>
-  <script src="assets/vendor/quill/quill.js"></script>
-  <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
   <script src="assets/vendor/tinymce/tinymce.min.js"></script>
-
-  <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
-
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
 

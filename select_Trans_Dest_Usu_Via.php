@@ -1,6 +1,6 @@
 <?php
 
-function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos')
+function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos',$filtro_documento = '')
 {
     $Listado = array();
 
@@ -16,11 +16,11 @@ function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos')
             E.tel, 
             E.imagen, 
             E.fecha_baja,
+            E.dni,
             C.descripcion AS nomcargo, 
             C.idcargo, 
             P.idprovincia, 
             P.nombre AS nomprov
-          
         FROM 
             empleado E
         JOIN 
@@ -29,18 +29,31 @@ function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos')
             provincia P ON E.idprovincia = P.idprovincia
     ";
 
-    // Filtros según el estado
+    // Arreglo de condiciones dinámicas
+    $condiciones = array();
+
+    // Filtro por estado
     if ($filtro_estado == 'activos') {
-        $SQL .= "WHERE E.estado = 1 ";
+        $condiciones[] = "E.estado = 1";
     } elseif ($filtro_estado == 'inactivos') {
-        $SQL .= "WHERE E.estado = 0 AND E.fecha_baja IS NULL ";
+        $condiciones[] = "E.estado = 0 AND E.fecha_baja IS NULL";
     } elseif ($filtro_estado == 'baja') {
-        $SQL .= "WHERE E.estado = 0 AND E.fecha_baja IS NOT NULL ";
+        $condiciones[] = "E.estado = 0 AND E.fecha_baja IS NOT NULL";
     }
 
-    $SQL .= "ORDER BY apellido;";
+    // Filtro por documento
+    if (!empty($filtro_documento) && ctype_digit($filtro_documento)) {
+        $condiciones[] = "E.dni = " . intval($filtro_documento);
+    }
 
-    // Ejecutar la consulta
+    // Unir condiciones si hay alguna
+    if (!empty($condiciones)) {
+        $SQL .= " WHERE " . implode(" AND ", $condiciones);
+    }
+
+    $SQL .= " ORDER BY apellido;";
+
+    // Ejecutar consulta
     $rs = mysqli_query($vConexion, $SQL);
 
     // Procesar resultados
@@ -51,7 +64,7 @@ function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos')
         $Listado[$i]['ESTADO'] = $data['estado'];
         $Listado[$i]['FECHAINICIO'] = date("d/m/Y", strtotime($data['fecha_inicio']));
         $Listado[$i]['CIUDAD'] = $data['ciudad'];
-        $Listado[$i]['TEL'] = $data['tel'];
+        $Listado[$i]['DOCUMENTO'] = $data['dni'];
         $Listado[$i]['IMAGEN'] = $data['imagen'];
         $Listado[$i]['CARGO'] = $data['nomcargo'];
         $Listado[$i]['PROVINCIA'] = $data['nomprov'];
@@ -62,3 +75,4 @@ function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos')
 
     return $Listado;
 }
+

@@ -82,7 +82,10 @@ $preliquidaciones = Listar_Preliquidaciones($conexion);
                             <td><?php echo htmlspecialchars($preliquidacion['periodo']); ?></td>
                             <td><?php echo htmlspecialchars($preliquidacion['estado']); ?></td>
                             <td>
-                                <a href="detalle_preliquidacion.php?id=<?php echo urlencode($preliquidacion['idpreliquidacion']); ?>" class="btn btn-primary btn-sm">Ver Detalles</a>
+                                <a href="detalle_preliquidacion.php?id=<?php echo urlencode($preliquidacion['idpreliquidacion']); ?>" class="btn btn-warning btn-sm">Ver Detalles</a>
+
+                                <a href="exportar_preliquidacion.php?idPreliquidacion=<?php echo $preliquidacion['idpreliquidacion']; ?>" class="btn btn-danger btn-sm">Exportar a Excel</a>
+
                             </td>
                         </tr>
                     <?php } ?>
@@ -105,4 +108,5 @@ $preliquidaciones = Listar_Preliquidaciones($conexion);
         </nav>
     </div>
 </body>
+
 </html>
