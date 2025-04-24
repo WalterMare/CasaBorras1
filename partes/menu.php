@@ -76,7 +76,7 @@
                                                                       'Licencias.php'
                                                                     ]) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
           <li>
-            <a href="Asistencia_Empleados.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Asistencia_Empleados.php' ? 'active' : ''; ?>">
+            <a href="asistencia_listado.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'asistencia_listado.php' ? 'active' : ''; ?>">
               <i class="bi bi-file-earmark-plus"></i><span>Asistencia de Empleados</span>
             </a>
           </li>
