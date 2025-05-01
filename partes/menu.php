@@ -31,7 +31,7 @@
           </li>
           <li>
             <a href="Familiar_carga.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Familiar_carga.php' ? 'active' : ''; ?>">
-              <i class="bi bi-file-earmark-plus"></i><span>RegistrarFamiliar</span>
+              <i class="bi bi-file-earmark-plus"></i><span>Registrar Familiar</span>
             </a>
           </li>
         </ul>
@@ -49,7 +49,7 @@
                                                             'ObraSocial.php',
                                                             'Embargos.php',
                                                             'Sanciones.php',
-                                                            'Registrar_Vacaciones.php',
+                                                            'Vacaciones.php',
                                                             'Licencias.php'
                                                           ]) ? 'active' : ''; ?>" data-bs-toggle="collapse" aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), [
                                                                                                                               'Asistencia_Empleados.php',
@@ -59,7 +59,7 @@
                                                                                                                               'ObraSocial.php',
                                                                                                                               'Embargos.php',
                                                                                                                               'Sanciones.php',
-                                                                                                                              'Registrar_Vacaciones.php',
+                                                                                                                              'Vacaciones.php',
                                                                                                                               'Licencias.php'
                                                                                                                             ]) ? 'true' : 'false'; ?>">
           <i class="bi bi-globe2"></i><span>Gestor Movimientos</span><i class="bi bi-chevron-down ms-auto"></i>
@@ -72,7 +72,7 @@
                                                                       'ObraSocial.php',
                                                                       'Embargos.php',
                                                                       'Sanciones.php',
-                                                                      'Registrar_Vacaciones.php',
+                                                                      'Vacaciones.php',
                                                                       'Licencias.php'
                                                                     ]) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
           <li>
@@ -111,8 +111,8 @@
             </a>
           </li>
           <li>
-            <a href="Registrar_Vacaciones.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Registrar_Vacaciones.php' ? 'active' : ''; ?>">
-              <i class="bi bi-file-earmark-plus"></i><span>Registrar Vacaciones</span>
+            <a href="Vacaciones.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Vacaciones.php' ? 'active' : ''; ?>">
+              <i class="bi bi-file-earmark-plus"></i><span>Vacaciones</span>
             </a>
           </li>
           <li>

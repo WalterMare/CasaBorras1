@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Verificar si la sesión está activa
 if (empty($_SESSION['Usuario_Nombre'])) {
@@ -46,119 +48,97 @@ $CantidadEmpleado = count($listadoEmpleado);
 </head>
 
 <body>
-    <!-- ======= Header ======= -->
-    <?php include_once 'partes/header.php' ?>
-    <!-- End Header -->
-    <!-- ======= Sidebar ======= -->
-    <?php include_once 'partes/menu.php'; ?>
 
-    <!-- End Sidebar-->
-    <main id="main" class="main ">
+    <h5 class="card-title">Registro de Vacaciones</h5>
 
-        <div class="pagetitle">
-            <h1>Vacaciones</h1>
-            <nav>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="index.php">Home</a></li>
-                    <li class="breadcrumb-item">Gestor de movimientos</li>
-                    <li class="breadcrumb-item active">Vacaciones</li>
-                </ol>
-            </nav>
-        </div><!-- End Page Title -->
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Registro de Vacaciones</h5>
-
-                <?php
-                $Mensaje = '';
-                $Estilo = 'warning';
-                if (!empty($_POST['BotonRegistrar'])) {
-                    //estoy en condiciones de poder validar los datos
-                    $Mensaje = Validar_Datos();
-                    if (empty($Mensaje)) {
-                        if (InsertarVacacion($conexion) != false) {
-                            $Mensaje = 'Se ha registrado correctamente.';
-                            $_POST = array();
-                            $Estilo = 'success';
-                        } ?>
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bi bi-check-circle me-1"></i>
-                            <?php echo $Mensaje; ?>
-                        </div>
-                    <?php  } else { ?>
-                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle me-1"></i>
-                            <?php echo $Mensaje; ?>
-                        </div><?php }
-                        } ?>
-
-
-
-
-                <form class="row g-3" method="POST">
-                    <div class="col-6">
-                        <label for="empleado" class="form-label">Empleado:</label>
-                        <select class="form-select" aria-label="Selector" id="empleado" name="empleado" onchange="calcularDiasVacaciones()">
-                            <option value="">Selecciona una opcion</option>
-                            <?php
-                            $selected = '';
-                            for ($i = 0; $i < $CantidadEmpleado; $i++) {
-                                if (!empty($_POST['empleado']) && $_POST['empleado'] ==  $listadoEmpleado[$i]['ID']) { //recuerda el elemento seleccionado
-                                    $selected = 'selected';
-                                } else {
-                                    $selected = ''; //limpia la variable para que solo se seleccione una opcion
-                                }
-                            ?>
-                                <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
-                                    <?php echo $listadoEmpleado[$i]['NOMBRE'] . " " . $listadoEmpleado[$i]['APELLIDO']; ?>
-                                </option>
-                            <?php } ?>
-                        </select>
-                    </div>
-                    <div class="col-6">
-                        <label for="dias" class="form-label">Cantidad de días que corresponde por la antigüedad</label>
-                        <input class="form-control" type="text" id="dias" name="dias" readonly>
-                    </div>
-
-
-                    <div class="col-6">
-                        <label for="fecha_inicio" class="form-label">Fecha de Inicio:</label>
-                        <input class="form-control" type="date" id="fecha_inicio" name="fecha_inicio">
-                    </div>
-
-                    <div class="col-6">
-                        <label for="fecha_fin" class="form-label">Fecha de Fin:</label>
-                        <input class="form-control" type="date" id="fecha_fin" name="fecha_fin">
-                    </div>
-
-                    <div class="col-6">
-                        <label for="año" class="form-label">Año:</label>
-                        <input class="form-control" type="number" id="año" name="año">
-                    </div>
-                    <div class="col-6">
-                        <label for="cantidad_dias" class="form-label">Cantidad de Días:</label>
-                        <input class="form-control" type="number" id="cantidad_dias" name="cantidad_dias">
-                    </div>
-
-                    <div class="col-6">
-                        <label for="vacaciones_restantes" class="form-label">Vacaciones Restantes:</label>
-                        <input class="form-control" type="number" id="vacaciones_restantes" name="vacaciones_restantes">
-                    </div>
-                    <div class="col-6">
-                        <label for="estado" class="form-label">Estado</label>
-                        <select class="form-select" name="estado" id="estado">
-                            <option value="Aprobado">Aprobado</option>
-                            <option value="Rechazado">Rechazado</option>
-                        </select>
-                    </div>
-
-                    <div class="col-6">
-                        <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Registrar</button>
-                    </div>
-                </form>
+    <?php
+    $Mensaje = '';
+    $Estilo = 'warning';
+    if (!empty($_POST['BotonRegistrar'])) {
+        //estoy en condiciones de poder validar los datos
+        $Mensaje = Validar_Datos();
+        if (empty($Mensaje)) {
+            if (InsertarVacacion($conexion) != false) {
+                $Mensaje = 'Se ha registrado correctamente.';
+                $_POST = array();
+                $Estilo = 'success';
+            } ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-1"></i>
+                <?php echo $Mensaje; ?>
             </div>
+        <?php  } else { ?>
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                <?php echo $Mensaje; ?>
+            </div><?php }
+            } ?>
+
+
+
+
+    <form class="row g-3" method="POST">
+        <div class="col-6">
+            <label for="empleado" class="form-label">Empleado:</label>
+            <select class="form-select" aria-label="Selector" id="empleado" name="empleado" onchange="calcularDiasVacaciones()">
+                <option value="">Selecciona una opcion</option>
+                <?php
+                $selected = '';
+                for ($i = 0; $i < $CantidadEmpleado; $i++) {
+                    if (!empty($_POST['empleado']) && $_POST['empleado'] ==  $listadoEmpleado[$i]['ID']) { //recuerda el elemento seleccionado
+                        $selected = 'selected';
+                    } else {
+                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
+                    }
+                ?>
+                    <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
+                        <?php echo $listadoEmpleado[$i]['NOMBRE'] . " " . $listadoEmpleado[$i]['APELLIDO']; ?>
+                    </option>
+                <?php } ?>
+            </select>
         </div>
-    </main>
+        <div class="col-6">
+            <label for="dias" class="form-label">Cantidad de días que corresponde por la antigüedad</label>
+            <input class="form-control" type="text" id="dias" name="dias" readonly>
+        </div>
+
+
+        <div class="col-6">
+            <label for="fecha_inicio" class="form-label">Fecha de Inicio:</label>
+            <input class="form-control" type="date" id="fecha_inicio" name="fecha_inicio">
+        </div>
+
+        <div class="col-6">
+            <label for="fecha_fin" class="form-label">Fecha de Fin:</label>
+            <input class="form-control" type="date" id="fecha_fin" name="fecha_fin">
+        </div>
+
+        <div class="col-6">
+            <label for="año" class="form-label">Año:</label>
+            <input class="form-control" type="number" id="año" name="año">
+        </div>
+        <div class="col-6">
+            <label for="cantidad_dias" class="form-label">Cantidad de Días:</label>
+            <input class="form-control" type="number" id="cantidad_dias" name="cantidad_dias">
+        </div>
+
+        <div class="col-6">
+            <label for="vacaciones_restantes" class="form-label">Vacaciones Restantes:</label>
+            <input class="form-control" type="number" id="vacaciones_restantes" name="vacaciones_restantes">
+        </div>
+        <div class="col-6">
+            <label for="estado" class="form-label">Estado</label>
+            <select class="form-select" name="estado" id="estado">
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+            </select>
+        </div>
+
+        <div class="col-6">
+            <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Registrar</button>
+        </div>
+    </form>
+    
     <script>
         function calcularDiasVacaciones() {
             var empleadoId = document.getElementById('empleado').value;
@@ -360,8 +340,6 @@ $CantidadEmpleado = count($listadoEmpleado);
                 alert('No puede solicitar más días de los disponibles');
             }
         });
-
-        
     </script>
     <!-- ======= Footer ======= -->
     <?php include_once 'partes/footer.php' ?>
@@ -370,8 +348,7 @@ $CantidadEmpleado = count($listadoEmpleado);
     <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="assets/vendor/tinymce/tinymce.min.js"></script>
     <script src="assets/js/cartel.js"></script>
-    <!-- Template Main JS File -->
-    <script src="assets/js/main.js"></script>
+
 </body>
 
 </html>

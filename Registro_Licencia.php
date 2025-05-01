@@ -173,11 +173,6 @@ $estilo = 'info';
             <button class="btn btn-primary" id="btnRegistrar" name='BotonRegistrar' type="submit">Registrar Licencia</button>
         </div>
     </form>
-    </div>
-    </div>
-    </div>
-    </div>
-    </section>
 
 
     <script>

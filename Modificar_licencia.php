@@ -39,7 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     mysqli_stmt_bind_param($stmtUpdate, "ssiiii", $fechainicio, $fechafin, $idtipo, $idestado, $cantidaddias, $idLicencia);
 
     if (mysqli_stmt_execute($stmtUpdate)) {
-        header("Location: consultar_licencias.php?empleado=" . $licencia['idEmpleado']);
+        header("Location: Licencias.php");
         exit;
     } else {
         echo "Error al actualizar la licencia.";
@@ -136,7 +136,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     </div>
                                     <div class="text-center">
                                         <button type="submit" class="btn btn-primary mt-3">Guardar Cambios</button>
-                                        <a href="Consultar_licencias.php" class="btn btn-secondary mt-3">Cancelar</a>
+                                        <a href="Licencias.php" class="btn btn-secondary mt-3">Cancelar</a>
                                     </div>
                                 </form>
                             </div>

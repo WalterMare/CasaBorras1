@@ -64,7 +64,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['qrData'])) {
 
         if ($idAsistencia && $horaEntrada && !$horaSalida) {
             // Registrar salida
-            $observacion = strtotime($horaActual) < strtotime($horaFin) ? "Salida antes del horario asignado" : "";
+            if(strtotime($horaActual) < strtotime($horaFin)){
+                $observacion="Salida antes del horario asignado";
+            }else if(strtotime($horaActual) > strtotime($horaFin)){
+                $observacion="Salida despues del horarios asignado";
+            } else{
+                $observacion="Salida correcta";
+            }
+
             $stmt = mysqli_prepare($conexion, "UPDATE asistencias SET horaSalida = ?, observacion_salida = ? WHERE idAsistencia = ?");
             mysqli_stmt_bind_param($stmt, 'ssi', $horaActual, $observacion, $idAsistencia);
             mysqli_stmt_execute($stmt);
