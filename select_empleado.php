@@ -5,7 +5,7 @@ function Listar_empleado($vConexion)
     $Listado = array();
 
     //1) genero la consulta que deseo
-    $consulta = "SELECT * FROM empleado WHERE empleado.fecha_baja IS NULL ORDER BY apellido";
+    $consulta = "SELECT * FROM empleado  ORDER BY apellido";
 
     //2) a la conexion actual le brindo mi consulta, y el resultado lo entrego a variable $rs
     $rs = mysqli_query($vConexion, $consulta);
@@ -41,7 +41,7 @@ function Listar_Imagen_empleado($vConexion,$empleado)
     //3) el resultado deberá organizarse en una matriz, entonces lo recorro
     $data = mysqli_fetch_array($rs);
     if ($data) {
-        $Listado[$i]['IMAGEN'] = $data['imagen'];
+        $Listado['IMAGEN'] = $data['imagen'];
     
     }
 

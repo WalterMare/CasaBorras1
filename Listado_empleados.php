@@ -23,7 +23,7 @@ $filtro_documento = isset($_GET['filtro_documento']) ? trim($_GET['filtro_docume
 
 
 // Llamar a la función con el filtro seleccionado
-$ListadoReporte = Listar_Reporte_2($MiConexion, $_SESSION['Usuario_Nivel'], $filtro_estado,$filtro_documento);
+$ListadoReporte = Listar_Reporte_2($MiConexion, $_SESSION['Usuario_Nivel'], $filtro_estado, $filtro_documento);
 $CantidadReportes = count($ListadoReporte);
 
 // Paginación
@@ -68,6 +68,8 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
 
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
+ 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 
 </head>
@@ -179,13 +181,41 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
                           <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i></span>
                         </a>
                         <?php if (!$estaDadoDeBaja) { ?>
-                          <a onclick="return confirm('¿Está seguro de que desea dar de baja a este empleado?');"
-                            href="dar_baja_empleado.php?ID=<?php echo $item['ID']; ?>" title="Dar de baja">
+                          <a href="#" data-bs-toggle="modal" data-bs-target="#modalBaja<?php echo $item['ID']; ?>" title="Dar de baja">
                             <span class="badge bg-danger text-light"><i class="bi bi-x-circle me-1"></i></span>
                           </a>
                         <?php } ?>
                       </td>
                     </tr>
+                    <div class="modal fade" id="modalBaja<?php echo $item['ID']; ?>" tabindex="-1">
+                      <div class="modal-dialog">
+                        <form action="dar_baja_empleado.php" method="post">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title">Dar de baja al empleado</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                              <input type="hidden" name="id_empleado" value="<?php echo $item['ID']; ?>">
+                              <label for="motivo_baja">Seleccione el motivo:</label>
+                              <select name="motivo_baja" class="form-select" required>
+                                <option value="">Seleccione un motivo</option>
+                                <option value="Renuncia voluntaria">Renuncia voluntaria</option>
+                                <option value="Sanción grave">Sanción grave</option>
+                                <option value="Fallecimiento">Fallecimiento</option>
+                                <option value="Jubilación">Jubilación</option>
+                                <option value="Otro">Otro</option>
+                              </select>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="submit" class="btn btn-danger">Confirmar baja</button>
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+
                   <?php } ?>
                 </tbody>
 

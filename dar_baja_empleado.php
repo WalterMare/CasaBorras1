@@ -1,33 +1,26 @@
 <?php
 require_once 'conexiondb.php';
 
-// Verificar si se recibió el ID del empleado
-if (isset($_GET['ID'])) {
-    $idEmpleado = intval($_GET['ID']);
-
-    // Establecer conexión a la base de datos
-    $conexion = ConexionBD();
-
-    // Fecha actual para la baja
+if (isset($_POST['id_empleado'], $_POST['motivo_baja'])) {
+    $idEmpleado = intval($_POST['id_empleado']);
+    $motivo = trim($_POST['motivo_baja']);
     $fechaBaja = date("Y-m-d");
 
-    // Actualizar estado del empleado a 0 (inactivo) y establecer la fecha de baja
-    $sql = "UPDATE empleado 
-            SET estado = 0, fecha_baja = '$fechaBaja' 
-            WHERE idempleado = $idEmpleado";
+    $conexion = ConexionBD();
 
-    if (mysqli_query($conexion, $sql)) {
-        // Redirigir de vuelta al listado con un mensaje de éxito
-        header("Location: listado_empleados.php?mensaje=Empleado dado de baja correctamente");
-    } else {
-        // Redirigir de vuelta al listado con un mensaje de error
-        header("Location: listado_empleados.php?mensaje=Error al dar de baja al empleado");
+    $stmt = mysqli_prepare($conexion, "UPDATE empleado SET estado = 0, fecha_baja = ?, motivo_baja = ? WHERE idempleado = ?");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "ssi", $fechaBaja, $motivo, $idEmpleado);
+        if (mysqli_stmt_execute($stmt)) {
+            header("Location: listado_empleados.php?mensaje=Empleado dado de baja correctamente");
+            exit;
+        }
     }
 
-    // Cerrar conexión
+    header("Location: listado_empleados.php?mensaje=Error al dar de baja al empleado");
     mysqli_close($conexion);
 } else {
-    // Si no se recibe un ID, redirigir al listado
-    header("Location: listado_empleados.php?mensaje=ID de empleado no especificado");
+    header("Location: listado_empleados.php?mensaje=Datos incompletos para dar de baja");
 }
 ?>
+

@@ -5,7 +5,8 @@ function actualizarEstadoLicencia($conexion)
     $hoy = date('Y-m-d'); // o usar CURDATE() en SQL
 
     // Consultamos todas las licencias cuya fecha de fin sea igual o menor a la fecha actual
-    $query = "SELECT idlicencia, idEmpleado FROM licencia WHERE fechafin <= ?";
+    $query = "SELECT idlicencia, idEmpleado FROM licencia WHERE fechafin <= ? AND IdEstado <> 3";
+
     $stmt = mysqli_prepare($conexion, $query);
 
     if (!$stmt) {

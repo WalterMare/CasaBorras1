@@ -27,6 +27,7 @@ if ($idEmpleado <= 0) {
 $sql = "SELECT 
             e.estado,
             e.fecha_baja,
+            e.motivo_baja,
             l.fechainicio AS licencia_inicio,
             l.fechafin AS licencia_fin,
             tl.descripcion AS tipo_licencia,
@@ -68,24 +69,35 @@ $sancion_fin = $datosEmpleado['sancion_fin'] ?? null;
 $tipo_sancion = $datosEmpleado['tipo_sancion'] ?? null;
 $vacaciones_inicio = $datosEmpleado['vacaciones_inicio'] ?? null;
 $vacaciones_fin = $datosEmpleado['vacaciones_fin'] ?? null;
+$motivobaja=$datosEmpleado['motivo_baja']??null;
 
 // Determinar la razón de inactividad
-$razonInactivo = "";
-if (!empty($fecha_baja)) {
-  $razonInactivo = "Baja el " . date("d/m/Y", strtotime($fecha_baja));
-} elseif (!empty($licencia_inicio)) {
-  $razonInactivo = "En licencia ({$tipo_licencia}) del " .
-    date("d/m/Y", strtotime($licencia_inicio)) .
-    " al " . date("d/m/Y", strtotime($licencia_fin));
-} elseif (!empty($sancion_inicio)) {
-  $razonInactivo = "Sancionado ({$tipo_sancion}) del " .
+$razonInactivo = [];
+
+if (!empty($sancion_inicio)) {
+  $razonInactivo[] = "Sancionado ({$tipo_sancion}) del " .
     date("d/m/Y", strtotime($sancion_inicio)) .
     " al " . date("d/m/Y", strtotime($sancion_fin));
-} elseif (!empty($vacaciones_inicio)) {
-  $razonInactivo = "En vacaciones del " .
+}
+
+if (!empty($fecha_baja)) {
+  $razonInactivo[] = "Baja por el motivo: {$motivobaja}. Fecha de Baja: " . date("d/m/Y", strtotime($fecha_baja));
+}
+
+if (!empty($licencia_inicio)) {
+  $razonInactivo[] = "En licencia ({$tipo_licencia}) del " .
+    date("d/m/Y", strtotime($licencia_inicio)) .
+    " al " . date("d/m/Y", strtotime($licencia_fin));
+}
+
+if (!empty($vacaciones_inicio)) {
+  $razonInactivo[] = "En vacaciones del " .
     date("d/m/Y", strtotime($vacaciones_inicio)) .
     " al " . date("d/m/Y", strtotime($vacaciones_fin));
 }
+$razonInactivoTexto = implode(" | ", $razonInactivo);
+
+
 
 // Cerrar conexión
 $stmt->close();
@@ -246,11 +258,10 @@ require_once 'funcion_calcularEdad.php';
 
                   <?php if (!empty($razonInactivo)): ?>
                     <div class="alert alert-warning mt-2">
-                      <strong>Motivo de inactividad:</strong> <?php echo $razonInactivo; ?>
+                      <strong>Motivo de inactividad:</strong> <?php echo $razonInactivoTexto; ?>
                     </div>
                   <?php endif; ?>
                 </div>
-
 
 
                 <div class="col-3">

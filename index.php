@@ -16,10 +16,6 @@ try {
   die('Error en la conexión: ' . $e->getMessage());
 }
 
-
-
-
-
 // Obtener la fecha de preliquidación configurada
 $sqlFecha = "SELECT fecha_preliquidacion FROM configuracion WHERE idconfiguracion = 1";
 $result = $conexion->query($sqlFecha);
@@ -59,7 +55,7 @@ try {
 require_once 'Actualizar_Estado_Vacaciones_empleado.php';
 try {
   actualizarEstadosVacacionales($conexion);
-  } catch (Exception $e) {
+} catch (Exception $e) {
   $mensaje = 'Error al actualizar los estados de las vacaiones : ' . $e->getMessage();
 }
 
@@ -68,15 +64,15 @@ require_once 'select_empleado.php';
 
 try {
   // Listado de empleados y su cantidad
-  $ListadoReporte = Listar_empleado($conexion);
-  $CantidadEmpleados = count($ListadoReporte);
+  $ListadoEmpleados = Listar_empleado($conexion);
+  $CantidadEmpleados = count($ListadoEmpleados);
 
   // Listado de empleados activos e inactivos
-  $ListadoReporte = Listar_empleado_activos($conexion);
-  $CantidadEmpleadosActivos = count($ListadoReporte);
+  $ListadoReporteActivos = Listar_empleado_activos($conexion);
+  $CantidadEmpleadosActivos = count($ListadoReporteActivos);
 
-  $ListadoReporte = Listar_empleado_inactivos($conexion);
-  $CantidadEmpleadosInactivos = count($ListadoReporte);
+  $ListadoReporteInactivos = Listar_empleado_inactivos($conexion);
+  $CantidadEmpleadosInactivos = count($ListadoReporteInactivos);
 } catch (Exception $e) {
   die('Error al obtener los empleados: ' . $e->getMessage());
 }
@@ -188,9 +184,13 @@ try {
                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                       <i class="bi bi-people"></i>
                     </div>
+                    <?php
+                    $porcentajeActivos = $CantidadEmpleadosActivos > 0 ? number_format(($CantidadEmpleadosActivos * 100 / $CantidadEmpleados), 2) : 0;
+                    $porcentajeInactivos = $CantidadEmpleadosInactivos > 0 ? number_format(($CantidadEmpleadosInactivos * 100 / $CantidadEmpleados), 2) : 0;
+                    ?>
                     <div class="ps-3">
                       <h6><?php echo $CantidadEmpleadosActivos ?></h6>
-                      <span class="text-danger small pt-1 fw-bold"><?php echo number_format((($CantidadEmpleadosActivos * 100) / $CantidadEmpleados), 2); ?>%</span>
+                      <span class="text-danger small pt-1 fw-bold"><?php echo $porcentajeActivos; ?>%</span>
                       <span class="text-muted small pt-2 ps-1">de empleados activos</span>
                     </div>
                   </div>
@@ -209,7 +209,7 @@ try {
                     </div>
                     <div class="ps-3">
                       <h6><?php echo $CantidadEmpleadosInactivos ?></h6>
-                      <span class="text-danger small pt-1 fw-bold"><?php echo number_format((($CantidadEmpleadosInactivos * 100) / $CantidadEmpleados), 2); ?>%</span>
+                      <span class="text-danger small pt-1 fw-bold"><?php echo $porcentajeInactivos; ?>%</span>
                       <span class="text-muted small pt-2 ps-1">de empleados inactivos</span>
                     </div>
                   </div>
@@ -221,7 +221,7 @@ try {
         </div>
 
       </div>
-    <?php require_once 'chatFrontEnd.php';?>
+      <?php require_once 'chatFrontEnd.php'; ?>
     </section>
 
   </main>
@@ -244,40 +244,42 @@ try {
     };
   </script>
 
-<script>
-  const boton = document.getElementById("abrirChat");
-  const ventana = document.getElementById("chatVentana");
-  const form = document.getElementById("formulario");
-  const input = document.getElementById("mensaje");
-  const chat = document.getElementById("chat");
+  <script>
+    const boton = document.getElementById("abrirChat");
+    const ventana = document.getElementById("chatVentana");
+    const form = document.getElementById("formulario");
+    const input = document.getElementById("mensaje");
+    const chat = document.getElementById("chat");
 
-  boton.onclick = () => {
-    ventana.style.display = 'flex';
-  };
+    boton.onclick = () => {
+      ventana.style.display = 'flex';
+    };
 
-  function cerrarChat() {
-    ventana.style.display = 'none';
-  }
+    function cerrarChat() {
+      ventana.style.display = 'none';
+    }
 
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    const mensaje = input.value;
-    if (!mensaje.trim()) return;
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const mensaje = input.value;
+      if (!mensaje.trim()) return;
 
-    chat.innerHTML += `<div style="margin-bottom: 10px;"><b>Tú:</b> ${mensaje}</div>`;
-    input.value = "";
+      chat.innerHTML += `<div style="margin-bottom: 10px;"><b>Tú:</b> ${mensaje}</div>`;
+      input.value = "";
 
-    const res = await fetch("chat.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "mensaje=" + encodeURIComponent(mensaje)
-    });
+      const res = await fetch("chat.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "mensaje=" + encodeURIComponent(mensaje)
+      });
 
-    const respuesta = await res.text();
-    chat.innerHTML += `<div style="margin-bottom: 10px; color: green;"><b>Bot:</b> ${respuesta}</div>`;
-    chat.scrollTop = chat.scrollHeight;
-  };
-</script>
+      const respuesta = await res.text();
+      chat.innerHTML += `<div style="margin-bottom: 10px; color: green;"><b>Bot:</b> ${respuesta}</div>`;
+      chat.scrollTop = chat.scrollHeight;
+    };
+  </script>
 
 </body>
 
