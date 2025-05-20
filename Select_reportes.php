@@ -145,9 +145,9 @@ WHERE
             $Listado[$i]['FECHA_CREACION_DOCUMENTO'] = $data['fecha_documento'];
             $Listado[$i]['NOMBRE'] = $data['empleado_nombre'];
             $Listado[$i]['APELLIDO'] = $data['empleado_apellido'];
-           
 
-            
+
+
             // Manejo de la documentación
             if (!empty($data['Documentacion'])) {
                 $Listado[$i]['DOCUMENTACION'] = "<a href='data:application/octet-stream; base64," . base64_encode($data['Documentacion']) . "' download='documentacion_licencia'>Descargar Documentación</a>";
@@ -388,58 +388,58 @@ function Listar_Reporte_Viaticos_Empleado($vConexion, $idEmpleado)
 function Listar_Reporte_Asistencias_Empleado($vConexion, $idEmpleado)
 {
     $Listado = array();
-    $totalHoras = 0;
+    $totalSegundos = 0;
 
-    // Consulta para obtener las asistencias del empleado en el mes actual
-    $consulta = "SELECT 
-                    idAsistencia, 
-                    fecha, 
-                    horaEntrada, 
-                    horaSalida, 
-                    estado, 
-                    observaciones,
-                    TIMESTAMPDIFF(SECOND, horaEntrada, horaSalida) AS segundos_trabajados
-                FROM asistencias
-                WHERE idEmpleado = ? 
-                AND MONTH(fecha) = MONTH(CURDATE()) 
-                AND YEAR(fecha) = YEAR(CURDATE())
-                ORDER BY fecha";
+    $consulta = "
+        SELECT 
+            a.idAsistencia,
+            a.fecha,
+            ea.nombreEstado AS estado,
+            da.observaciones,
+            (SELECT horaEvento 
+             FROM evento_asistencia 
+             WHERE idDetalleAsistencia = da.idDetalleAsistencia AND tipoEvento = 'Entrada' 
+             ORDER BY idEvento ASC LIMIT 1) AS horaEntrada,
+            (SELECT horaEvento 
+             FROM evento_asistencia 
+             WHERE idDetalleAsistencia = da.idDetalleAsistencia AND tipoEvento = 'Salida' 
+             ORDER BY idEvento DESC LIMIT 1) AS horaSalida,
+            TIME_TO_SEC(TIMEDIFF(
+                (SELECT horaEvento FROM evento_asistencia WHERE idDetalleAsistencia = da.idDetalleAsistencia AND tipoEvento = 'Salida' ORDER BY idEvento DESC LIMIT 1),
+                (SELECT horaEvento FROM evento_asistencia WHERE idDetalleAsistencia = da.idDetalleAsistencia AND tipoEvento = 'Entrada' ORDER BY idEvento ASC LIMIT 1)
+            )) AS segundos_trabajados
+        FROM asistencia a
+        LEFT JOIN detalle_asistencia da ON a.idAsistencia = da.idAsistencia
+        LEFT JOIN estadoasistencia ea ON a.idEstado = ea.idEstado
+        WHERE a.idEmpleado = ?
+          AND MONTH(a.fecha) = MONTH(CURDATE())
+          AND YEAR(a.fecha) = YEAR(CURDATE())
+        ORDER BY a.fecha
+    ";
 
-    // Preparar la consulta
     $stmt = mysqli_prepare($vConexion, $consulta);
-
-    // Vincular el ID del empleado
     mysqli_stmt_bind_param($stmt, "i", $idEmpleado);
-
-    // Ejecutar la consulta
     mysqli_stmt_execute($stmt);
-
-    // Obtener el resultado
     $rs = mysqli_stmt_get_result($stmt);
 
-    // Recorrer los resultados y guardarlos en el array
-    $i = 0;
-    while ($data = mysqli_fetch_array($rs)) {
-        $Listado[$i]['ID'] = $data['idAsistencia'];
-        $Listado[$i]['FECHA'] = $data['fecha'];
-        $Listado[$i]['HORA_ENTRADA'] = $data['horaEntrada'];
-        $Listado[$i]['HORA_SALIDA'] = $data['horaSalida'];
-        $Listado[$i]['ESTADO'] = $data['estado'];
-        $Listado[$i]['OBSERVACIONES'] = $data['observaciones'];
-
-        // Sumar los segundos trabajados
-        $totalHoras += $data['segundos_trabajados'];
-        $i++;
+    while ($data = mysqli_fetch_assoc($rs)) {
+        $Listado[] = [
+            'ID' => $data['idAsistencia'],
+            'FECHA' => $data['fecha'],
+            'HORA_ENTRADA' => $data['horaEntrada'] ?? '-',
+            'HORA_SALIDA' => $data['horaSalida'] ?? '-',
+            'ESTADO' => $data['estado'] ?? 'Sin Estado',
+            'OBSERVACIONES' => $data['observaciones'] ?? '',
+        ];
+        $totalSegundos += intval($data['segundos_trabajados']) ?? 0;
     }
 
-    // Convertir los segundos totales a horas y minutos
-    $horasTrabajadas = floor($totalHoras / 3600);
-    $minutosTrabajados = floor(($totalHoras % 3600) / 60);
+    $horas = floor($totalSegundos / 3600);
+    $minutos = floor(($totalSegundos % 3600) / 60);
 
-    // Devolver el listado junto con el total de horas trabajadas
     return [
         'asistencias' => $Listado,
-        'total_horas' => "{$horasTrabajadas}h {$minutosTrabajados}m"
+        'total_horas' => "{$horas}h {$minutos}m"
     ];
 }
 ?>

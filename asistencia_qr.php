@@ -1,35 +1,36 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Escanear Código QR</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        body {
-            text-align: center;
-            background: #f8f9fa;
-        }
-        #qr-reader {
-            width: 300px;
-            margin: 2rem auto;
-        }
-    </style>
-</head>
-<body>
-    <h2>Escanear Código QR</h2>
-    <form id="qr-form" method="POST" action="controlador_asistencia.php">
-        <input type="hidden" name="qrData" id="qrData">
-    </form>
+<?php
+session_start();
 
-    <script>
-        function escanearQR() {
-            const idEmpleado = prompt("Ingrese el ID del empleado para simular escaneo QR:");
-            if (idEmpleado) {
-                document.getElementById("qrData").value = idEmpleado;
-                document.getElementById("qr-form").submit();
-            }
-        }
-    </script>
+// Verificación si la sesión está vacía y redirigir al login si es necesario
+if (empty($_SESSION['Usuario_Nombre'])) {
+  header('Location: cerrarsesion.php');
+  exit;
+}
 
-</body>
-</html>
+require_once 'conexiondb.php';
+
+// Manejo de errores en la conexión a la base de datos
+try {
+  $conexion = ConexionBD();
+} catch (Exception $e) {
+  die('Error en la conexión: ' . $e->getMessage());
+}
+
+date_default_timezone_set('America/Argentina/Buenos_Aires');
+include 'controlador_asistencia.php';
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $idEmpleado = intval($_POST['idEmpleado']);
+    $accion = $_POST['accion']; // Entrada o Salida
+
+    if ($accion === 'Entrada') {
+        registrarEntrada($idEmpleado,$conexion);
+    } elseif ($accion === 'Salida') {
+        registrarSalida($idEmpleado,$conexion);
+    }
+
+    header("Location: asistencia_listado.php");
+    exit;
+}
+
+

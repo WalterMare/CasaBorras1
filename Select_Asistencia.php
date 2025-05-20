@@ -1,33 +1,29 @@
 <?php
-function Listar_asistenciasHoy($vConexion, $registrosPorPagina, $offset) {
-
-    $Listado = array();
-
-    // 1) Armo la consulta
-    $consulta = "SELECT e.idempleado, e.nombre, e.apellido, a.idEmpleado, a.fecha, a.horaEntrada, a.horaSalida, a.estado, a.observacion_entrada, a.observacion_salida
-    FROM empleado e
-    LEFT JOIN asistencias a ON e.idempleado = a.idEmpleado AND a.fecha = CURDATE()
-    ORDER BY e.idempleado
-    LIMIT $registrosPorPagina OFFSET $offset";
-
-    // 2) Ejecuto la consulta
-    $rs = mysqli_query($vConexion, $consulta);
-
-    // 3) Armo el array
-    $i = 0;
-    while ($data = mysqli_fetch_array($rs)) {
-        $Listado[$i]['IDEMPLEADO'] = $data['idempleado'];
-        $Listado[$i]['NOMBRE'] = $data['nombre'];
-        $Listado[$i]['APELLIDO'] = $data['apellido'];
-        $Listado[$i]['FECHA'] = $data['fecha'];
-        $Listado[$i]['ENTRADA'] = $data['horaEntrada'];
-        $Listado[$i]['SALIDA'] = $data['horaSalida'];
-        $Listado[$i]['ESTADO'] = $data['estado'];
-        $Listado[$i]['OBS_ENTRADA'] = $data['observacion_entrada'];
-        $Listado[$i]['OBS_SALIDA'] = $data['observacion_salida'];
-        $i++;
+function Listar_asistenciasHoy($conexion, $limit, $offset) {
+    $fechaHoy = date('Y-m-d');
+    $query = "SELECT 
+                a.idEmpleado AS IDEMPLEADO,
+                e.nombre AS NOMBRE,
+                e.apellido AS APELLIDO,
+                a.horaEntrada AS ENTRADA,
+                a.horaSalida AS SALIDA,
+                a.estado AS ESTADO,
+                a.observacion_entrada AS OBS_ENTRADA,
+                a.observacion_salida AS OBS_SALIDA
+              FROM asistencia a
+              INNER JOIN empleado e ON a.idEmpleado = e.idEmpleado
+              WHERE a.fecha = ?
+              ORDER BY a.horaEntrada ASC
+              LIMIT ? OFFSET ?";
+    $stmt = mysqli_prepare($conexion, $query);
+    mysqli_stmt_bind_param($stmt, 'sii', $fechaHoy, $limit, $offset);
+    mysqli_stmt_execute($stmt);
+    $resultado = mysqli_stmt_get_result($stmt);
+    $datos = [];
+    while ($fila = mysqli_fetch_assoc($resultado)) {
+        $datos[] = $fila;
     }
-
-    return $Listado;
+    return $datos;
 }
 ?>
+

@@ -1,96 +1,125 @@
 <?php
-session_start();
-date_default_timezone_set('America/Argentina/Buenos_Aires');
-
-if (empty($_SESSION['Usuario_Nombre'])) {
-    header('Location: cerrarsesion.php');
-    exit;
-}
-
-require_once 'conexiondb.php';
-$conexion = ConexionBD();
 
 
-// Si el llamado es por QR (POST)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['qrData'])) {
-    $idEmpleado = (int) $_POST['qrData'];
+function registrarEntrada($idEmpleado,$conexion) {
+    
+    date_default_timezone_set('America/Argentina/Buenos_Aires');
+    $fecha = date('Y-m-d');
+    $hora = date('H:i:s');
+    $idAsistencia = null;
+    $idDetalle=null;
+    $horaSalida=null;
+    $horaEntrada=null;
 
-    // 🔍 Verificar si el empleado existe y está activo
-    $stmt = mysqli_prepare($conexion, "SELECT estado FROM empleado WHERE idempleado = ?");
-    mysqli_stmt_bind_param($stmt, 'i', $idEmpleado);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $estadoEmpleado);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
+    // Verificar si ya tiene asistencia hoy
+    $stmt = $conexion->prepare("SELECT idAsistencia FROM asistencia WHERE idEmpleado = ? AND fecha = ?");
+    $stmt->bind_param("is", $idEmpleado, $fecha);
+    $stmt->execute();
+    $stmt->bind_result($idAsistencia);
+    $stmt->fetch();
+    $stmt->close();
 
-    if (!$estadoEmpleado) {
-        $mensaje = "El empleado no existe o está inactivo.";
-        header('Location: asistencia_listado.php?mensaje=' . urlencode($mensaje));
-        exit;
+    if (!$idAsistencia) {
+        $stmt = $conexion->prepare("INSERT INTO asistencia (idEmpleado, fecha, idEstado) VALUES (?, ?, 1)");
+        $stmt->bind_param("is", $idEmpleado, $fecha);
+        $stmt->execute();
+        $idAsistencia = $stmt->insert_id;
+        $stmt->close();
     }
 
+    // Buscar detalle
+    $stmt = $conexion->prepare("SELECT idDetalleAsistencia FROM detalle_asistencia WHERE idAsistencia = ?");
+    $stmt->bind_param("i", $idAsistencia);
+    $stmt->execute();
+    $stmt->bind_result($idDetalle);
+    $stmt->fetch();
+    $stmt->close();
 
-    function registrarAsistencia($idEmpleado, $conexion)
-    {
-        $fechaHoy = date('Y-m-d');
-        $horaActual = date('H:i:s');
-        $diaSemana = [
-            'Monday' => 'Lunes',
-            'Tuesday' => 'Martes',
-            'Wednesday' => 'Miércoles',
-            'Thursday' => 'Jueves',
-            'Friday' => 'Viernes',
-            'Saturday' => 'Sábado',
-            'Sunday' => 'Domingo'
-        ][date('l')];
+    if (!$idDetalle) {
+        $stmt = $conexion->prepare("INSERT INTO detalle_asistencia (idAsistencia) VALUES (?)");
+        $stmt->bind_param("i", $idAsistencia);
+        $stmt->execute();
+        $idDetalle = $stmt->insert_id;
+        $stmt->close();
+    }
 
-        $stmt = mysqli_prepare($conexion, "SELECT hora_inicio, hora_fin FROM empleado_dia_horario WHERE idempleado = ? AND dia_semana = ?");
-        mysqli_stmt_bind_param($stmt, 'is', $idEmpleado, $diaSemana);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $horaInicio, $horaFin);
-        mysqli_stmt_fetch($stmt);
-        mysqli_stmt_close($stmt);
+    // Registrar evento de entrada
+    $stmt = $conexion->prepare("INSERT INTO evento_asistencia (idDetalleAsistencia, tipoEvento, horaEvento) VALUES (?, 'Entrada', ?)");
+    $stmt->bind_param("is", $idDetalle, $hora);
+    $stmt->execute();
+    $stmt->close();
+}
 
-        if (!$horaInicio || !$horaFin) {
-            return "No hay horario asignado para este día.";
-        }
+function registrarSalida($idEmpleado,$conexion) {
+    $fecha = date('Y-m-d');
+    $hora = date('H:i:s');
+    $idAsistencia = null;
+    $idDetalle = null;
+    $horaEntradaStr=null;
 
-        $stmt = mysqli_prepare($conexion, "SELECT idAsistencia, horaEntrada, horaSalida FROM asistencias WHERE idEmpleado = ? AND fecha = ?");
-        mysqli_stmt_bind_param($stmt, 'is', $idEmpleado, $fechaHoy);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $idAsistencia, $horaEntrada, $horaSalida);
-        mysqli_stmt_fetch($stmt);
-        mysqli_stmt_close($stmt);
+    // Obtener idAsistencia y idDetalle
+    $stmt = $conexion->prepare("SELECT a.idAsistencia, da.idDetalleAsistencia 
+                            FROM asistencia a
+                            INNER JOIN detalle_asistencia da ON a.idAsistencia = da.idAsistencia
+                            WHERE a.idEmpleado = ? AND a.fecha = ?");
+    $stmt->bind_param("is", $idEmpleado, $fecha);
+    $stmt->execute();
+    $stmt->bind_result($idAsistencia, $idDetalle);
+    $stmt->fetch();
+    $stmt->close();
 
-        if ($idAsistencia && $horaEntrada && !$horaSalida) {
-            // Registrar salida
-            if(strtotime($horaActual) < strtotime($horaFin)){
-                $observacion="Salida antes del horario asignado";
-            }else if(strtotime($horaActual) > strtotime($horaFin)){
-                $observacion="Salida despues del horarios asignado";
-            } else{
-                $observacion="Salida correcta";
+    if ($idDetalle) {
+        // Registrar evento de salida
+        $stmt = $conexion->prepare("INSERT INTO evento_asistencia (idDetalleAsistencia, tipoEvento, horaEvento) VALUES (?, 'Salida', ?)");
+        $stmt->bind_param("is", $idDetalle, $hora);
+        $stmt->execute();
+        $stmt->close();
+
+        // Buscar hora de entrada
+        $stmt = $conexion->prepare("SELECT horaEvento FROM evento_asistencia WHERE idDetalleAsistencia = ? AND tipoEvento = 'Entrada' ORDER BY idEvento ASC LIMIT 1");
+        $stmt->bind_param("i", $idDetalle);
+        $stmt->execute();
+        $stmt->bind_result($horaEntradaStr);
+        $stmt->fetch();
+        $stmt->close();
+
+        if ($horaEntradaStr) {
+            $horaEntrada = new DateTime($horaEntradaStr);
+            $horaSalida = new DateTime($hora);
+            $intervalo = $horaEntrada->diff($horaSalida);
+            $horasTrabajadas = $intervalo->format('%H:%I:%S');
+
+            // Comparar con horario esperado
+            $diaSemana = ucfirst(strftime('%A'));
+            $horario = $conexion->query("SELECT COALESCE(edh.hora_inicio, tdh.hora_inicio) AS inicio, COALESCE(edh.hora_fin, tdh.hora_fin) AS fin
+                FROM empleado e
+                LEFT JOIN empleado_turno et ON e.idempleado = et.idempleado
+                LEFT JOIN turno_dia_horario tdh ON et.idturno = tdh.idturno AND tdh.dia_semana = '$diaSemana'
+                LEFT JOIN empleado_dia_horario edh ON e.idempleado = edh.idempleado AND edh.dia_semana = '$diaSemana'
+                WHERE e.idempleado = $idEmpleado")->fetch_assoc();
+
+            $observacion = '';
+            if ($horario) {
+                if ($horaEntrada > new DateTime($horario['inicio'])) {
+                    $observacion .= "Llegó tarde. ";
+                }
+                if ($horaSalida < new DateTime($horario['fin'])) {
+                    $observacion .= "Se fue antes. ";
+                }
             }
 
-            $stmt = mysqli_prepare($conexion, "UPDATE asistencias SET horaSalida = ?, observacion_salida = ? WHERE idAsistencia = ?");
-            mysqli_stmt_bind_param($stmt, 'ssi', $horaActual, $observacion, $idAsistencia);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
-            return "Salida registrada correctamente.";
-        } else {
-            // Registrar entrada
-            $estado = 'Presente';
-            $observacion = strtotime($horaActual) > strtotime($horaInicio) ? "Llegada fuera del horario asignado" : "";
-            $stmt = mysqli_prepare($conexion, "INSERT INTO asistencias (idEmpleado, fecha, horaEntrada, estado, observacion_entrada) VALUES (?, ?, ?, ?, ?)");
-            mysqli_stmt_bind_param($stmt, 'issss', $idEmpleado, $fechaHoy, $horaActual, $estado, $observacion);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
-            return "Entrada registrada correctamente.";
+            $stmt = $conexion->prepare("UPDATE detalle_asistencia SET horasTrabajadas = ?, observaciones = ? WHERE idDetalleAsistencia = ?");
+            $stmt->bind_param("ssi", $horasTrabajadas, $observacion, $idDetalle);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $conexion->prepare("UPDATE asistencia SET idEstado = 1 WHERE idAsistencia = ?");
+            $stmt->bind_param("i", $idAsistencia);
+            $stmt->execute();
+            $stmt->close();
         }
     }
-
-
-    $mensaje = registrarAsistencia($idEmpleado, $conexion);
-    header('Location: asistencia_listado.php?mensaje=' . urlencode($mensaje));
-    exit;
 }
+
+?>
+
