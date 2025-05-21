@@ -10,17 +10,34 @@ $empleados = $conexion->query("SELECT idempleado, nombre, apellido FROM empleado
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Consulta de Asistencia</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <meta content="" name="description">
+    <meta content="" name="keywords">
+
+    <!-- Favicons -->
+    <link href="assets/img/favicon.png" rel="icon">
+    <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+
+    <!-- Vendor CSS Files -->
+    <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
+    <!-- Template Main CSS File -->
+    <link href="assets/css/style.css" rel="stylesheet">
 </head>
 
 <body>
     <div class="container mt-4">
         <h1 class="mb-4">Consulta de Asistencia por Empleado</h1>
-        <form method="GET" action="" class="row g-3 align-items-center">
-            <div class="col-md-4">
+        <form method="GET" action="" class="row g-3 ">
+            <div class="col-md-3 d-flex flex-column">
                 <label for="idEmpleado" class="form-label">Empleado</label>
                 <select name="idEmpleado" id="idEmpleado" class="form-select" required>
                     <option value="">-- Seleccionar --</option>
@@ -31,11 +48,11 @@ $empleados = $conexion->query("SELECT idempleado, nombre, apellido FROM empleado
                     <?php endwhile; ?>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 d-flex flex-column">
                 <label for="fechaInicio" class="form-label">Desde</label>
                 <input type="date" id="fechaInicio" name="fechaInicio" class="form-control" value="<?= $_GET['fechaInicio'] ?? '' ?>" />
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 d-flex flex-column">
                 <label for="fechaFin" class="form-label">Hasta</label>
                 <input type="date" id="fechaFin" name="fechaFin" class="form-control" value="<?= $_GET['fechaFin'] ?? '' ?>" />
             </div>
@@ -93,7 +110,7 @@ $empleados = $conexion->query("SELECT idempleado, nombre, apellido FROM empleado
             $resultados = $stmt->get_result();
         ?>
 
-            <table class="table table-bordered table-striped align-middle text-center">
+            <table class="table table-bordered table-striped align-middle text-center mt-4">
                 <thead class="table-dark">
                     <tr>
                         <th>Fecha</th>

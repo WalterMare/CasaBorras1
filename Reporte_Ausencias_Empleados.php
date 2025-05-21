@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (empty($_SESSION['Usuario_Nombre'])|| $_SESSION['Usuario_Id']!=1) {
+if (empty($_SESSION['Usuario_Nombre']) || $_SESSION['Usuario_Id'] != 1) {
     header('Location: cerrarsesion.php');
     exit;
 }
@@ -28,7 +28,7 @@ $timestampInicio = strtotime($fechaInicio);
 $timestampFin = strtotime($fechaFin);
 
 // Calcular la diferencia en días
-$diasTotales = ($timestampFin - $timestampInicio) / (60 * 60 * 24);
+$diasTotales = (int)($timestampFin - $timestampInicio) / (60 * 60 * 24) + 1;
 
 
 // Crear el arreglo de inasistencia
@@ -91,48 +91,34 @@ if (!empty($fechaInicio) && !empty($fechaFin)) {
         e.idempleado,
         e.nombre,
         e.apellido,
-        COUNT(a.idasistencia) AS cantidad_asistencias
+        COUNT(a.idAsistencia) AS cantidad_asistencias
     FROM empleado e
-    LEFT JOIN asistencias a ON e.idempleado = a.idempleado
+    LEFT JOIN asistencia a ON e.idempleado = a.idEmpleado
         AND a.fecha BETWEEN ? AND ?
     GROUP BY e.idempleado
     ORDER BY cantidad_asistencias DESC
-    ";
+";
 
     $stmt_asistencia = mysqli_prepare($conexion, $query_asistencia);
     mysqli_stmt_bind_param($stmt_asistencia, 'ss', $fechaInicio, $fechaFin);
     mysqli_stmt_execute($stmt_asistencia);
     $resultado_asistencia = mysqli_stmt_get_result($stmt_asistencia);
 
-    // Consulta para obtener los días de inasistencia por empleado, incluyendo a los empleados sin registros de asistencia
-    $query_inasistencia = "
-SELECT 
-    e.idempleado,
-    e.nombre,
-    e.apellido,
-    COALESCE((
-        SELECT COUNT(*)
-        FROM asistencias a
-        WHERE a.idEmpleado = e.idempleado
-        AND a.fecha BETWEEN ? AND ?
-        AND a.estado IN ('Presente', 'Tarde')
-    ), 0) AS dias_presentes_tarde
-FROM empleado e
-ORDER BY dias_presentes_tarde";
 
-    // Preparamos la consulta
-    $stmt_inasistencia = mysqli_prepare($conexion, $query_inasistencia);
+    require_once 'Obtener_asistencia.php';
+    $resultado_inasistencia = obtenerInasistencias($conexion, $fechaInicio, $fechaFin);
+    // Obtener datos de empleados activos (id, nombre, apellido)
+    $sql_empleados = "SELECT idempleado, nombre, apellido FROM empleado WHERE estado = 1";
+    $res_empleados = mysqli_query($conexion, $sql_empleados);
 
-    // Vinculamos las fechas al query
-    mysqli_stmt_bind_param($stmt_inasistencia, 'ss', $fechaInicio, $fechaFin);
-    mysqli_stmt_execute($stmt_inasistencia);
-
-    // Obtenemos el resultado
-    $resultado_inasistencia = mysqli_stmt_get_result($stmt_inasistencia);
+    $empleados = [];
+    while ($row = mysqli_fetch_assoc($res_empleados)) {
+        $empleados[$row['idempleado']] = $row; // Guardamos info para usar luego
+    }
 }
 
 // Función para generar el reporte en PDF
-function generarPDF($fechaInicio, $fechaFin, $resultado_resumen, $resultado_detalle, $resultado_asistencia, $resultado_inasistencia, $diasTotales)
+function generarPDF($fechaInicio, $fechaFin, $resultado_resumen, $resultado_detalle, $resultado_asistencia, $resultado_inasistencia, $diasTotales,$empleados)
 {
     // Al inicio del script
     ob_start();
@@ -226,13 +212,19 @@ function generarPDF($fechaInicio, $fechaFin, $resultado_resumen, $resultado_deta
     $pdf->Cell(50, 10, 'Apellido', 1, 0, 'C');
     $pdf->Cell(50, 10, 'Días de Inasistencia', 1, 1, 'C');
 
-  
-    while ($fila = mysqli_fetch_assoc($resultado_inasistencia)) {
-        $dias_inasistencia = $diasTotales - $fila['dias_presentes_tarde'];
-        $pdf->Cell(40, 10, $fila['idempleado'], 1, 0, 'C');
-        $pdf->Cell(50, 10, $fila['nombre'], 1, 0, 'C');
-        $pdf->Cell(50, 10, $fila['apellido'], 1, 0, 'C');
-        $pdf->Cell(50, 10, $dias_inasistencia, 1, 1, 'C');
+    foreach ($resultado_inasistencia as $idempleado => $fechas_inasistencias) {
+       
+        $idempleado = (int)$idempleado;
+        $cantidad_inasistencias = count($fechas_inasistencias);
+
+        if (isset($empleados[$idempleado])) {
+            $empleado = $empleados[$idempleado];
+
+            $pdf->Cell(40, 10, $idempleado, 1, 0, 'C');
+            $pdf->Cell(50, 10, $empleado['nombre'], 1, 0, 'C');
+            $pdf->Cell(50, 10, $empleado['apellido'], 1, 0, 'C');
+            $pdf->Cell(50, 10, $cantidad_inasistencias, 1, 1, 'C');
+        }
     }
 
     // Output the PDF
@@ -240,7 +232,7 @@ function generarPDF($fechaInicio, $fechaFin, $resultado_resumen, $resultado_deta
 }
 
 if (isset($_POST['generar_pdf'])) {
-    generarPDF($fechaInicio, $fechaFin, $resultado_resumen, $resultado_detalle, $resultado_asistencia, $resultado_inasistencia,$diasTotales);
+    generarPDF($fechaInicio, $fechaFin, $resultado_resumen, $resultado_detalle, $resultado_asistencia, $resultado_inasistencia, $diasTotales,$empleados);
     exit; // Para evitar que el contenido del HTML se muestre después del PDF
 }
 
@@ -370,6 +362,7 @@ if (isset($_POST['generar_pdf'])) {
                                 </table>
 
                                 <h2 class="mt-4">Cantidad de Días de Inasistencia por Empleado</h2>
+
                                 <table class="table table-striped">
                                     <thead>
                                         <tr>
@@ -381,34 +374,23 @@ if (isset($_POST['generar_pdf'])) {
                                     </thead>
                                     <tbody>
                                         <?php
-
-                                        // Recorremos los resultados de todos los empleados
-                                        while ($empleado = mysqli_fetch_assoc($resultado_inasistencia)) {
-                                            // Si el empleado tiene días registrados como presente o tarde, calculamos la inasistencia
-                                            if ($empleado['dias_presentes_tarde'] > 0) {
-                                                // Restamos los días presentes/tarde de los días totales
-                                                $dias_inasistencia = $diasTotales - $empleado['dias_presentes_tarde'];
-                                            } else {
-                                                // Si no tiene registros, el total de días de inasistencia será igual a los días totales
-                                                $dias_inasistencia = $diasTotales;
-                                            }
-                                            $datos_inasistencia[] = array(
-                                                'idempleado' => $empleado['idempleado'],
-                                                'nombre' => $empleado['nombre'],
-                                                'apellido' => $empleado['apellido'],
-                                                'dias_inasistencia' => $dias_inasistencia
-                                            );
-
+                                        foreach ($resultado_inasistencia as $idempleado => $fechas) {
+                                            // Si el empleado existe en la lista (precaución)
+                                            if (isset($empleados[$idempleado])) {
+                                                $nombre = $empleados[$idempleado]['nombre'];
+                                                $apellido = $empleados[$idempleado]['apellido'];
+                                                $dias_inasistencia = count($fechas);
                                         ?>
-                                            <tr>
-                                                <td><?= $empleado['idempleado'] ?></td>
-                                                <td><?= $empleado['nombre'] ?></td>
-                                                <td><?= $empleado['apellido'] ?></td>
-                                                <td><?= $dias_inasistencia ?></td>
-                                            </tr>
-
-
-                                        <?php } ?>
+                                                <tr>
+                                                    <td><?= htmlspecialchars($idempleado) ?></td>
+                                                    <td><?= htmlspecialchars($nombre) ?></td>
+                                                    <td><?= htmlspecialchars($apellido) ?></td>
+                                                    <td><?= htmlspecialchars($dias_inasistencia) ?></td>
+                                                </tr>
+                                        <?php
+                                            }
+                                        }
+                                        ?>
                                     </tbody>
                                 </table>
 

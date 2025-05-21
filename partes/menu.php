@@ -42,7 +42,7 @@
       <li class="nav-item">
 
         <a href="#forms-nav-movimientos" class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), [
-                                                            'Asistencia_Empleados.php',
+                                                            'asistencia.php',
                                                             'Viaticos.php',
                                                             'Anticipo.php',
                                                             'HorasExtras.php',
@@ -52,7 +52,7 @@
                                                             'Vacaciones.php',
                                                             'Licencias.php'
                                                           ]) ? 'active' : ''; ?>" data-bs-toggle="collapse" aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), [
-                                                                                                                              'Asistencia_Empleados.php',
+                                                                                                                              'asistencia.php',
                                                                                                                               'Viaticos.php',
                                                                                                                               'Anticipo.php',
                                                                                                                               'HorasExtras.php',
@@ -65,7 +65,7 @@
           <i class="bi bi-globe2"></i><span>Gestor Movimientos</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="forms-nav-movimientos" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), [
-                                                                      'Asistencia_Empleados.php',
+                                                                      'asistencia.php',
                                                                       'Viaticos.php',
                                                                       'Anticipo.php',
                                                                       'HorasExtras.php',
@@ -76,7 +76,7 @@
                                                                       'Licencias.php'
                                                                     ]) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
           <li>
-            <a href="asistencia_listado.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'asistencia_listado.php' ? 'active' : ''; ?>">
+            <a href="asistencia.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'asistencia.php' ? 'active' : ''; ?>">
               <i class="bi bi-file-earmark-plus"></i><span>Asistencia de Empleados</span>
             </a>
           </li>

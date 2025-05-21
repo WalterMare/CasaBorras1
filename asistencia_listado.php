@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Verificación si la sesión está vacía y redirigir al login si es necesario
 if (empty($_SESSION['Usuario_Nombre'])) {
@@ -16,6 +18,8 @@ try {
     die('Error en la conexión: ' . $e->getMessage());
 }
 
+require_once 'controlador_asistencia.php';
+
 date_default_timezone_set('America/Argentina/Buenos_Aires');
 $fechaHoy = date('Y-m-d');
 $dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -23,6 +27,26 @@ $dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domin
 $numeroDia = date('N');
 $diaSemana = $dias[$numeroDia - 1];
 
+$registrosPorPagina = 10;
+$paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+$offset = ($paginaActual - 1) * $registrosPorPagina;
+
+// Contar el total de registros
+$sqlTotal = "
+SELECT COUNT(*) AS total
+FROM empleado e
+LEFT JOIN empleado_turno et ON e.idempleado = et.idempleado
+LEFT JOIN turno_dia_horario tdh ON et.idturno = tdh.idturno AND tdh.dia_semana = '$diaSemana'
+LEFT JOIN empleado_dia_horario edh ON e.idempleado = edh.idempleado AND edh.dia_semana = '$diaSemana'
+LEFT JOIN asistencia a ON a.idEmpleado = e.idempleado AND a.fecha = '$fechaHoy'
+LEFT JOIN estadoasistencia es ON a.idEstado = es.idEstado
+LEFT JOIN detalle_asistencia da ON da.idAsistencia = a.idAsistencia
+LEFT JOIN evento_asistencia ea1 ON ea1.idDetalleAsistencia = da.idDetalleAsistencia AND ea1.tipoEvento = 'Entrada'
+LEFT JOIN evento_asistencia ea2 ON ea2.idDetalleAsistencia = da.idDetalleAsistencia AND ea2.tipoEvento = 'Salida'
+";
+$totalResultado = $conexion->query($sqlTotal);
+$totalRegistros = $totalResultado->fetch_assoc()['total'];
+$totalPaginas = ceil($totalRegistros / $registrosPorPagina);
 
 $sql = "
 SELECT e.idempleado, e.nombre, e.apellido,
@@ -41,6 +65,7 @@ LEFT JOIN detalle_asistencia da ON da.idAsistencia = a.idAsistencia
 LEFT JOIN evento_asistencia ea1 ON ea1.idDetalleAsistencia = da.idDetalleAsistencia AND ea1.tipoEvento = 'Entrada'
 LEFT JOIN evento_asistencia ea2 ON ea2.idDetalleAsistencia = da.idDetalleAsistencia AND ea2.tipoEvento = 'Salida'
 ORDER BY e.apellido, e.nombre
+LIMIT $registrosPorPagina OFFSET $offset
 ";
 
 $resultado = $conexion->query($sql);
@@ -75,91 +100,112 @@ $resultado = $conexion->query($sql);
 
 <body class="bg-light">
 
-    <?php include_once 'partes/header.php'; ?>
-    <?php include_once 'partes/menu.php'; ?>
+    <h2>Asistencia de Hoy (<?php echo $fechaHoy; ?>)</h2>
 
-    <main id="main" class="main">
-        <div class="pagetitle">
-            <h1 class="card-title text-center">Asistencia de Empleados</h1>
+    <?php
+    $Mensaje = '';
+    $Estilo = '';
+
+    // Si viene un POST para registrar entrada/salida
+    if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        $idEmpleado = intval($_POST['idEmpleado']);
+        $accion = $_POST['accion'];
+
+        if ($accion === 'Entrada') {
+            $Mensaje = registrarEntrada($idEmpleado, $conexion);
+        } elseif ($accion === 'Salida') {
+            $Mensaje = registrarSalida($idEmpleado, $conexion);
+        }
+
+        // Definir estilo según el tipo de mensaje
+        if (strpos($Mensaje, 'correctamente') !== false) {
+            $Estilo = 'success';
+        } else {
+            $Estilo = 'warning';
+        }
+    } ?>
+
+    <?php if (!empty($Mensaje)) { ?>
+        <div id='cartel' class="alert alert-<?php echo $Estilo; ?> alert-dismissible fade show" role="alert">
+            <i class="bi <?php echo $Estilo === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'; ?> me-1"></i>
+            <?php echo $Mensaje; ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        <section class="section">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card">
-                        <div class="card-body">
+    <?php } ?>
 
-                            <h2>Asistencia de Hoy (<?php echo $fechaHoy; ?>)</h2>
-                            <form action="asistencia_qr.php" method="POST" class="row g-6">
-                                <div class="col-6">
-                                    <label class="form-label">Empleado:</label>
-                                    <select class="form-select" name="idEmpleado" required>
-                                        <option value="">Seleccionar</option>
-                                        <?php
-                                        $empleados = $conexion->query("SELECT idempleado, nombre, apellido FROM empleado ORDER BY apellido");
-                                        while ($emp = $empleados->fetch_assoc()) {
-                                            echo "<option value='{$emp['idempleado']}'>{$emp['apellido']} {$emp['nombre']}</option>";
-                                        }
-                                        ?>
-                                    </select>
-                                </div>
-                                <div class="col-1">
-                                    <button type="submit" name="accion" value="Entrada" class="btn btn-primary">Registrar Entrada</button>
-                                    <button type="submit" name="accion" value="Salida" class="btn btn-secondary">Registrar Salida</button>
-                                </div>
+    <form method="POST" class="row g-6">
+        <div class="col-6">
+            <label class="form-label">Empleado:</label>
+            <select class="form-select" name="idEmpleado" required>
+                <option value="">Seleccionar</option>
+                <?php
+                $empleados = $conexion->query("SELECT idempleado, nombre, apellido FROM empleado ORDER BY apellido");
+                while ($emp = $empleados->fetch_assoc()) {
+                    echo "<option value='{$emp['idempleado']}'>{$emp['apellido']} {$emp['nombre']}</option>";
+                }
+                ?>
+            </select>
+        </div>
+        <div class="col-6 d-flex gap-2 align-items-end">
+            <button type="submit" name="accion" value="Entrada" class="btn btn-primary">Registrar Entrada</button>
+            <button type="submit" name="accion" value="Salida" class="btn btn-secondary">Registrar Salida</button>
+        </div>
 
-                            </form>
+    </form>
 
-                            <table class="table table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Empleado</th>
-                                        <th>Horario Esperado</th>
-                                        <th>Entrada</th>
-                                        <th>Salida</th>
-                                        <th>Estado</th>
-                                        <th>Horas Trabajadas</th>
-                                        <th>Observaciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php while ($row = $resultado->fetch_assoc()): ?>
-                                        <tr>
-                                            <td><?= $row['apellido'] . " " . $row['nombre'] ?></td>
-                                            <td><?= $row['hora_esperada_entrada'] . " - " . $row['hora_esperada_salida'] ?></td>
-                                            <td><?= $row['horaEntrada'] ?? "-" ?></td>
-                                            <td><?= $row['horaSalida'] ?? "-" ?></td>
-                                            <td><?= $row['nombreEstado'] ?? "Ausente" ?></td>
-                                            <td><?= $row['horasTrabajadas'] ?? "-" ?></td>
-                                            <td><?= $row['observaciones'] ?? "-" ?></td>
-                                        </tr>
-                                    <?php endwhile; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-    <?php include_once 'partes/footer.php'; ?>
-    <!-- End Footer -->
+    <table class="table table-striped mt-4">
+        <thead class="table-dark">
+            <tr>
+                <th>Empleado</th>
+                <th>Horario Esperado</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Estado</th>
+                <th>Horas Trabajadas</th>
+                <th>Observaciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while ($row = $resultado->fetch_assoc()): ?>
+                <tr>
+                    <td><?= $row['apellido'] . " " . $row['nombre'] ?></td>
+                    <td><?= $row['hora_esperada_entrada'] . " - " . $row['hora_esperada_salida'] ?></td>
+                    <td><?= $row['horaEntrada'] ?? "-" ?></td>
+                    <td><?= $row['horaSalida'] ?? "-" ?></td>
+                    <td>
+                        <?php
+                        $estado = $row['nombreEstado'] ?? 'Ausente';
+                        $badgeClass = ($estado === 'Presente') ? 'bg-success' : 'bg-danger';
+                        ?>
+                        <span class="badge <?= $badgeClass ?>"><?= $estado ?></span>
+                    </td>
+                    <td><?= $row['horasTrabajadas'] ?? "-" ?></td>
+                    <td><?= $row['observaciones'] ?? "-" ?></td>
+                </tr>
+            <?php endwhile; ?>
+        </tbody>
+    </table>
+    <nav aria-label="Paginación de asistencia" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <?php if ($paginaActual > 1): ?>
+                <li class="page-item">
+                    <a class="page-link" href="?pagina=<?= $paginaActual - 1 ?>">Anterior</a>
+                </li>
+            <?php endif; ?>
 
-    <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+            <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+                <li class="page-item <?= $i == $paginaActual ? 'active' : '' ?>">
+                    <a class="page-link" href="?pagina=<?= $i ?>"><?= $i ?></a>
+                </li>
+            <?php endfor; ?>
 
-    <!-- Vendor JS Files
-<script src="assets/vendor/apexcharts/apexcharts.min.js"></script> -->
-    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <!-- <script src="assets/vendor/chart.js/chart.umd.js"></script>
-<script src="assets/vendor/echarts/echarts.min.js"></script>
-<script src="assets/vendor/quill/quill.js"></script>
-<script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
-    <script src="assets/vendor/tinymce/tinymce.min.js"></script>
-
-    <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
-
-    <!-- Template Main JS File -->
-    <script src="assets/js/main.js"></script>
-
+            <?php if ($paginaActual < $totalPaginas): ?>
+                <li class="page-item">
+                    <a class="page-link" href="?pagina=<?= $paginaActual + 1 ?>">Siguiente</a>
+                </li>
+            <?php endif; ?>
+        </ul>
+    </nav>
 </body>
 
 </html>
