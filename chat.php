@@ -192,15 +192,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
     }
 
 
+ 
     // Empleados ausentes hoy
     elseif (strpos($mensaje, 'ausentes hoy') !== false) {
         $fecha = date('Y-m-d');
         $query = "
-            SELECT e.nombre, e.apellido 
-            FROM empleado e 
-            LEFT JOIN asistencias a ON e.idempleado = a.idEmpleado AND a.fecha = ? 
-            WHERE a.idAsistencia IS NULL
-        ";
+        SELECT e.nombre, e.apellido 
+        FROM empleado e
+        LEFT JOIN asistencia a ON e.idempleado = a.idEmpleado AND a.fecha = ?
+        WHERE a.idAsistencia IS NULL
+    ";
         $stmt = mysqli_prepare($conexion, $query);
         mysqli_stmt_bind_param($stmt, 's', $fecha);
         mysqli_stmt_execute($stmt);

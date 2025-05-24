@@ -26,7 +26,7 @@ $mensaje = "";
 // Compara la fecha configurada con la fecha actual
 if (date('Y-m-d') === $fechaPreliquidacion) {
   // Ejecuta la preliquidación (puedes incluir la lógica de tu preliquidación aquí)
-  require_once 'PreliquidacionSueldo.php';
+  require_once 'crear_preliquidacion.php';
 
   // Calcular la fecha de preliquidación para el próximo mes
   $nuevaFecha = date('Y-m-d', strtotime('next month', strtotime($fechaPreliquidacion)));

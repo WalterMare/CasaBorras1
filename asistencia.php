@@ -82,7 +82,7 @@ $conexion = ConexionBD();
                 </ul>
 
                 <!-- Contenido de las Tabs -->
-                <div class="tab-content pt-2" id="EmbargosTabsContent">
+                <div class="tab-content pt-2" id="AsistenciaTabsContent">
                     <!-- Tab de Registro -->
                     <div class="tab-pane fade show active" id="registrar" role="tabpanel">
                         <?php include 'asistencia_listado.php'; ?>

@@ -83,8 +83,16 @@ $preliquidaciones = Listar_Preliquidaciones($conexion);
                             <td><?php echo htmlspecialchars($preliquidacion['estado']); ?></td>
                             <td>
                                 <a href="detalle_preliquidacion.php?id=<?php echo urlencode($preliquidacion['idpreliquidacion']); ?>" class="btn btn-warning btn-sm">Ver Detalles</a>
-
-                                <a href="exportar_preliquidacion.php?idPreliquidacion=<?php echo $preliquidacion['idpreliquidacion']; ?>" class="btn btn-danger btn-sm">Exportar a Excel</a>
+                                <?php if ($preliquidacion['estado'] ==='Confirmada'): ?>
+                                    <a href="exportar_preliquidacion.php?id=<?php echo $preliquidacion['idpreliquidacion']; ?>" class="btn btn-success btn-sm">
+                                        <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                                    </a>
+                                <?php else: ?>
+                                    <!-- Opcional: botón deshabilitado o mensaje -->
+                                    <button class="btn btn-success btn-sm" disabled title="Solo disponible cuando está Confirmada">
+                                        <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                                    </button>
+                                <?php endif; ?>
 
                             </td>
                         </tr>

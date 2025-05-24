@@ -6,11 +6,11 @@ require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
 // Si no se ha pasado un idPreliquidacion
-if (!isset($_GET['idPreliquidacion'])) {
+if (!isset($_GET['id'])) {
     die("Error: ID de preliquidación no especificado.");
 }
 
-$idPreliquidacion = intval($_GET['idPreliquidacion']);
+$idPreliquidacion = intval($_GET['id']);
 
 // Consulta para obtener los datos de la preliquidación
 $consultaPreliquidacion = "SELECT 
