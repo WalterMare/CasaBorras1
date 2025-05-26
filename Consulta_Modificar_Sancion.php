@@ -1,45 +1,4 @@
 <?php
-function ModificarSancion($vConexion, $id_sancion)
-{
-    // Verificamos si los datos necesarios están presentes
-    if (empty($_POST['IdTipoSancion']) || empty($_POST['idEmpleado']) || empty($_POST['fecha_inicio']) || empty($_POST['descripcion']) || empty($_POST['cantidadDias']) || empty($_POST['idEstadoSancion'])) {
-        return false;
-    }
-
-    // Obtenemos los datos de POST y los asignamos a variables
-    $tipo = intval($_POST['IdTipoSancion']);
-    $empleado = intval($_POST['idEmpleado']);
-    $fecha = $_POST['fecha_inicio'];
-    $descripcion = trim($_POST['descripcion']);
-    $dias = intval($_POST['cantidadDias']);
-    $estado = intval($_POST['idEstadoSancion']);
-
-    // Calculamos la nueva fecha_fin
-    $fecha_inicio = new DateTime($fecha);
-    $fecha_fin = $fecha_inicio->modify("+$dias days");
-    $fecha_fin_formateada = $fecha_fin->format('Y-m-d');
-
-    // Preparamos la consulta SQL para actualizar la sanción
-    $SQL_Update = "UPDATE sancion 
-                   SET IdTipoSancion = '$tipo', 
-                       idEmpleado = '$empleado', 
-                       fecha_inicio = '$fecha', 
-                       descripcion = '$descripcion', 
-                       cantidadDias = '$dias', 
-                       idEstadoSancion = '$estado', 
-                       fecha_fin = '$fecha_fin_formateada'
-                   WHERE idsancion = $id_sancion";
-
-    // Ejecutamos la consulta
-    if (!mysqli_query($vConexion, $SQL_Update)) {
-        // Si ocurre un error, detenemos la ejecución y mostramos un mensaje
-        die('<h4>Error al intentar modificar la sanción.</h4>');
-    }
-
-    return true;
-}
-
-
 function ObtenerSancion($conexion, $idSancion) {
 
     $Listado = array();
@@ -79,7 +38,5 @@ function ObtenerSancion($conexion, $idSancion) {
 }
 ?>
 
-
-?>
 
 

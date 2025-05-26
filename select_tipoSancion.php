@@ -55,31 +55,49 @@ function Listar_Estado($vConexion) {
 <?php
 function Listar_Sancion_Empleado($vConexion,$empleado) {
 
-    $Listado=array();
+    $Listado = array();
 
-    //1) genero la consulta que deseo
-    $consulta = "SELECT * FROM tiposancion, sancion, estadosancion as e, empleado WHERE sancion.idEmpleado=$empleado
-    AND  sancion.IdTipoSancion= tiposancion.idtiposancion and empleado.idempleado=sancion.idEmpleado and sancion.idEstadoSancion=e.idestadoSancion  ORDER BY sancion.fecha_inicio";
+    $empleado = (int)$empleado; // proteger el valor
 
-    //2) a la conexion actual le brindo mi consulta, y el resultado lo entrego a variable $rs
-     $rs = mysqli_query($vConexion, $consulta);
-        
-     //3) el resultado deberá organizarse en una matriz, entonces lo recorro
-     $i=0;
-    while ($data = mysqli_fetch_array($rs)) {
-            $Listado[$i]['FECHAINICIO'] = $data['fecha_inicio'];
-            $Listado[$i]['FECHAFIN'] = $data['fecha_fin'];
-            $Listado[$i]['NOMBRE'] = $data['nombre'];
-            $Listado[$i]['APELLIDO'] = $data['apellido'];
-            $Listado[$i]['NOMBRETIPO'] = $data['nombreTipo'];
-            $Listado[$i]['DIAS'] = $data['cantidadDias'];
-            $Listado[$i]['ESTADO'] = $data['nombres'];
-            $Listado[$i]['IDSANCION']=$data['idsancion'];
-            $i++;
+    // Consulta clara con alias
+    $consulta = "
+        SELECT 
+            s.fecha_inicio AS fecha_inicio_sancion,
+            s.fecha_fin AS fecha_fin_sancion,
+            s.cantidadDias,
+            s.idsancion,
+            t.nombreTipo,
+            e.nombres AS estado_nombre,
+            emp.nombre AS nombre_empleado,
+            emp.apellido AS apellido_empleado
+        FROM sancion s
+        JOIN tiposancion t ON s.IdTipoSancion = t.idtiposancion
+        JOIN estadosancion e ON s.idEstadoSancion = e.idestadoSancion
+        JOIN empleado emp ON s.idEmpleado = emp.idempleado
+        WHERE s.idEmpleado = $empleado
+        ORDER BY s.fecha_inicio
+    ";
+
+    $rs = mysqli_query($vConexion, $consulta);
+
+    if (!$rs) {
+        echo "Error en la consulta: " . mysqli_error($vConexion);
+        return $Listado;
     }
 
+    $i = 0;
+    while ($data = mysqli_fetch_assoc($rs)) {
+        $Listado[$i]['FECHAINICIO'] = $data['fecha_inicio_sancion'];
+        $Listado[$i]['FECHAFIN'] = $data['fecha_fin_sancion'];
+        $Listado[$i]['NOMBRE'] = $data['nombre_empleado'];
+        $Listado[$i]['APELLIDO'] = $data['apellido_empleado'];
+        $Listado[$i]['NOMBRETIPO'] = $data['nombreTipo'];
+        $Listado[$i]['DIAS'] = $data['cantidadDias'];
+        $Listado[$i]['ESTADO'] = $data['estado_nombre'];
+        $Listado[$i]['IDSANCION'] = $data['idsancion'];
+        $i++;
+    }
 
-    //devuelvo el listado generado en el array $Listado. (Podra salir vacio o con datos)..
     return $Listado;
 
 }

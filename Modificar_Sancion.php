@@ -100,7 +100,7 @@ require_once 'validacion_Modificar_sanciones.php';
                                 $Mensaje = Validar_Datos();
                                 if (empty($Mensaje)) {
                                     if (ModificarSancion($conexion, $_GET['ID']) != false) {
-                                        $Mensaje = 'Se ha registrado correctamente.';
+                                        $Mensaje = 'Se ha Actualizado correctamente.';
                                         $_POST = array();
                                         $Estilo = 'success';
                                         // Agregar redirección automática después de 2 segundos

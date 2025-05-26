@@ -33,15 +33,19 @@ try {
         ':IdTipo'      => $_POST['IdTipo'],
         ':idEmpleado'  => $_POST['idEmpleado'],
         ':IdEstado'    => $_POST['IdEstado'],
-        ':cantidaddias'=> $_POST['diasLicencia']
+        ':cantidaddias' => $_POST['diasLicencia']
     ]);
 
     $idLicencia = $pdo->lastInsertId();
 
     // Actualizar estado del empleado a 0 (inactivo)
-    $stmt = $pdo->prepare("UPDATE empleado SET estado = 0 WHERE idempleado = :idEmpleado");
-    $stmt->execute([':idEmpleado' => $_POST['idEmpleado']]);
-
+    //$stmt = $pdo->prepare("UPDATE empleado SET estado = 0 WHERE idempleado = :idEmpleado");
+    //$stmt->execute([':idEmpleado' => $_POST['idEmpleado']]);
+    // Solo cambiar el estado del empleado si la licencia fue aprobada (IdEstado = 1)
+    if ((int)$_POST['IdEstado'] === 1) {
+        $stmt = $pdo->prepare("UPDATE empleado SET estado = 0 WHERE idempleado = :idEmpleado");
+        $stmt->execute([':idEmpleado' => $_POST['idEmpleado']]);
+    }
     // Insertar detalles de la licencia y la documentación en la tabla documento
     if (!empty($_POST['detalles_descripcion'])) {
         foreach ($_POST['detalles_descripcion'] as $index => $descripcion) {
@@ -61,7 +65,7 @@ try {
             $stmt->execute([
                 ':idLicencia'   => $idLicencia,
                 ':descripcion'  => $descripcion,
-                ':FechaCreacion'=> date('Y-m-d'),
+                ':FechaCreacion' => date('Y-m-d'),
                 ':idUsuario'    => $_POST['usuario']
             ]);
 
@@ -95,6 +99,3 @@ echo "<script>
         alert(" . json_encode($mensaje) . ");
         window.location.href='Licencias.php';
       </script>";
-?>
-
-

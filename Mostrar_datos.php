@@ -39,6 +39,7 @@ $sql = "SELECT
         FROM empleado e
         LEFT JOIN licencia l ON e.idempleado = l.idEmpleado 
             AND CURDATE() BETWEEN l.fechainicio AND l.fechafin
+            AND l.IdEstado = 1
         LEFT JOIN tipolicencia tl ON l.IdTipo = tl.idtipoLicencia
         LEFT JOIN sancion s ON e.idempleado = s.idEmpleado 
             AND CURDATE() BETWEEN s.fecha_inicio AND s.fecha_fin
@@ -69,7 +70,7 @@ $sancion_fin = $datosEmpleado['sancion_fin'] ?? null;
 $tipo_sancion = $datosEmpleado['tipo_sancion'] ?? null;
 $vacaciones_inicio = $datosEmpleado['vacaciones_inicio'] ?? null;
 $vacaciones_fin = $datosEmpleado['vacaciones_fin'] ?? null;
-$motivobaja=$datosEmpleado['motivo_baja']??null;
+$motivobaja = $datosEmpleado['motivo_baja'] ?? null;
 
 // Determinar la razón de inactividad
 $razonInactivo = [];
