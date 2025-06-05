@@ -65,6 +65,7 @@ function registrarEntrada($idEmpleado, $conexion)
 
 function registrarSalida($idEmpleado, $conexion)
 {
+    date_default_timezone_set('America/Argentina/Buenos_Aires');
     $fecha = date('Y-m-d');
     $hora = date('H:i:s');
     $idAsistencia = null;

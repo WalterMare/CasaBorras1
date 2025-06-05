@@ -1,9 +1,5 @@
 <!-- ======= Header ======= -->
-
 <header id="header" class="header fixed-top d-flex align-items-center">
-
-
-
   <div class="d-flex align-items-center justify-content-between">
     <a href="index.php" class="logo d-flex align-items-center">
       <img src="assets/img/LOGO2.jpg" alt="logo">
@@ -11,12 +7,9 @@
     </a>
     <i class="bi bi-list toggle-sidebar-btn"></i>
   </div><!-- End Logo -->
-
-
   <nav class="header-nav ms-auto">
     <ul class="d-flex align-items-center">
       <li class="nav-item dropdown pe-3">
-
         <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
           <?php
           // Si el valor de 'Usuario_Img' está en base64, lo usamos directamente en el src
@@ -35,7 +28,7 @@
             <h6><?php echo $_SESSION['Usuario_Nombre'] . " " . $_SESSION['Usuario_Apellido']; ?></h6>
             <span><?php echo $_SESSION['Usuario_Nombre_Nivel'] ?></span>
           </li>
-        
+
           <li>
             <hr class="dropdown-divider">
           </li>

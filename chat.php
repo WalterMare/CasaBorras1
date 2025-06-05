@@ -15,19 +15,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
             $apellido = $partes[1];
             $fecha = date('Y-m-d');
 
-            $stmt = mysqli_prepare($conexion, "SELECT a.estado FROM asistencias a JOIN empleado e ON a.idEmpleado = e.idempleado WHERE e.nombre = ? AND e.apellido = ? AND fecha = ?");
+            $stmt = mysqli_prepare(
+                $conexion,
+                "SELECT ea.nombreEstado 
+             FROM asistencia a 
+             JOIN empleado e ON a.idEmpleado = e.idempleado 
+             JOIN estadoasistencia ea ON a.idEstado = ea.idEstado 
+             WHERE e.nombre = ? AND e.apellido = ? AND a.fecha = ?"
+            );
 
             mysqli_stmt_bind_param($stmt, 'sss', $nombre, $apellido, $fecha);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_bind_result($stmt, $estado);
             if (mysqli_stmt_fetch($stmt)) {
-                $respuesta = "$nombre $apellido vino hoy. Estado: $estado.";
+                $respuesta = "$nombre $apellido si esta $estado.";
             } else {
                 $respuesta = "$nombre $apellido no registró asistencia hoy.";
             }
             mysqli_stmt_close($stmt);
         }
     }
+
 
     // Consultar si un empleado está de vacaciones hoy
     elseif (preg_match('/de vacaciones\s+([a-záéíóúñ]+\s[a-záéíóúñ]+)/i', $mensaje, $coincidencia)) {
@@ -36,9 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
         if (count($partes) >= 2) {
             $nombre = $partes[0];
             $apellido = $partes[1];
-    
+
             $hoy = date('Y-m-d');
-    
+
             // Verifica si el empleado está de vacaciones hoy
             $stmt = mysqli_prepare($conexion, "
                 SELECT v.fecha_inicio, v.fecha_fin, v.cantidad_dias, e.idempleado
@@ -51,14 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
             mysqli_stmt_bind_param($stmt, 'sss', $nombre, $apellido, $hoy);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_bind_result($stmt, $fechaInicio, $fechaFin, $diasTomados, $idEmpleado);
-    
+
             if (mysqli_stmt_fetch($stmt)) {
                 mysqli_stmt_close($stmt);
-    
+
                 // Año al que corresponde la vacación (año anterior a la fecha de inicio)
                 $anioCorrespondiente = date('Y', strtotime($fechaInicio)) - 1;
                 $limiteUso = ($anioCorrespondiente + 1) . "-04-01"; // 1 de abril del año siguiente
-    
+
                 if ($hoy >= $limiteUso) {
                     $respuesta = "$nombre $apellido está de vacaciones hoy, pero ya no debería estar usándolas porque vencían el 31 de marzo de " . ($anioCorrespondiente + 1) . ".";
                 } else {
@@ -73,11 +81,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
                     mysqli_stmt_bind_result($stmt2, $totalTomado);
                     mysqli_stmt_fetch($stmt2);
                     mysqli_stmt_close($stmt2);
-    
+
                     // Definimos que el total disponible es 14 días (puede ajustarse si tenés un campo para eso)
-                    $totalDisponible = 14; 
+                    $totalDisponible = 14;
                     $diasRestantes = $totalDisponible - $totalTomado;
-    
+
                     $respuesta = "$nombre $apellido está de vacaciones hoy. Tomó $diasTomados día(s) en este tramo, correspondientes al año $anioCorrespondiente. Le quedan $diasRestantes día(s) disponibles para usar antes del 31 de marzo de " . ($anioCorrespondiente + 1) . ".";
                 }
             } else {
@@ -192,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
     }
 
 
- 
+
     // Empleados ausentes hoy
     elseif (strpos($mensaje, 'ausentes hoy') !== false) {
         $fecha = date('Y-m-d');

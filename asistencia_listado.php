@@ -1,16 +1,16 @@
 <?php
+
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
-
 // Verificación si la sesión está vacía y redirigir al login si es necesario
 if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;
 }
 
-require_once 'conexiondb.php';
 
+require_once 'conexiondb.php';
 // Manejo de errores en la conexión a la base de datos
 try {
     $conexion = ConexionBD();
@@ -18,15 +18,38 @@ try {
     die('Error en la conexión: ' . $e->getMessage());
 }
 
-require_once 'controlador_asistencia.php';
-
 date_default_timezone_set('America/Argentina/Buenos_Aires');
+require_once 'controlador_asistencia.php';
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $idEmpleado = intval($_POST['idEmpleado']);
+    $accion = $_POST['accion'];
+
+    if ($accion === 'Entrada') {
+        $mensaje = registrarEntrada($idEmpleado, $conexion);
+    } elseif ($accion === 'Salida') {
+        $mensaje = registrarSalida($idEmpleado, $conexion);
+    } else {
+        $mensaje = 'Acción no válida.';
+    }
+
+    // Definir estilo según el tipo de mensaje
+    $estilo = (strpos($mensaje, 'correctamente') !== false) ? 'success' : 'warning';
+
+    // Guardar en sesión para mostrar después de redirigir
+    $_SESSION['flash_mensaje'] = $mensaje;
+    $_SESSION['flash_estilo'] = $estilo;
+
+    // Redireccionar (evita reenvío de formulario al recargar)
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+
 $fechaHoy = date('Y-m-d');
 $dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 // date('N') devuelve 1 para lunes, 7 para domingo
 $numeroDia = date('N');
 $diaSemana = $dias[$numeroDia - 1];
-
 $registrosPorPagina = 10;
 $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($paginaActual - 1) * $registrosPorPagina;
@@ -47,7 +70,6 @@ LEFT JOIN evento_asistencia ea2 ON ea2.idDetalleAsistencia = da.idDetalleAsisten
 $totalResultado = $conexion->query($sqlTotal);
 $totalRegistros = $totalResultado->fetch_assoc()['total'];
 $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
-
 $sql = "
 SELECT e.idempleado, e.nombre, e.apellido,
        COALESCE(edh.hora_inicio, tdh.hora_inicio) AS hora_esperada_entrada,
@@ -67,8 +89,9 @@ LEFT JOIN evento_asistencia ea2 ON ea2.idDetalleAsistencia = da.idDetalleAsisten
 ORDER BY e.apellido, e.nombre
 LIMIT $registrosPorPagina OFFSET $offset
 ";
-
 $resultado = $conexion->query($sql);
+
+
 ?>
 
 <!DOCTYPE html>
@@ -102,37 +125,7 @@ $resultado = $conexion->query($sql);
 
     <h2>Asistencia de Hoy (<?php echo $fechaHoy; ?>)</h2>
 
-    <?php
-    $Mensaje = '';
-    $Estilo = '';
-
-    // Si viene un POST para registrar entrada/salida
-    if ($_SERVER["REQUEST_METHOD"] === "POST") {
-        $idEmpleado = intval($_POST['idEmpleado']);
-        $accion = $_POST['accion'];
-
-        if ($accion === 'Entrada') {
-            $Mensaje = registrarEntrada($idEmpleado, $conexion);
-        } elseif ($accion === 'Salida') {
-            $Mensaje = registrarSalida($idEmpleado, $conexion);
-        }
-
-        // Definir estilo según el tipo de mensaje
-        if (strpos($Mensaje, 'correctamente') !== false) {
-            $Estilo = 'success';
-        } else {
-            $Estilo = 'warning';
-        }
-    } ?>
-
-    <?php if (!empty($Mensaje)) { ?>
-        <div id='cartel' class="alert alert-<?php echo $Estilo; ?> alert-dismissible fade show" role="alert">
-            <i class="bi <?php echo $Estilo === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'; ?> me-1"></i>
-            <?php echo $Mensaje; ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php } ?>
-
+   
     <form method="POST" class="row g-6">
         <div class="col-6">
             <label class="form-label">Empleado:</label>
@@ -152,6 +145,29 @@ $resultado = $conexion->query($sql);
         </div>
 
     </form>
+
+    <?php
+    if (!empty($_SESSION['flash_mensaje'])) {
+        $mensaje = $_SESSION['flash_mensaje'];
+        $estilo = $_SESSION['flash_estilo'];
+
+        // Mostrar alerta con JS para recargar
+        echo "
+    <div id='cartel' class='alert alert-$estilo alert-dismissible fade show' role='alert'>
+        $mensaje
+        <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
+    </div>
+    <script>
+        setTimeout(function() {
+            location.reload();
+        }, 3000); // 3 segundos
+    </script>";
+
+        // Limpiar sesión
+        unset($_SESSION['flash_mensaje']);
+        unset($_SESSION['flash_estilo']);
+    }
+    ?>
 
     <table class="table table-striped mt-4">
         <thead class="table-dark">

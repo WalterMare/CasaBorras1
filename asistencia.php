@@ -1,5 +1,5 @@
 <?php
-
+ob_start();
 session_start();
 
 //si tengo vacio mi elemento de sesion me tiene q redireccionar al login.. 
@@ -133,5 +133,5 @@ $conexion = ConexionBD();
 
 
 </body>
-
+<?php ob_end_flush(); ?>
 </html>

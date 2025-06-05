@@ -1,4 +1,5 @@
 <?php
+
 function InsertarSancion($vConexion)
 {
     // Obtener la fecha de inicio y la cantidad de días
@@ -11,24 +12,39 @@ function InsertarSancion($vConexion)
     $fecha_finalicima = $fecha_final->format('Y-m-d');
 
     // Insertar la sanción en la base de datos
-    $SQL_Insert = "INSERT INTO sancion (idsancion, fecha_inicio, IdTipoSancion, descripcion, idEmpleado, cantidadDias, idEstadoSancion, fecha_fin) 
-                   VALUES (null, '" . $_POST['fecha'] . "', '" . $_POST['tipo'] . "', '" . $_POST['descripcion'] . "', '" . $_POST['empleado'] . "', '" . $_POST['dias'] . "', '" . $_POST['estado'] . "', '" . $fecha_finalicima . "')";
+    $SQL_Insert = "INSERT INTO sancion (
+                        idsancion, fecha_inicio, IdTipoSancion, descripcion, 
+                        idEmpleado, cantidadDias, idEstadoSancion, fecha_fin
+                    ) VALUES (
+                        null, 
+                        '" . $_POST['fecha'] . "', 
+                        '" . $_POST['tipo'] . "', 
+                        '" . $_POST['descripcion'] . "', 
+                        '" . $_POST['empleado'] . "', 
+                        '" . $_POST['dias'] . "', 
+                        '" . $_POST['estado'] . "', 
+                        '" . $fecha_finalicima . "'
+                    )";
 
     // Ejecutar la consulta de inserción
     if (!mysqli_query($vConexion, $SQL_Insert)) {
         return false;
     } else {
-        // Verificar si el tipo de sanción es 3, 4 o 5 (suspensiones)
-        $tipos_que_inactivan = [3, 4, 5]; // IDs que inhabilitan al empleado
+        // Si la sanción está "En curso" (estado 2), se inactiva al empleado
+        $estadoSancion = (int)$_POST['estado'];
+        $tipoSancion = (int)$_POST['tipo'];
 
-        if (in_array((int)$_POST['tipo'], $tipos_que_inactivan)) {
-            // Modificar el estado del empleado a 0 (inactivo)
+        // Si es una sanción del tipo que inactiva y está En curso
+        $tipos_que_inactivan = [3, 4, 5]; // IDs de tipos de sanción que suspenden
+
+        if ($estadoSancion === 2 && in_array($tipoSancion, $tipos_que_inactivan)) {
             Modificar_Estado_Empleado($_POST['empleado'], 0, $vConexion);
         }
     }
 
     return true;
 }
+
 
 function Modificar_Estado_Empleado($Id, $Estado, $conexion)
 {
