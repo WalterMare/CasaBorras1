@@ -62,4 +62,80 @@ function Consultar_licencias_por_cargo($conexion, $fechaInicio, $fechaFin)
 
     return $licencias_por_cargo;
 }
+
+
+function ContarEmpleadosConLicencia($conexion, $fechaInicio, $fechaFin) {
+    $sql = "SELECT COUNT(DISTINCT idEmpleado) AS total_empleados
+            FROM licencia
+            WHERE fechainicio BETWEEN ? AND ?";
+    
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param("ss", $fechaInicio, $fechaFin);
+    $stmt->execute();
+    $resultado = $stmt->get_result()->fetch_assoc();
+    return $resultado['total_empleados'] ?? 0;
+}
+
+function LicenciasPorMes($conexion, $fechaInicio, $fechaFin) {
+    $sql = "SELECT DATE_FORMAT(fechainicio, '%Y-%m') AS mes, COUNT(*) AS cantidad
+            FROM licencia
+            WHERE fechainicio BETWEEN ? AND ?
+            GROUP BY mes
+            ORDER BY mes";
+    
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param("ss", $fechaInicio, $fechaFin);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+    $datos = [];
+    while ($fila = $resultado->fetch_assoc()) {
+        $datos[] = $fila;
+    }
+    return $datos;
+}
+function EmpleadosConLicencias($conexion, $fechaInicio, $fechaFin) {
+    $sql = "SELECT 
+                e.nombre, 
+                e.apellido, 
+                c.descripcion AS cargo,
+                COUNT(*) AS total_licencias, 
+                SUM(l.cantidaddias) AS total_dias
+            FROM licencia l
+            JOIN empleado e ON e.idempleado = l.idEmpleado
+            JOIN cargo c ON c.idcargo = e.Idcargo
+            WHERE l.fechainicio BETWEEN ? AND ?
+            GROUP BY l.idEmpleado
+            ORDER BY total_licencias DESC, total_dias DESC";
+    
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param("ss", $fechaInicio, $fechaFin);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+    $empleados = [];
+    while ($fila = $resultado->fetch_assoc()) {
+        $empleados[] = $fila;
+    }
+    return $empleados;
+}
+
+
+function EmpleadoConMasLicencias($conexion, $fechaInicio, $fechaFin) {
+    $sql = "SELECT e.nombre, e.apellido, COUNT(*) AS total_licencias, SUM(l.cantidaddias) AS total_dias
+            FROM licencia l
+            JOIN empleado e ON e.idempleado = l.idEmpleado
+            WHERE l.fechainicio BETWEEN ? AND ?
+            GROUP BY l.idEmpleado
+            ORDER BY total_licencias DESC, total_dias DESC
+            LIMIT 1";
+    
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param("ss", $fechaInicio, $fechaFin);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc();
+}
+
+
+
+
+
 ?>
