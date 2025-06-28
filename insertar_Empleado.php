@@ -1,13 +1,15 @@
-<?php 
-function InsertarEmpleado($vConexion) {
+<?php
+function InsertarEmpleado($vConexion)
+{
     $default = 0;
     $variable = $_POST['estado'];
     $default = ($variable == 0 || $variable == null) ? 0 : 1;
 
     $Imagen = addslashes(file_get_contents($_FILES['imagen']['tmp_name']));
-
+    $fechaBaja = trim($_POST['fecha_baja'] ?? '');
+    $fechaBaja = $fechaBaja === '' ? 'NULL' : "'$fechaBaja'";
     $SQL_Insert = "INSERT INTO empleado (nombre, apellido, Idsexo, fechaNacimiento, IdestadoCivil, email, estado, fecha_inicio, Idcargo, direccion, ciudad, tel, idprovincia, imagen, dni, fecha_baja) 
-    VALUES ('".$_POST['nombre']."', '".$_POST['apellido']."', '".$_POST['sexo']."', '".$_POST['fechanacimiento']."', '".$_POST['estadocivil']."', '".$_POST['email']."', '".$default."', '".$_POST['fechainicio']."', '".$_POST['cargo']."', '".$_POST['direccion']."', '".$_POST['ciudad']."', '".$_POST['tel']."', '".$_POST['provincia']."', '".$Imagen."', '".$_POST['documento']."', '".null."')";
+    VALUES ('" . $_POST['nombre'] . "', '" . $_POST['apellido'] . "', '" . $_POST['sexo'] . "', '" . $_POST['fechanacimiento'] . "', '" . $_POST['estadocivil'] . "', '" . $_POST['email'] . "', '" . $default . "', '" . $_POST['fechainicio'] . "', '" . $_POST['cargo'] . "', '" . $_POST['direccion'] . "', '" . $_POST['ciudad'] . "', '" . $_POST['tel'] . "', '" . $_POST['provincia'] . "', '" . $Imagen . "', '" . $_POST['documento'] . "', $fechaBaja)";
 
     if (!mysqli_query($vConexion, $SQL_Insert)) {
         die('<h4>Error al intentar insertar el registro.</h4>');
@@ -27,7 +29,7 @@ function InsertarEmpleado($vConexion) {
         }
 
         // 🔄 Asignar horarios diarios automáticamente (INCLUYENDO DÍA)
-        $SQL_Horarios = "SELECT dia, hora_inicio, hora_fin 
+        $SQL_Horarios = "SELECT dia_semana, hora_inicio, hora_fin 
                          FROM turno_dia_horario 
                          WHERE idturno = $idTurno";
 
@@ -35,11 +37,11 @@ function InsertarEmpleado($vConexion) {
 
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
-                $dia = $row['dia'];
+                $dia = $row['dia_semana'];
                 $horaInicio = $row['hora_inicio'];
                 $horaFin = $row['hora_fin'];
 
-                $SQL_EmpleadoHorario = "INSERT INTO empleado_dia_horario (idempleado, idturno, dia, hora_inicio, hora_fin) 
+                $SQL_EmpleadoHorario = "INSERT INTO empleado_dia_horario (idempleado, idturno, dia_semana, hora_inicio, hora_fin) 
                                         VALUES ($idEmpleado, $idTurno, '$dia', '$horaInicio', '$horaFin')";
 
                 if (!mysqli_query($vConexion, $SQL_EmpleadoHorario)) {
@@ -53,5 +55,3 @@ function InsertarEmpleado($vConexion) {
 
     return true;
 }
-?>
-

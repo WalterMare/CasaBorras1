@@ -127,17 +127,17 @@
     <?php if ($nivelUsuario == 1): ?>
       <!-- Gestor de Reportes -->
       <li class="nav-item">
-        <a class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'active' : ''; ?>"
+        <a class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php','Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'active' : ''; ?>"
           href="#forms-nav-reportes"
           data-bs-toggle="collapse"
-          aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'true' : 'false'; ?>">
+          aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php','Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'true' : 'false'; ?>">
           <i class="bi bi-file-earmark"></i><span>Gestor de Reportes</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="forms-nav-reportes" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
+        <ul id="forms-nav-reportes" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php','Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
           
           <li>
             <a href="Reportes.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reportes.php' ? 'active' : ''; ?>">
-              <i class="bi bi-file-earmark-plus"></i><span>Generar Reportes por empleado </span>
+              <i class="bi bi-file-earmark-plus"></i><span>Reportes por empleado </span>
             </a>
           </li>
           <li>
@@ -148,6 +148,11 @@
           <li>
             <a href="reporte_estadistico.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'reporte_estadistico.php' ? 'active' : ''; ?>">
               <i class="bi bi-file-earmark-plus"></i><span>Reporte Estadístico de Licencias </span>
+            </a>
+          </li>
+          <li>
+            <a href="Reporte_Organigrama.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reporte_Organigrama.php' ? 'active' : ''; ?>">
+              <i class="bi bi-file-earmark-plus"></i><span>Reporte Estructural de Personal </span>
             </a>
           </li>
           <li>
