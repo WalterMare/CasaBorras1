@@ -146,6 +146,14 @@ require_once 'insertar_usuario.php';
       </select>
     </div>
 
+    <div class="col-6">
+      <label class="form-label">Roles funcionales(*)</label><br>
+      <input type="checkbox" name="roles[]" value="1"> Encargado de Personal<br>
+      <input type="checkbox" name="roles[]" value="2"> Encargado de Movimientos<br>
+      <input type="checkbox" name="roles[]" value="3"> Encargado de Licencias<br>
+      <input type="checkbox" name="roles[]" value="4"> Gerente de Departamento<br>
+    </div>
+
     <div class="text-center">
       <button class="btn btn-primary" type="submit" value='Registrar' name="BotonRegistrar">Registrar</button>
       <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
@@ -154,7 +162,19 @@ require_once 'insertar_usuario.php';
   </form>
 
   <script src="assets/js/cartel.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const tipoSelect = document.querySelector("select[name='tipo']");
+      const rolesDiv = document.querySelector(".col-6:nth-child(6)"); // Ajustá si cambia el orden
 
+      function toggleRoles() {
+        rolesDiv.style.display = (tipoSelect.value == "2") ? "block" : "none";
+      }
+
+      tipoSelect.addEventListener("change", toggleRoles);
+      toggleRoles(); // Ejecutar al cargar
+    });
+  </script>
 </body>
 
 </html>

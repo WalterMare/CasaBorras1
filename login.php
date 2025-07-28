@@ -26,6 +26,7 @@ if (!empty($_POST['BotonEnviar'])) {
       $_SESSION['Usuario_Id']         =   $UsuarioLogueado['ID'];
       $_SESSION['Usuario_Nombre_Nivel'] = $UsuarioLogueado['NOMBRE_TIPO'];
       $_SESSION['Usuario_IdEmpleado'] = $UsuarioLogueado['IDEMPLEADO'];
+      $_SESSION['Usuario_Roles_Funcionales'] = $UsuarioLogueado['ROLES_FUNCIONALES']; // array de roles funcionales
 
       // Redirigir al index si el login es correcto
       header('Location: index.php');

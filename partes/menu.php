@@ -1,3 +1,21 @@
+<?php
+$nivelUsuario = $_SESSION['Usuario_Id']; // Ej: 1 = admin, 2 = operador
+$rolesFuncionales = $_SESSION['Usuario_Roles_Funcionales']; // Array con roles, ej: ['Encargado de Personal', 'Encargado de Licencias']
+
+// Función para validar acceso según nivel y rol
+function TieneAcceso($nivelUsuario, $rolesFuncionales, $rolesNecesarios = [])
+{
+  // Si es admin, tiene acceso a todo
+  if ($nivelUsuario == 1) return true;
+
+  // Si no es admin y no hay roles requeridos, no tiene acceso
+  if (empty($rolesNecesarios)) return false;
+
+  // Verificar si tiene al menos un rol requerido
+  return count(array_intersect($rolesFuncionales, $rolesNecesarios)) > 0;
+}
+?>
+
 <aside id="sidebar" class="sidebar">
   <ul class="sidebar-nav" id="sidebar-nav">
     <!-- Dashboard -->
@@ -7,12 +25,9 @@
         <span>Panel</span>
       </a>
     </li><!-- End Dashboard Nav -->
-    <?php
-    // Obtener el nivel del usuario desde la sesión
-    $nivelUsuario = $_SESSION['Usuario_Id'];
-    ?>
+
     <!-- Gestor de Personal - Solo para administradores y RRHH -->
-    
+    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Encargado de Personal', 'Administrador'])): ?>
       <!-- Gestor de Personal -->
       <li class="nav-item">
         <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'Empleado_carga.php' || basename($_SERVER['PHP_SELF']) == 'Familiar_carga.php' || basename($_SERVER['PHP_SELF']) == 'Usuario.php' || basename($_SERVER['PHP_SELF']) == 'Listado_empleados.php') ? 'active' : ''; ?>" data-bs-target="#forms-nav-personal" data-bs-toggle="collapse" href="#">
@@ -36,8 +51,10 @@
           </li>
         </ul>
       </li><!-- End Gestor de Personal -->
-  <!-- End Gestor de Personal -->
+      <!-- End Gestor de Personal -->
+    <?php endif; ?>
 
+    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Encargado de Movimientos', 'Administrador'])): ?>
       <!-- Gestor Movimientos -->
       <li class="nav-item">
 
@@ -48,9 +65,7 @@
                                                             'HorasExtras.php',
                                                             'ObraSocial.php',
                                                             'Embargos.php',
-                                                            'Sanciones.php',
-                                                            'Vacaciones.php',
-                                                            'Licencias.php'
+                                                            'Sanciones.php'
                                                           ]) ? 'active' : ''; ?>" data-bs-toggle="collapse" aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), [
                                                                                                                               'asistencia.php',
                                                                                                                               'Viaticos.php',
@@ -58,9 +73,7 @@
                                                                                                                               'HorasExtras.php',
                                                                                                                               'ObraSocial.php',
                                                                                                                               'Embargos.php',
-                                                                                                                              'Sanciones.php',
-                                                                                                                              'Vacaciones.php',
-                                                                                                                              'Licencias.php'
+                                                                                                                              'Sanciones.php'
                                                                                                                             ]) ? 'true' : 'false'; ?>">
           <i class="bi bi-globe2"></i><span>Gestor Movimientos</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
@@ -71,9 +84,7 @@
                                                                       'HorasExtras.php',
                                                                       'ObraSocial.php',
                                                                       'Embargos.php',
-                                                                      'Sanciones.php',
-                                                                      'Vacaciones.php',
-                                                                      'Licencias.php'
+                                                                      'Sanciones.php'
                                                                     ]) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
           <li>
             <a href="asistencia.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'asistencia.php' ? 'active' : ''; ?>">
@@ -110,6 +121,27 @@
               <i class="bi bi-file-earmark-plus"></i><span>Sanciones</span>
             </a>
           </li>
+        </ul>
+      </li>
+    <?php endif; ?>
+    
+    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Encargado de Licencias', 'Administrador'])): ?>
+      <!-- Gestor Licencias-->
+      <li class="nav-item">
+
+        <a href="#forms-nav-licencias" class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), [
+                                                            'Vacaciones.php',
+                                                            'Licencias.php'
+                                                          ]) ? 'active' : ''; ?>" data-bs-toggle="collapse" aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), [
+                                                                                                                              'Vacaciones.php',
+                                                                                                                              'Licencias.php'
+                                                                                                                            ]) ? 'true' : 'false'; ?>">
+          <i class="bi bi-globe2"></i><span>Gestor Licencias</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="forms-nav-licencias" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), [
+                                                                      'Vacaciones.php',
+                                                                      'Licencias.php'
+                                                                    ]) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
           <li>
             <a href="Vacaciones.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Vacaciones.php' ? 'active' : ''; ?>">
               <i class="bi bi-file-earmark-plus"></i><span>Vacaciones</span>
@@ -122,19 +154,20 @@
           </li>
         </ul>
       </li>
+    <?php endif; ?>
 
     <!-- Gestor de Reportes -->
-    <?php if ($nivelUsuario == 1): ?>
+    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Gerente de Departamento', 'Administrador'])): ?>
       <!-- Gestor de Reportes -->
       <li class="nav-item">
-        <a class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php','Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'active' : ''; ?>"
+        <a class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php', 'Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'active' : ''; ?>"
           href="#forms-nav-reportes"
           data-bs-toggle="collapse"
-          aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php','Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'true' : 'false'; ?>">
+          aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php', 'Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'true' : 'false'; ?>">
           <i class="bi bi-file-earmark"></i><span>Gestor de Reportes</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="forms-nav-reportes" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php','Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
-          
+        <ul id="forms-nav-reportes" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php', 'Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
+
           <li>
             <a href="Reportes.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reportes.php' ? 'active' : ''; ?>">
               <i class="bi bi-file-earmark-plus"></i><span>Reportes por empleado </span>
@@ -167,18 +200,21 @@
           </li>
         </ul>
       </li>
+    <?php endif; ?>
+
+    <?php if ($nivelUsuario == 1): ?>
       <!-- Gestor de Usuarios -->
       <li class="nav-item">
         <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'Usuario.php') ? 'active' : ''; ?>" data-bs-target="#forms-nav-usuario" data-bs-toggle="collapse" href="#">
           <i class="bi bi-truck"></i><span>Gestor de Usuarios</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="forms-nav-usuario" class="nav-content collapse <?php echo (basename($_SERVER['PHP_SELF'])  == 'Usuario.php') ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
-        <li>
+          <li>
             <a href="Usuarios.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Usuarios.php' ? 'active' : ''; ?>">
               <i class="bi bi-file-earmark-plus"></i><span>Usuarios</span>
             </a>
           </li>
         </ul>
-    <?php endif; ?>
+      <?php endif; ?>
   </ul>
 </aside>

@@ -11,6 +11,11 @@ require_once 'conexiondb.php';
 $MiConexion = ConexionBD();
 
 require_once 'validar_registro_usuario.php';
+require_once 'select_roles_funcionales.php';
+require_once 'select_roles_usuario.php';
+
+$rolesDisponibles = Listar_roles_funcionales($MiConexion); // trae todos los roles funcionales
+$rolesDelUsuario = Obtener_roles_usuario($MiConexion, $_GET['id']); // trae solo los idrol_funcional asignados al usuario actual
 
 require_once 'select_tipo.php';
 $Listartipos = Listar_tipo($MiConexion);
@@ -82,7 +87,7 @@ $listarUsuarios = Listar_usuario($MiConexion, $_GET['id']);
                             $Estilo = 'warning';
                             if (!empty($_POST['BotonModificar'])) {
                                 // Estoy en condiciones de poder validar los datos
-                                $Mensaje = Validar_Datos_Usuario_bis($_POST['user'], $_POST['Idtipo']);
+                                $Mensaje = Validar_Datos_Usuario_bis($_POST['user'], $_POST['Idtipo'], $_POST['roles'] ?? []);
                                 if (empty($Mensaje)) {
                                     require_once 'Actualizar__Usuario.php';
                                     if (Modificar_usuario($MiConexion, $_GET['id']) != false) {
@@ -126,22 +131,26 @@ $listarUsuarios = Listar_usuario($MiConexion, $_GET['id']);
                                 <div class="mb-3">
                                     <label for="selector" class="form-label">Tipo</label>
                                     <select class="form-select" aria-label="Selector" id="selector" name="Idtipo" required>
-                                        <!-- Opción por defecto para el tipo actual del usuario -->
-                                        <option value="<?php echo $listarUsuarios['ID']; ?>"><?php echo $listarUsuarios['TIPO']; ?> </option>
                                         <?php
-                                        $selected = '';
-                                        for ($i = 0; $i < $CantidadTipo; $i++) {
-                                            if (!empty($_POST['Idtipo']) && $_POST['Idtipo'] == $Listartipos['ID']) {
-                                                $selected = 'selected';
-                                            } else {
-                                                $selected = '';
-                                            }
+                                        foreach ($Listartipos as $tipo) {
+                                            $selected = ($tipo['ID'] == $listarUsuarios['IDTIPO']) ? 'selected' : '';
+                                            echo "<option value='{$tipo['ID']}' $selected>{$tipo['NOMBRE']}</option>";
+                                        }
                                         ?>
-                                            <option value="<?php echo $Listartipos[$i]['ID']; ?>" <?php echo $selected; ?>>
-                                                <?php echo $Listartipos[$i]['NOMBRE']; ?>
-                                            </option>
-                                        <?php } ?>
                                     </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Roles funcionales</label><br>
+                                    <?php foreach ($rolesDisponibles as $rol): ?>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="roles[]" id="rol_<?php echo $rol['ID']; ?>" value="<?php echo $rol['ID']; ?>"
+                                                <?php echo in_array($rol['ID'], $rolesDelUsuario) ? 'checked' : ''; ?>>
+                                            <label class="form-check-label" for="rol_<?php echo $rol['ID']; ?>">
+                                                <?php echo $rol['NOMBRE']; ?>
+                                            </label>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
 
                                 <div class="text-center">

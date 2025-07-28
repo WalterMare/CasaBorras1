@@ -27,8 +27,8 @@ function Listar_tipo($vConexion) {
 function Listar_usuario($vConexion, $idusuario) {
     $Listado = array();
 
-    // Consulta para obtener un solo usuario con su tipo
-    $consulta = "SELECT u.idusuario, u.user, t.descripcion AS tipo 
+    // Consulta para obtener un solo usuario con su tipo y su IDTIPO
+    $consulta = "SELECT u.idusuario, u.user, u.Idtipo AS IDTIPO, t.descripcion AS tipo 
                  FROM usuario u
                  JOIN tipo t ON u.Idtipo = t.idtipo
                  WHERE u.idusuario = ?";
@@ -44,12 +44,12 @@ function Listar_usuario($vConexion, $idusuario) {
         $Listado['ID'] = $data['idusuario'];
         $Listado['USUARIO'] = $data['user'];
         $Listado['TIPO'] = $data['tipo'];
+        $Listado['IDTIPO'] = $data['IDTIPO']; // ⚠️ Esto es lo nuevo e importante
     }
 
-    // Devolver el usuario o un array vacío si no se encuentra
     return $Listado;
 }
-?>
+
 
 
 

@@ -2,7 +2,7 @@
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
-  }
+}
 
 if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
@@ -13,7 +13,23 @@ require_once 'conexiondb.php';
 $MiConexion = ConexionBD();
 
 // Obtener la lista de usuarios
-$query = "SELECT u.idusuario, u.user, t.descripcion FROM usuario u INNER JOIN tipo t ON u.Idtipo = t.idtipo ORDER BY t.descripcion";
+$query = "SELECT 
+    u.idusuario,
+    u.user,
+    t.descripcion AS tipo_usuario,
+    GROUP_CONCAT(rf.nombre SEPARATOR ', ') AS roles_funcionales
+FROM 
+    usuario u
+JOIN 
+    tipo t ON u.Idtipo = t.idtipo
+LEFT JOIN 
+    usuario_rol_funcional urf ON u.idusuario = urf.idusuario
+LEFT JOIN 
+    rol_funcional rf ON urf.idrol_funcional = rf.idrol_funcional
+GROUP BY 
+    u.idusuario, u.user, t.descripcion
+ORDER BY 
+    t.descripcion, u.user";
 $resultado = mysqli_query($MiConexion, $query);
 
 ?>
@@ -57,6 +73,7 @@ $resultado = mysqli_query($MiConexion, $query);
                 <th>ID</th>
                 <th>Usuario</th>
                 <th>Tipo</th>
+                <th>Roles</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -65,7 +82,8 @@ $resultado = mysqli_query($MiConexion, $query);
                 <tr>
                     <td><?php echo $usuario['idusuario']; ?></td>
                     <td><?php echo $usuario['user']; ?></td>
-                    <td><?php echo $usuario['descripcion']; ?></td>
+                    <td><?php echo $usuario['tipo_usuario']; ?></td>
+                    <td><?php echo $usuario['roles_funcionales'] ?: 'Administrador del Sistema'; ?></td>
                     <td>
                         <a href="Modificar_Usuario.php?id=<?php echo $usuario['idusuario']; ?>" class="badge bg-info text-dark">Modificar</a>
                         <a href="Eliminar_Usuario.php?id=<?php echo $usuario['idusuario']; ?>" class="badge bg-danger text-light" onclick="return confirm('¿Seguro que desea eliminar este usuario?');">Eliminar</a>
