@@ -2,7 +2,7 @@
 session_start();
 
 // Validar sesión
-if (empty($_SESSION['Usuario_Nombre']) || $_SESSION['Usuario_Id'] != 1) {
+if (empty($_SESSION['Usuario_Nombre'])) {
     echo "Sesión expirada. Redirigiendo al inicio de sesión...";
     header('Refresh: 3; URL=cerrarsesion.php');
     exit;
@@ -149,12 +149,18 @@ if (isset($_POST['generar_pdf'])) {
                             <?php if ($mensaje): ?>
                                 <div class="alert alert-warning"><?= htmlspecialchars($mensaje) ?></div>
                             <?php endif; ?>
+                            <div class="alert alert-info mt-4">
+                                <strong>Cantidad de empleados que tomaron al menos una licencia:</strong> <?= $total_empleados_con_licencia ?>
+                            </div>
+                            <?php if ($empleado_top): ?>
+                                <div class="alert alert-success mt-4">
+                                    <strong>Empleado con más licencias:</strong>
+                                    <?= $empleado_top['nombre'] . ' ' . $empleado_top['apellido'] ?>
+                                    (<?= $empleado_top['total_licencias'] ?> licencias, <?= $empleado_top['total_dias'] ?> días)
+                                </div>
+                            <?php endif; ?>
 
                             <?php if (!empty($licencia_por_cargo)): ?>
-                                <h5 class="card-title mt-5">Licencias por Cargo</h5>
-                                <div style="width: 800px; height: 400px;">
-                                    <canvas id="graficoCargo" width="800" height="400"></canvas>
-                                </div>
 
                                 <table class="table table-bordered">
                                     <thead>
@@ -178,16 +184,7 @@ if (isset($_POST['generar_pdf'])) {
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
-                                <div class="alert alert-info mt-4">
-                                    <strong>Cantidad de empleados que tomaron al menos una licencia:</strong> <?= $total_empleados_con_licencia ?>
-                                </div>
-                                <?php if ($empleado_top): ?>
-                                    <div class="alert alert-success mt-4">
-                                        <strong>Empleado con más licencias:</strong>
-                                        <?= $empleado_top['nombre'] . ' ' . $empleado_top['apellido'] ?>
-                                        (<?= $empleado_top['total_licencias'] ?> licencias, <?= $empleado_top['total_dias'] ?> días)
-                                    </div>
-                                <?php endif; ?>
+
 
                                 <?php if (!empty($empleados_con_licencias)): ?>
                                     <h5 class="card-title mt-5">Empleados que tomaron licencias</h5>
@@ -221,6 +218,11 @@ if (isset($_POST['generar_pdf'])) {
                             <div style="width: 800px; height: 400px;">
                                 <canvas id="graficoLinealMeses" width="800" height="400"></canvas>
                             </div>
+                            <h5 class="card-title mt-5">Licencias por Cargo</h5>
+                            <div style="width: 800px; height: 400px;">
+                                <canvas id="graficoCargo" width="800" height="400"></canvas>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -229,48 +231,73 @@ if (isset($_POST['generar_pdf'])) {
                 document.addEventListener('DOMContentLoaded', function() {
                     const datos = <?= json_encode($licencia_por_cargo) ?>;
 
-                    const labels = datos.map(item => `${item.cargo} - ${item.tipo_licencia}`);
-                    const valores = datos.map(item => item.total_licencias);
+                    // Obtener labels únicos para cargos y tipos de licencia
+                    const cargos = [...new Set(datos.map(d => d.cargo))];
+                    const tipos = [...new Set(datos.map(d => d.tipo_licencia))];
 
+                    // Generar colores por tipo
                     function generarColores(n) {
                         const colores = [];
                         for (let i = 0; i < n; i++) {
-                            const r = Math.floor(Math.random() * 200);
-                            const g = Math.floor(Math.random() * 200);
-                            const b = Math.floor(Math.random() * 200);
-                            colores.push(`rgba(${r}, ${g}, ${b}, 0.7)`);
+                            const hue = (i * 360 / n) % 360;
+                            colores.push(`hsl(${hue}, 70%, 50%)`);
                         }
                         return colores;
                     }
+                    const colores = generarColores(tipos.length);
 
-                    const coloresFondo = generarColores(labels.length);
-                    const coloresBorde = coloresFondo.map(c => c.replace('0.7', '1'));
+                    // Preparar datasets
+                    const datasets = tipos.map((tipo, i) => {
+                        return {
+                            label: tipo,
+                            data: cargos.map(cargo => {
+                                const registro = datos.find(d => d.cargo === cargo && d.tipo_licencia === tipo);
+                                return registro ? registro.total_licencias : 0;
+                            }),
+                            backgroundColor: colores[i],
+                            borderColor: colores[i].replace('70%', '40%'), // un poco más oscuro
+                            borderWidth: 1
+                        };
+                    });
 
-                    // Gráfico de barras
+                    // Crear gráfico agrupado
                     const ctxCargo = document.getElementById('graficoCargo').getContext('2d');
                     const chartCargo = new Chart(ctxCargo, {
                         type: 'bar',
                         data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Licencias por Cargo y Tipo',
-                                data: valores,
-                                backgroundColor: coloresFondo,
-                                borderColor: coloresBorde,
-                                borderWidth: 1
-                            }]
+                            labels: cargos,
+                            datasets: datasets
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
                                 legend: {
-                                    display: false
+                                    position: 'top',
+                                    labels: {
+                                        boxWidth: 20
+                                    }
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false
                                 }
                             },
                             scales: {
+                                x: {
+                                    stacked: false,
+                                    title: {
+                                        display: true,
+                                        text: 'Cargo'
+                                    }
+                                },
                                 y: {
+                                    stacked: false,
                                     beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Cantidad de Licencias'
+                                    },
                                     ticks: {
                                         stepSize: 1
                                     }

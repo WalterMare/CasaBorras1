@@ -54,8 +54,9 @@ function ModificarSancion($conexion, $idSancion) {
     // Calculamos fecha fin
     $fecha_fin = date('Y-m-d', strtotime($fecha_inicio . ' + ' . $cantidadDias . ' days'));
 
+    // Actualizo sancion
     $sql = "UPDATE sancion SET 
-                idTipoSancion = ?, 
+                IdTipoSancion = ?, 
                 idEmpleado = ?, 
                 fecha_inicio = ?, 
                 cantidadDias = ?, 
@@ -80,7 +81,33 @@ function ModificarSancion($conexion, $idSancion) {
         $idSancion
     );
 
+    $resultado = $stmt->execute();
+
+    // Si la actualización de sanción fue exitosa, actualizo estado empleado según sanción
+    if ($resultado) {
+        // Tipos que inactivan
+        $tipos_que_inactivan = [3, 4, 5];
+
+        if (in_array($idTipo, $tipos_que_inactivan)) {
+            if ($idEstado == 2 || $idEstado == 1) {
+                // Sanción "En curso": inactivar empleado
+                Modificar_Estado_Empleado($idEmpleado, 0, $conexion);
+            } elseif ($idEstado == 3) {
+                // Sanción "Finalizada": activar empleado
+                Modificar_Estado_Empleado($idEmpleado, 1, $conexion);
+            }
+        }
+    }
+
+    return $resultado;
+}
+function Modificar_Estado_Empleado($Id, $Estado, $conexion) {
+    $sql = "UPDATE empleado SET estado = ? WHERE idempleado = ?";
+    $stmt = $conexion->prepare($sql);
+    if (!$stmt) return false;
+    $stmt->bind_param("ii", $Estado, $Id);
     return $stmt->execute();
 }
+
 ?>
 

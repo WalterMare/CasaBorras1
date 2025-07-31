@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (empty($_SESSION['Usuario_Nombre']) || $_SESSION['Usuario_Id'] != 1) {
+if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;
 }

@@ -140,83 +140,60 @@ require_once('TCPDF-main/tcpdf.php');
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">Licencias con Detalles</h5>
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">#</th>
-                                            <th scope="col">Fecha Inicio</th>
-                                            <th scope="col">Fecha Fin</th>
-                                            <th scope="col">Cantidad de Días</th>
-                                            <th scope="col">Tipo de Licencia</th>
-                                            <th scope="col">Estado de Licencia</th>
-                                            <th scope="col">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php for ($i = 0; $i < $Cantidad; $i++) { ?>
-                                            <tr>
-                                                <th scope="row"><?php echo $i + 1; ?></th>
-                                                <td><?php echo $listado[$i]['FECHAINICIO']; ?></td>
-                                                <td><?php echo $listado[$i]['FECHAFIN']; ?></td>
-                                                <td><?php echo $listado[$i]['CANTIDADDIAS']; ?></td>
-                                                <td><?php echo $listado[$i]['TIPO']; ?></td>
-                                                <td><?php echo $listado[$i]['ESTADO']; ?></td>
-                                                <td>
-                                                    <a href="Modificar_licencia.php?id=<?php echo $listado[$i]['ID']; ?>" class="btn btn-warning btn-sm">
-                                                        Modificar
-                                                    </a>
-                                                    <a href="eliminar_licencia.php?id=<?php echo $listado[$i]['ID']; ?>" class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('¿Estás seguro de que deseas eliminar esta licencia?');">
-                                                        Eliminar
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                            <!-- Detalles de la Licencia -->
+                                <?php for ($i = 0; $i < $Cantidad; $i++) { ?>
+                                    <div class="card mb-2">
+                                        <div class="card-header py-2 px-2 d-flex justify-content-between align-items-center bg-light">
+                                            <div>
+                                                <span class="fw-bold text-primary">Licencia #<?php echo $i + 1; ?></span><br>
+                                                <small><strong>Inicio:</strong> <?php echo $listado[$i]['FECHAINICIO']; ?> |
+                                                    <strong>Fin:</strong> <?php echo $listado[$i]['FECHAFIN']; ?> |
+                                                    <strong>Días:</strong> <?php echo $listado[$i]['CANTIDADDIAS']; ?> |
+                                                    <strong>Tipo:</strong> <?php echo $listado[$i]['TIPO']; ?> |
+                                                    <strong>Estado:</strong> <?php echo $listado[$i]['ESTADO']; ?></small>
+                                            </div>
+                                        </div>
+                                        <div class="card-body py-1 px-2">
                                             <?php
                                             $idLicencia = $listado[$i]['ID'];
                                             $listadoDetalle = Listar_Reporte_Empleado3_Detalle($conexion, $idLicencia);
                                             ?>
-                                            <tr>
-                                                <td colspan="6">
-                                                    <strong>Detalles para la Licencia ID <?php echo $idLicencia; ?>:</strong>
-                                                    <?php if (!empty($listadoDetalle)) { ?>
-                                                        <table class="table table-bordered mt-3">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th scope="col">#</th>
-                                                                    <th scope="col">Descripción</th>
-                                                                    <th scope="col">Fecha de Creación</th>
-                                                                    <th scope="col">Usuario Otorga</th>
-                                                                    <th scope="col">Documentación</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php foreach ($listadoDetalle as $j => $detalle) { ?>
-                                                                    <tr>
-                                                                        <th scope="row"><?php echo $j + 1; ?></th>
-                                                                        <td><?php echo $detalle['DESCRIPCION']; ?></td>
-                                                                        <td><?php echo $detalle['FECHACREACION']; ?></td>
-                                                                        <td><?php echo $detalle['USUARIO']; ?></td>
-                                                                        <td>
-                                                                            <a href="download_document.php?file_id=<?php echo $detalle['IDDETALLELICENCIA']; ?>" class="btn btn-link">
-                                                                                Descargar Documentación
-                                                                            </a>
-                                                                        </td>
-
-                                                                    </tr>
-                                                                <?php } ?>
-                                                            </tbody>
-                                                        </table>
-                                                    <?php } else { ?>
-                                                        <p class="text-muted">No hay detalles disponibles para esta licencia.</p>
-                                                    <?php } ?>
-                                                </td>
-
-                                            </tr>
-                                        <?php } ?>
-
-                                    </tbody>
-                                </table>
+                                            <?php if (!empty($listadoDetalle)) { ?>
+                                                <table class="table table-sm table-bordered mb-1">
+                                                    <thead>
+                                                        <tr class="table-light">
+                                                            <th scope="col">#</th>
+                                                            <th scope="col">Descripción</th>
+                                                            <th scope="col">Fecha de Creación</th>
+                                                            <th scope="col">Usuario Otorga</th>
+                                                            <th scope="col">Documentación</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php foreach ($listadoDetalle as $j => $detalle) { ?>
+                                                            <tr>
+                                                                <th scope="row"><?php echo $j + 1; ?></th>
+                                                                <td><?php echo $detalle['DESCRIPCION']; ?></td>
+                                                                <td><?php echo $detalle['FECHACREACION']; ?></td>
+                                                                <td><?php echo $detalle['USUARIO']; ?></td>
+                                                                <td>
+                                                                    <a href="download_document.php?file_id=<?php echo $detalle['IDDETALLELICENCIA']; ?>" class="btn btn-link btn-sm">Descargar</a>
+                                                                </td>
+                                                            </tr>
+                                                        <?php } ?>
+                                                    </tbody>
+                                                </table>
+                                                <div>
+                                                    <a href="Modificar_licencia.php?id=<?php echo $listado[$i]['ID']; ?>" class="btn btn-warning btn-sm">Modificar</a>
+                                                    <a href="eliminar_licencia.php?id=<?php echo $listado[$i]['ID']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de que deseas eliminar esta licencia?');">Eliminar</a>
+                                                </div>
+                                            <?php } else { ?>
+                                                <p class="text-muted mb-0">No hay detalles disponibles para esta licencia.</p>
+                                            <?php } ?>
+                                        </div>
+                                    </div>
+                                <?php } ?>
+                            </div>
+                            <div class="text-center">
                                 <form action="generar_pdf_Reporte_Licencia.php" method="get">
                                     <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
                                     <input type="hidden" name="tipo_reporte" value="1"> <!-- Agregar el parámetro adicional -->
@@ -224,6 +201,7 @@ require_once('TCPDF-main/tcpdf.php');
                                     <button type="submit" class="btn btn-primary" <?php echo $listadoDetalle == 0 ? 'disabled' : ''; ?>>Generar PDF</button>
                                 </form>
                             </div>
+
                         </div>
                     </div>
                 </div>

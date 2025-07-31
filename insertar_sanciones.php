@@ -37,7 +37,7 @@ function InsertarSancion($vConexion)
         // Si es una sanción del tipo que inactiva y está En curso
         $tipos_que_inactivan = [3, 4, 5]; // IDs de tipos de sanción que suspenden
 
-        if ($estadoSancion === 2 && in_array($tipoSancion, $tipos_que_inactivan)) {
+        if ($estadoSancion === 1 && in_array($tipoSancion, $tipos_que_inactivan)) {
             Modificar_Estado_Empleado($_POST['empleado'], 0, $vConexion);
         }
     }

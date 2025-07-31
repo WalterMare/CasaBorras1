@@ -6,10 +6,11 @@ unset($_SESSION['RadioSeleccionado2']);
 
 //si tengo vacio mi elemento de sesion me tiene q redireccionar al login.. 
 //al cerrarsesion para que mate todo de la sesion y el se encarga de ubicar en el login
-if (empty($_SESSION['Usuario_Nombre'])|| $_SESSION['Usuario_Id']!=1) {
+if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;
 }
+
 $seleccionado = "1"; //se establece un valor por defecto para la primera carga de la página
 $seleccionado2 = "2";
 

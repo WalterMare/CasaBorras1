@@ -2,7 +2,7 @@
 session_start();
 
 // Validar sesión
-if (empty($_SESSION['Usuario_Nombre']) || $_SESSION['Usuario_Id'] != 1) {
+if (empty($_SESSION['Usuario_Nombre'])) {
     echo "Sesión expirada. Redirigiendo al inicio de sesión...";
     header('Refresh: 3; URL=cerrarsesion.php');
     exit;

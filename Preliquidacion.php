@@ -4,7 +4,7 @@ session_start();
 
 //si tengo vacio mi elemento de sesion me tiene q redireccionar al login.. 
 //al cerrarsesion para que mate todo de la sesion y el se encarga de ubicar en el login
-if (empty($_SESSION['Usuario_Nombre'])|| $_SESSION['Usuario_Id']!=1) {
+if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;
 }

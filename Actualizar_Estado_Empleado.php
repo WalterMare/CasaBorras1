@@ -2,7 +2,7 @@
 function actualizarEstadoSancion($conexion)
 {
     $hoy = date('Y-m-d');
-    $ayer = date('Y-m-d', strtotime('-1 day'));
+    $ayer = date('Y-m-d');
 
     // ⚠️ 1. Sanciones pendientes que deben comenzar hoy o antes → pasar a EN CURSO
     $queryPendientes = "SELECT idsancion, idEmpleado, IdTipoSancion 
@@ -34,7 +34,7 @@ function actualizarEstadoSancion($conexion)
     }
 
     // ✅ 2. Sanciones de tipo suspensión que terminaron ayer → pasar a FINALIZADA y activar empleado
-    $queryFinalizadas = "SELECT idsancion, idEmpleado FROM sancion WHERE fecha_fin = ? AND IdTipoSancion = 3";
+    $queryFinalizadas = "SELECT idsancion, idEmpleado FROM sancion WHERE fecha_fin <= ? AND idEstadoSancion = 2";
     $stmtFinalizadas = mysqli_prepare($conexion, $queryFinalizadas);
     mysqli_stmt_bind_param($stmtFinalizadas, 's', $ayer);
     mysqli_stmt_execute($stmtFinalizadas);
@@ -55,8 +55,8 @@ function actualizarEstadoSancion($conexion)
         mysqli_stmt_execute($stmtSancion);
     }
 
-    $_SESSION['Mensaje'] = 'Actualización automática de sanciones completada.';
-    $_SESSION['Estilo'] = 'success';
+    //$_SESSION['Mensaje'] = 'Actualización automática de sanciones completada.';
+   // $_SESSION['Estilo'] = 'success';
     return true;
 }
 
