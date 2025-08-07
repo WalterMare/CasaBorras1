@@ -15,20 +15,20 @@ require_once 'select_empleado.php';
 $listadoEmpleado = Listar_empleado($conexion);
 $CantidadEmpleado = count($listadoEmpleado);
 
-  require_once 'select_mostrar_Horaextra.php';
-  if (!empty($_GET['ID'])){
-      $datosObtenidos=Listar_horaExtradeEmpleado($conexion, $_GET['ID']);
-  }else{
-      $_SESSION['Mensaje']= 'Sin datos para mostrar...';
-  }
+
+require_once 'select_mostrar_Horaextra.php';
+$valoresTipoHora = ObtenerValoresTipoHora($conexion);
+
+require_once 'select_horaextra.php';
+if (!empty($_GET['IDHORAEXTRA'])) {
+    $datosObtenidos = ObtenerHoraExtraPorID($conexion, $_GET['IDHORAEXTRA']);
+} else {
+    $_SESSION['Mensaje'] = 'Sin datos para mostrar...';
+}
 
 require_once 'validacion_registro_horaextra.php';
 require_once 'Modificar_extra.php';
-
-
-
 ?>
-
 
 <!DOCTYPE html>
 <html lang="es">
@@ -53,21 +53,7 @@ require_once 'Modificar_extra.php';
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <!--<link href="assets/vendor/quill/quill.snow.css" rel="stylesheet">
-  <link href="assets/vendor/quill/quill.bubble.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-  <link href="assets/vendor/simple-datatables/style.css" rel="stylesheet">
--->
-  <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
-
-  <!-- =======================================================
-  * Template Name: NiceAdmin
-  * Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
-  * Updated: Apr 20 2024 with Bootstrap v5.3.3
-  * Author: BootstrapMade.com
-  * License: https://bootstrapmade.com/license/
-  ======================================================== -->
 </head>
 
 <body>
@@ -109,12 +95,10 @@ require_once 'Modificar_extra.php';
                 //estoy en condiciones de poder validar los datos
                 $Mensaje = Validar_Datos();
                 if (empty($Mensaje)) {
-                  if (ModificarExtra($conexion,$_GET['ID']) != false) {
+                  if (ModificarExtra($conexion, $_GET['IDHORAEXTRA']) != false) {
                     $Mensaje = 'Se ha registrado correctamente.';
                     $_POST = array();
                     $Estilo = 'success';
-                    
-
                   } ?>
                   <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="bi bi-check-circle me-1"></i>
@@ -127,15 +111,12 @@ require_once 'Modificar_extra.php';
                   </div><?php }
                     } ?>
 
-
-
-
               <form class="row g-3" method="post"> <!--se agrego el metodo post para la captura de datos -->
 
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Empleado al que se asignará(*)</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="empleado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
-                    <option value="<?php echo $datosObtenidos['ID'];?>"><?PHP echo $datosObtenidos['NOMBRE']." ".$datosObtenidos['APELLIDO'];?></option>
+                    <option value="<?php echo $datosObtenidos['ID']; ?>"><?PHP echo $datosObtenidos['NOMBRE'] . " " . $datosObtenidos['APELLIDO']; ?></option>
                     <?php
                     $selected = '';
                     for ($i = 0; $i < $CantidadEmpleado; $i++) {
@@ -146,7 +127,7 @@ require_once 'Modificar_extra.php';
                       }
                     ?>
                       <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadoEmpleado[$i]['NOMBRE']." ".$listadoEmpleado[$i]['APELLIDO']; ?>
+                        <?php echo $listadoEmpleado[$i]['NOMBRE'] . " " . $listadoEmpleado[$i]['APELLIDO']; ?>
                       </option>
                     <?php } ?>
                   </select>
@@ -154,12 +135,33 @@ require_once 'Modificar_extra.php';
 
                 <div class="col-6">
                   <label for="fecha" class="form-label">Fecha(*)</label>
-                  <input type="date" class="form-control" id="fecha" name="fecha" VALUE="<?php echo $datosObtenidos['FECHA'];?>">
+                  <input type="date" class="form-control" id="fecha" name="fecha" VALUE="<?php echo $datosObtenidos['FECHA']; ?>">
                 </div>
 
                 <div class="col-6">
                   <label for="horas" class="form-label">Cantidad de Horas que realizó(*)</label>
-                  <input type="number" step="0.5" class="form-control" id="horas" name='horas' value="<?php echo $datosObtenidos['HORAS'];?>">
+                  <input type="number" step="0.5" class="form-control" id="horas" name='horas' value="<?php echo $datosObtenidos['HORAS']; ?>">
+                </div>
+
+                <div class="col-6">
+                  <label for="hora_inicio" class="form-label">Hora de Inicio de la Hora Extra(*)</label>
+                  <input type="time" class="form-control" id="hora_inicio" name="hora_inicio" required value="<?php echo isset($_POST['hora_inicio']) ? $_POST['hora_inicio'] : $datosObtenidos['HORAINICIO']; ?>">
+                </div>
+
+                <div class="col-6">
+                  <label for="tipoHora" class="form-label">Tipo de Hora</label>
+                  <input type="text" class="form-control" id="tipoHora" name="tipoHora" value="<?php echo $datosObtenidos['TIPOHORAS']; ?>" readonly>
+                </div>
+
+                <div class="col-6">
+                  <label for="tipoRecargo" class="form-label">Recargo</label>
+                  <input type="text" class="form-control" id="tipoRecargo" name="tipoRecargo" value="<?php echo $datosObtenidos['RECARGO']; ?>" readonly>
+                </div>
+
+
+                <div class="col-6">
+                  <label for="valor" class="form-label">Valor Total ($)</label>
+                  <input type="text" class="form-control" id="valor" name="valor" value="<?php echo number_format($datosObtenidos['VALOR'], 2, ',', '.'); ?>" disabled>
                 </div>
 
 
@@ -177,31 +179,14 @@ require_once 'Modificar_extra.php';
     </section>
 
   </main><!-- End #main -->
-
-
   <!-- ======= Footer ======= -->
   <?php include_once 'partes/footer.php' ?>
   <!-- End Footer -->
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-
-  <!-- Vendor JS Files
-  <script src="assets/vendor/apexcharts/apexcharts.min.js"></script> -->
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <!-- <script src="assets/vendor/chart.js/chart.umd.js"></script>
-  <script src="assets/vendor/echarts/echarts.min.js"></script>
-  <script src="assets/vendor/quill/quill.js"></script>
-  <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>-->
   <script src="assets/vendor/tinymce/tinymce.min.js"></script>
-
-  <!--<script src="assets/vendor/php-email-form/validate.js"></script> -->
-
-  <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
-
-
-
-
 </body>
 
 </html>

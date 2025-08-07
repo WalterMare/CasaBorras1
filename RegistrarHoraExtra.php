@@ -19,6 +19,8 @@ require_once 'select_empleado.php';
 $listadoEmpleado = Listar_empleado($conexion);
 $CantidadEmpleado = count($listadoEmpleado);
 
+require_once 'select_horaextra.php';
+$valoresTipoHora = ObtenerValoresEnumTipoHora($conexion);
 
 require_once 'validacion_registro_horaextra.php';
 require_once 'Insertar_horaextra.php';
@@ -50,7 +52,7 @@ require_once 'Insertar_horaextra.php';
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  
+
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
 
@@ -90,7 +92,6 @@ require_once 'Insertar_horaextra.php';
 
 
 
-
   <form class="row g-3" method="post"> <!--se agrego el metodo post para la captura de datos -->
 
     <div class="col-6">
@@ -121,6 +122,11 @@ require_once 'Insertar_horaextra.php';
     <div class="col-6">
       <label for="horas" class="form-label">Cantidad de Horas que realizó(*)</label>
       <input type="number" step="0.5" class="form-control" id="horas" name='horas'>
+    </div>
+
+    <div class="col-6">
+      <label for="hora_inicio" class="form-label">Hora de Inicio de la Hora Extra(*)</label>
+      <input type="time" class="form-control" id="hora_inicio" name="hora_inicio" required value="<?php echo isset($_POST['hora_inicio']) ? $_POST['hora_inicio'] : ''; ?>">
     </div>
 
 

@@ -192,7 +192,8 @@ try {
             $familiares[] = $familiar['nombre'] . ' ' . $familiar['apellido'];
         }
         $familiaresString = empty($familiares) ? 'N/A' : implode(', ', $familiares);
-
+        $tiposSancionesStr = implode(", ", $tiposSanciones);
+        $tiposLicenciasStr = implode(", ", $tiposLicencias);
         // 5.11 Insertar detalle (usando consultas preparadas)
         $sqlDetalle = "INSERT INTO detallepreliquidacion
                       (idPreliquidacion, idEmpleado, idHorasExtras, idLicencia, idAnticipo, 
@@ -213,8 +214,8 @@ try {
             $totalSanciones,
             $totalEmbargos,
             $totalViaticos,
-            implode(", ", $tiposSanciones),
-            implode(", ", $tiposLicencias),
+            $tiposSancionesStr,
+            $tiposLicenciasStr,
             $diasTrabajados,
             $totalDiasVacaciones
         );

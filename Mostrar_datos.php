@@ -24,7 +24,7 @@ if ($idEmpleado <= 0) {
 }
 
 // Consulta SQL
-$sql = "SELECT 
+$sql ="SELECT 
             e.estado,
             e.fecha_baja,
             e.motivo_baja,
@@ -35,7 +35,9 @@ $sql = "SELECT
             s.fecha_fin AS sancion_fin,
             ts.nombreTipo AS tipo_sancion,
             v.fecha_inicio AS vacaciones_inicio,
-            v.fecha_fin AS vacaciones_fin
+            v.fecha_fin AS vacaciones_fin,
+            c.descripcion AS cargo,
+            c.sueldo_basico
         FROM empleado e
         LEFT JOIN licencia l ON e.idempleado = l.idEmpleado 
             AND CURDATE() BETWEEN l.fechainicio AND l.fechafin
@@ -46,7 +48,9 @@ $sql = "SELECT
         LEFT JOIN tiposancion ts ON s.IdTipoSancion = ts.idtipoSancion
         LEFT JOIN vacaciones v ON e.idempleado = v.idempleado 
             AND CURDATE() BETWEEN v.fecha_inicio AND v.fecha_fin
+        LEFT JOIN cargo c ON e.idCargo = c.idcargo
         WHERE e.idempleado = ?";
+
 
 $stmt = $conexion->prepare($sql);
 $stmt->bind_param("i", $idEmpleado);
@@ -71,6 +75,7 @@ $tipo_sancion = $datosEmpleado['tipo_sancion'] ?? null;
 $vacaciones_inicio = $datosEmpleado['vacaciones_inicio'] ?? null;
 $vacaciones_fin = $datosEmpleado['vacaciones_fin'] ?? null;
 $motivobaja = $datosEmpleado['motivo_baja'] ?? null;
+$sueldo= $datosEmpleado['sueldo_basico']??null;
 
 // Determinar la razón de inactividad
 $razonInactivo = [];
@@ -116,6 +121,12 @@ if (!empty($_GET['ID'])) {
 }
 
 require_once 'funcion_calcularEdad.php';
+
+$fechaInicio = new DateTime($datosEmpleado['FECHAINICIO']);
+$fechaHoy = new DateTime();
+$antiguedad = $fechaInicio->diff($fechaHoy);
+
+$antiguedadTexto = $antiguedad->y . " años, " . $antiguedad->m . " meses";
 
 ?>
 
@@ -244,10 +255,21 @@ require_once 'funcion_calcularEdad.php';
                   <input type="text" class="form-control" id="fechainicio" name="fechainicio" value="<?php echo $datosEmpleado['FECHAINICIO']; ?>" disabled>
                 </div>
 
+                 <div class="col-3">
+                  <label for="cargo" class="form-label">Antiguedad</label>
+                  <input type="text" class="form-control" id="cargo" name="antiguedad" value="<?php echo $antiguedadTexto; ?>" disabled>
+                </div>
+
                 <div class="col-3">
                   <label for="cargo" class="form-label">Cargo</label>
                   <input type="text" class="form-control" id="cargo" name="cargo" value="<?php echo $datosEmpleado['CARGO']; ?>" disabled>
                 </div>
+
+                <div class="col-3">
+                  <label for="sueldo" class="form-label">Sueldo Básico</label>
+                  <input type="text" class="form-control" id="sueldo" name="sueldo" value="$ <?php echo $sueldo; ?>" disabled>
+                </div>
+
 
                 <div class="col-3">
                   <label class="form-label">Estado</label>

@@ -288,5 +288,77 @@ WHERE L.idlicencia=DL.idLicencia and DL.UsuarioCreacion=U.idusuario AND DL.idLic
     //devuelvo el listado generado en el array $Listado. (Podra salir vacio o con datos)..
     return $Listado;
 }
+
+
+
+function Listar_Licencia_Empleado_preliquidacion($vConexion, $empleado, $idPreliquidacion)
+{
+    $Listado = array();
+    $empleado = (int)$empleado;
+    $idPreliquidacion = (int)$idPreliquidacion;
+
+    // Obtener el período desde la tabla preliquidacion
+    $consultaPeriodo = "SELECT periodo FROM preliquidacion WHERE idpreliquidacion = ?";
+    $stmtPeriodo = mysqli_prepare($vConexion, $consultaPeriodo);
+    mysqli_stmt_bind_param($stmtPeriodo, "i", $idPreliquidacion);
+    mysqli_stmt_execute($stmtPeriodo);
+    $resultadoPeriodo = mysqli_stmt_get_result($stmtPeriodo);
+    $filaPeriodo = mysqli_fetch_assoc($resultadoPeriodo);
+
+    if (!$filaPeriodo) {
+        return $Listado; // no encontró preliquidación
+    }
+
+    // Separar el rango "YYYY-MM-DD a YYYY-MM-DD"
+    $partes = explode(' a ', $filaPeriodo['periodo']);
+    if (count($partes) !== 2) {
+        return $Listado; // formato inválido
+    }
+
+    $fechaInicioPeriodo = $partes[0];
+    $fechaFinPeriodo = $partes[1];
+
+    // Consulta con JOIN y filtro por período
+    $consulta = "
+        SELECT 
+            l.idlicencia,
+            l.fechainicio,
+            l.fechafin,
+            l.cantidaddias,
+            tl.descripcion,
+            e.nombreEstado,
+            emp.nombre,
+            emp.apellido
+        FROM licencia l
+        JOIN tipolicencia tl ON l.IdTipo = tl.idtipoLicencia
+        JOIN estadolicencia e ON l.idEstado = e.idestadoLicencia
+        JOIN empleado emp ON l.idEmpleado = emp.idempleado
+        WHERE l.idEmpleado = ?
+          AND l.fechainicio <= ?
+          AND l.fechafin >= ?
+        ORDER BY l.fechainicio
+    ";
+
+    $stmt = mysqli_prepare($vConexion, $consulta);
+    mysqli_stmt_bind_param($stmt, "iss", $empleado, $fechaFinPeriodo, $fechaInicioPeriodo);
+    mysqli_stmt_execute($stmt);
+    $rs = mysqli_stmt_get_result($stmt);
+
+    while ($data = mysqli_fetch_assoc($rs)) {
+        $Listado[] = [
+            'ID' => $data['idlicencia'],
+            'FECHAINICIO' => $data['fechainicio'],
+            'FECHAFIN' => $data['fechafin'],
+            'NOMBRE' => $data['nombre'],
+            'APELLIDO' => $data['apellido'],
+            'NOMBRETIPO' => $data['descripcion'],
+            'DIAS' => $data['cantidaddias'],
+            'ESTADO' => $data['nombreEstado'],
+        ];
+    }
+
+    return $Listado;
+}
+
 ?>
 

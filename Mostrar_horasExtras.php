@@ -13,11 +13,12 @@ $conexion = ConexionBD();
 
 
 require_once 'select_mostrar_Horaextra.php';
+require_once 'select_horaextra.php';
 
-if (!empty($_GET['ID'])){
-    $datosObtenidos=Listar_horaExtradeEmpleado($conexion, $_GET['ID']);
-}else{
-    $_SESSION['Mensaje']= 'Sin datos para mostrar...';
+if (!empty($_GET['IDHORAEXTRA'])) {
+    $datosObtenidos = ObtenerHoraExtraPorID($conexion, $_GET['IDHORAEXTRA']);
+} else {
+    $_SESSION['Mensaje'] = 'Sin datos para mostrar...';
 }
 ?>
 
@@ -44,21 +45,7 @@ if (!empty($_GET['ID'])){
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <!--<link href="assets/vendor/quill/quill.snow.css" rel="stylesheet">
-  <link href="assets/vendor/quill/quill.bubble.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-  <link href="assets/vendor/simple-datatables/style.css" rel="stylesheet">
--->
-  <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
-
-  <!-- =======================================================
-  * Template Name: NiceAdmin
-  * Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
-  * Updated: Apr 20 2024 with Bootstrap v5.3.3
-  * Author: BootstrapMade.com
-  * License: https://bootstrapmade.com/license/
-  ======================================================== -->
 </head>
 
 <body>
@@ -89,44 +76,60 @@ if (!empty($_GET['ID'])){
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Datos</h5>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="empleadoN" class="form-label"> Nombre</label>
+                  <input type="text" class="form-control" id="empleadoN" name="empleadoN"
+                    value="<?php echo $datosObtenidos['NOMBRE']; ?>" disabled>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="empleadoA" class="form-label"> Apellido</label>
+                  <input type="text" class="form-control" id="empleadoA" name="empleadoA"
+                    value="<?php echo $datosObtenidos['APELLIDO']; ?>" disabled>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="fecha" class="form-label">Fecha</label>
+                  <input type="date" class="form-control" id="fecha" name="fecha"
+                    value="<?php echo $datosObtenidos['FECHA']; ?>" disabled>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="horas" class="form-label">Cantidad de Horas que realizó</label>
+                  <input type="number" step="0.5" class="form-control" id="horas" name='horas'
+                    value="<?php echo $datosObtenidos['HORAS']; ?>" disabled>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="tipoHora" class="form-label">Tipo de Hora</label>
+                  <input type="text" class="form-control" id="tipoHora" name="tipoHora"
+                    value="<?php echo $datosObtenidos['TIPOHORAS']; ?>" disabled>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="tipoRecargo" class="form-label">Tipo de Recargo</label>
+                  <input type="text" class="form-control" id="tipoRecargo" name="tipoRecargo"
+                    value="<?php echo $datosObtenidos['RECARGO']; ?>" disabled>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="valor" class="form-label">Valor Total ($)</label>
+                  <input type="text" class="form-control" id="valor" name="valor"
+                    value="<?php echo number_format($datosObtenidos['VALOR'], 2, ',', '.'); ?>" disabled>
+                </div>
               </div>
 
-
-              <form class="row g-2 " method="post"> <!--se agrego el metodo post para la captura de datos -->
-
-              <div class="col-6">
-                  <label for="empleadoN" class="form-label">Empleado Nombre</label>
-                  <input type="text" class="form-control" id="empleadoN" name="empleadoN" value="<?php echo $datosObtenidos['NOMBRE'];?>" disabled>
-                </div>
-
-                <div class="col-6">
-                <label for="empleadoA" class="form-label">Empleado Apellido</label>
-                  <input type="text" class="form-control" id="empleadoA" name="empleadoA" value="<?php echo $datosObtenidos['APELLIDO'];?>" disabled>
-                </div>
-
-                <div class="col-6">
-                  <label for="fecha" class="form-label">Fecha</label>
-                  <input type="date" class="form-control" id="fecha" name="fecha" value="<?php echo $datosObtenidos['FECHA'];?>" disabled >
-                </div>
-
-                <div class="col-6">
-                  <label for="horas" class="form-label">Cantidad de Horas que realizó</label>
-                  <input type="number" step="0.5" class="form-control" id="horas" name='horas'value="<?php echo $datosObtenidos['HORAS'];?>" disabled>
-                </div>
-
-                <div class="text-center">
-                  <a href="HorasExtras.php" class="text-primary fw-bold">Volver</a>
-                </div>
-                <div>
-
-                </div>
-              </form><!-- Vertical Form -->
-
+              <div class="text-center mt-4">
+                <a href="HorasExtras.php" class="btn btn-outline-primary">Volver</a>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
+
 
   </main><!-- End #main -->
 

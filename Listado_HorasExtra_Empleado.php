@@ -134,6 +134,9 @@ require_once 'Validad_Datos_Busqueda.php';
                                     <th scope="col">Empleado</th>
                                     <th scope="col">Fecha</th>
                                     <th scope="col">Cantidad de Horas</th>
+                                    <th scope="col">Tipo de Horas</th>
+                                    <th scope="col">Recargo</th>
+                                    <th scope="col">Valor Calculado</th>
                                     <th scope="col">Acciones</th>
                                 </tr>
                             </thead>
@@ -146,9 +149,12 @@ require_once 'Validad_Datos_Busqueda.php';
                                             <td><?php echo $listadoExtra[$i]['NOMBRE'] . " " . $listadoExtra[$i]['APELLIDO']; ?></td>
                                             <td><?php echo $listadoExtra[$i]['FECHA']; ?></td>
                                             <td><?php echo $listadoExtra[$i]['HORAS']; ?></td>
+                                            <td><?php echo $listadoExtra[$i]['TIPOHORAS']; ?></td>
+                                            <td><?php echo $listadoExtra[$i]['RECARGO']; ?></td>
+                                            <td>$<?php echo number_format($listadoExtra[$i]['VALOR'], 2); ?></td>
                                             <td>
-                                                <a href="Mostrar_horasExtras.php?ID=<?php echo $listadoExtra[$i]['ID']; ?>" role="button"" title=" Ver"<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i> </span> </a>
-                                                <a href="Modificar_horaextra.php?ID=<?php echo $listadoExtra[$i]['ID']; ?>" role="button" title="Modificar" <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i></span> </a>
+                                                <a href="Mostrar_horasExtras.php?IDHORAEXTRA=<?php echo $listadoExtra[$i]['IDHORAEXTRA']; ?>" role="button"" title=" Ver"<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i> </span> </a>
+                                                <a href="Modificar_horaextra.php?IDHORAEXTRA=<?php echo $listadoExtra[$i]['IDHORAEXTRA']; ?>" role="button" title="Modificar" <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i></span> </a>
                                             </td>
                                         </tr>
                                     <?php }; ?>
