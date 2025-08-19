@@ -129,7 +129,7 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
 
 
               <!-- Default Table -->
-              <table class="table table-striped">
+              <table class="table table-striped small">
                 <thead>
                   <tr>
                     <th scope="col">#</th>

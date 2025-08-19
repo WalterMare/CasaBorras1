@@ -81,7 +81,7 @@ $estilo = 'info';
     </div>
 
 
-    <form class="row g-3" action="Registrar_Licencia.php" method="post" enctype="multipart/form-data">
+    <form class="row g-3" action="Registrar_Licencia.php" id="formLicencia" method="post" enctype="multipart/form-data">
         <div class="col-6">
             <!-- Selección de Empleado -->
             <label class="form-label" for="idEmpleado">Seleccione un empleado:</label>
@@ -131,6 +131,10 @@ $estilo = 'info';
                 ?>
             </select><br>
             <div id="diasMaximosLeyenda" class="form-text text-primary"></div>
+        </div>
+        <div class="col-6">
+            <label class="form-label" for="IdTipo">Fecha de parto estimada</label>
+            <input class="form-control" type="date" id="fechaProbableParto" name="fechaProbableParto" value="<?php echo htmlspecialchars($fechaProbablePartoDesdeBD); ?>">
         </div>
 
         <div class="col-6">
@@ -184,40 +188,142 @@ $estilo = 'info';
             const leyendaDias = document.getElementById('diasMaximosLeyenda');
             const btnRegistrar = document.getElementById('btnRegistrar');
             const errorDias = document.getElementById('errorDias');
+            const formLicencia = document.getElementById('formLicencia');
+            const fechaProbableParto = document.getElementById('fechaProbableParto');
 
+            // Calcula los días entre fechas
             function calcularDias() {
                 if (fechaInicio.value && fechaFin.value) {
                     const inicio = new Date(fechaInicio.value);
                     const fin = new Date(fechaFin.value);
                     const diferencia = (fin - inicio) / (1000 * 60 * 60 * 24) + 1;
                     diasLicencia.value = diferencia >= 0 ? diferencia : 0;
-                    validarDiasMaximos();
+                    validarTodo();
                 }
             }
 
+            // Valida licencias que no son maternidad
             function validarDiasMaximos() {
                 const selectedOption = tipoLicenciaSelect.options[tipoLicenciaSelect.selectedIndex];
                 const diasMaximos = parseInt(selectedOption.getAttribute('data-dias-maximos')) || 0;
                 const diasSeleccionados = parseInt(diasLicencia.value) || 0;
 
+                if (tipoLicenciaSelect.value === '1') return validarLicenciaMaternidad();
+
                 if (diasMaximos && diasSeleccionados > diasMaximos) {
                     errorDias.textContent = `⚠️ La cantidad de días supera el máximo permitido de ${diasMaximos} día(s).`;
-                    btnRegistrar.disabled = true;
-                } else {
-                    errorDias.textContent = '';
-                    btnRegistrar.disabled = false;
+                    return false;
                 }
+
+                errorDias.textContent = '';
+                return true;
             }
 
-            tipoLicenciaSelect.addEventListener('change', function() {
-                const diasMaximos = tipoLicenciaSelect.options[tipoLicenciaSelect.selectedIndex].getAttribute('data-dias-maximos');
-                leyendaDias.textContent = diasMaximos ? `👉 Esta licencia permite un máximo de ${diasMaximos} día(s).` : '';
-                validarDiasMaximos();
+            // Valida licencia de maternidad
+            function validarLicenciaMaternidad() {
+                if (tipoLicenciaSelect.value !== '1') return true;
+                if (!fechaInicio.value || !fechaFin.value || !fechaProbableParto.value) return false;
+
+                const inicio = new Date(fechaInicio.value);
+                const fin = new Date(fechaFin.value);
+                const parto = new Date(fechaProbableParto.value);
+
+                const diasSeleccionados = (fin - inicio) / (1000 * 60 * 60 * 24) + 1;
+                const diasAntesParto = Math.floor((parto - inicio) / (1000 * 60 * 60 * 24)) + 1;
+                const diasDespuesParto = diasSeleccionados - diasAntesParto;
+
+                if (diasSeleccionados !== 90) {
+                    errorDias.textContent = "⚠️ La licencia por maternidad debe ser exactamente de 90 días corridos.";
+                    return false;
+                }
+
+                if (!((diasAntesParto === 45 && diasDespuesParto === 45) ||
+                        (diasAntesParto === 30 && diasDespuesParto === 60))) {
+                    errorDias.textContent = "⚠️ Solo se permiten 45 días antes + 45 después o 30 antes + 60 después.";
+                    return false;
+                }
+
+                errorDias.textContent = '';
+                return true;
+            }
+
+            // Calcula automáticamente fechaFin para maternidad
+            function calcularFechaFin() {
+                if (tipoLicenciaSelect.value !== '1') return;
+                if (!fechaInicio.value || !fechaProbableParto.value) return;
+
+                const inicio = new Date(fechaInicio.value);
+                const parto = new Date(fechaProbableParto.value);
+
+                let diasAntesParto = Math.floor((parto - inicio) / (1000 * 60 * 60 * 24)) + 1;
+                let diasDespuesParto;
+
+                // Ajustar según combinación permitida
+                if (diasAntesParto >= 45) {
+                    diasAntesParto = 45;
+                    diasDespuesParto = 45;
+                } else {
+                    diasAntesParto = 30;
+                    diasDespuesParto = 60;
+                }
+
+                const fechaFinal = new Date(inicio);
+                fechaFinal.setDate(inicio.getDate() + diasAntesParto + diasDespuesParto - 1);
+
+                fechaFin.value = fechaFinal.toISOString().split('T')[0];
+                calcularDias();
+            }
+
+            // Valida todo el formulario
+            function validarTodo() {
+                let esValido = true;
+                errorDias.textContent = '';
+
+                if (!fechaInicio.value || !fechaFin.value) esValido = false;
+
+                if (tipoLicenciaSelect.value === '1') {
+                    if (!validarLicenciaMaternidad()) esValido = false;
+                } else {
+                    if (!validarDiasMaximos()) esValido = false;
+                }
+
+                btnRegistrar.disabled = !esValido;
+                return esValido;
+            }
+
+            // Eventos
+            fechaInicio.addEventListener('change', function() {
+                if (tipoLicenciaSelect.value === '1') {
+                    calcularFechaFin(); // maternidad
+                } else {
+                    calcularDias(); // otras licencias
+                }
             });
 
-            fechaInicio.addEventListener('change', calcularDias);
-            fechaFin.addEventListener('change', calcularDias);
-            tipoLicenciaSelect.dispatchEvent(new Event('change'));
+            fechaFin.addEventListener('change', function() {
+                if (tipoLicenciaSelect.value !== '1') {
+                    calcularDias(); // solo recalcula para no maternidad
+                }
+            });
+
+            fechaProbableParto.addEventListener('change', calcularFechaFin);
+
+            tipoLicenciaSelect.addEventListener('change', function() {
+                const selectedOption = tipoLicenciaSelect.options[tipoLicenciaSelect.selectedIndex];
+                if (selectedOption.value === '1') {
+                    leyendaDias.textContent = "La licencia por maternidad es de 90 días corridos. Debe tomar al menos 30 días antes del parto.";
+                    calcularFechaFin();
+                } else {
+                    const diasMaximos = parseInt(selectedOption.getAttribute('data-dias-maximos')) || 0;
+                    leyendaDias.textContent = diasMaximos ? `👉 Esta licencia permite un máximo de ${diasMaximos} día(s).` : '';
+                    calcularDias();
+                }
+                validarTodo();
+            });
+
+            formLicencia.addEventListener('submit', function(e) {
+                if (!validarTodo()) e.preventDefault();
+            });
         });
     </script>
     <!-- Template Main JS File -->

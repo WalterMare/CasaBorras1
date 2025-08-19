@@ -24,6 +24,14 @@ try {
     // Iniciar transacción
     $pdo->beginTransaction();
 
+    // 1. Verificar que el empleado esté activo antes de insertar la licencia
+    $stmtEstado = $pdo->prepare("SELECT estado FROM empleado WHERE idempleado = :idEmpleado");
+    $stmtEstado->execute([':idEmpleado' => $_POST['idEmpleado']]);
+    $empleado = $stmtEstado->fetch(PDO::FETCH_ASSOC);
+
+    if (!$empleado || (int)$empleado['estado'] !== 1) {
+        throw new Exception("El empleado no se encuentra activo. No puede registrar licencias por estar de vacaciones o suspendido.");
+    }
     // Insertar licencia
     $stmt = $pdo->prepare("INSERT INTO licencia (fechainicio, fechafin, IdTipo, idEmpleado, IdEstado, cantidaddias) 
                            VALUES (:fechainicio, :fechafin, :IdTipo, :idEmpleado, :IdEstado, :cantidaddias)");

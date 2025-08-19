@@ -17,6 +17,7 @@ function Listar_empleado($vConexion)
         $Listado[$i]['NOMBRE'] = $data['nombre'];
         $Listado[$i]['APELLIDO'] = $data['apellido'];
         $Listado[$i]['IMAGEN'] = $data['imagen'];
+        $Listado[$i]['FECHAINGRESO']=$data['fecha_inicio'];
         $i++;
     }
 

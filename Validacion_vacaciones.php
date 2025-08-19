@@ -1,67 +1,79 @@
 <?php
-function Validar_Datos() {
+function Validar_Datos()
+{
     $vMensaje = '';
 
-    // Campos obligatorios simplificados
-    $camposObligatorios = ['estado', 'empleado', 'fecha_inicio', 'fecha_fin', 'año', 'cantidad_dias'];
-    foreach ($camposObligatorios as $campo) {
-        if (empty($_POST[$campo])) {
-            $vMensaje .= "Complete el campo requerido: " . ucfirst(str_replace('_', ' ', $campo)) . "<br>";
-        }
+
+
+    if (empty($_POST['empleado'])) { //strlen cuenta la cantidad de caracteres de la cadena
+        $vMensaje .= 'Datos no encontrados debe seleccionar una opción. <br />';
+    }
+    //con esto aseguramos que limpiamos espacios y limpiamos de caracteres de codigo ingresados
+    foreach ($_POST as $Id => $Valor) {
+        $_POST[$Id] = trim($_POST[$Id]); //limpia los espacios
+        $_POST[$Id] = strip_tags($_POST[$Id]); //limpia los caracteres
     }
 
-    // Validación de fechas
-    if (!empty($_POST['fecha_inicio']) && !empty($_POST['fecha_fin'])) {
-        try {
-            $fechaInicio = new DateTime($_POST['fecha_inicio']);
-            $fechaFin = new DateTime($_POST['fecha_fin']);
-            
-            $mesInicio = $fechaInicio->format('m');
-            $mesFin = $fechaFin->format('m');
-            
-            if ($mesInicio < 10 && $mesInicio > 4) {
-                $vMensaje .= "Período vacacional no válido (octubre-abril)<br>";
-            }
-            
-            if ($mesFin > 4) {
-                $vMensaje .= "Las vacaciones deben finalizar antes de mayo<br>";
-            }
-            
-            if ($fechaFin < $fechaInicio) {
-                $vMensaje .= "Fecha final anterior a la inicial<br>";
-            }
-            
-            // Validación días calculados
-            $diasCalculados = (int)(($fechaFin->getTimestamp() - $fechaInicio->getTimestamp()) / (60 * 60 * 24)) + 1;
-            if ($_POST['cantidad_dias'] != $diasCalculados) {
-                $vMensaje .= "Inconsistencia en días solicitados<br>";
-            }
-            
-        } catch (Exception $e) {
-            $vMensaje .= "Error en formato de fechas<br>";
-        }
-    }
-
-    // Validación días disponibles
-    if (!empty($_POST['dias']) && !empty($_POST['cantidad_dias'])) {
-        $diasDisponibles = (int)$_POST['dias'];
-        $diasSolicitados = (int)$_POST['cantidad_dias'];
-        
-        if ($diasSolicitados > $diasDisponibles) {
-            $vMensaje .= "Días solicitados exceden los disponibles<br>";
-        }
-        
-        if (empty($_POST['vacaciones_restantes']) && $_POST['vacaciones_restantes'] !== '0') {
-            $vMensaje .= "Error en cálculo de días restantes<br>";
-        }
-    }
-
-    // Limpieza básica de datos
-    array_walk($_POST, function(&$valor) {
-        $valor = trim(htmlspecialchars($valor, ENT_QUOTES, 'UTF-8'));
-    });
 
     return $vMensaje;
 }
+function Validar_DatosRegistro()
+{
 
 
+    $vMensaje = '';
+
+    // Limpiamos espacios y etiquetas de todo el POST
+    foreach ($_POST as $Id => $Valor) {
+        $_POST[$Id] = trim($Valor); // limpia espacios
+        $_POST[$Id] = strip_tags($_POST[$Id]); // limpia etiquetas HTML
+    }
+
+    // Validar que haya empleado
+    if (empty($_POST['empleadoid'])) {
+        $vMensaje .= 'Debe seleccionar un empleado.<br />';
+    }
+
+    // Validar antigüedad (aunque viene readonly, igual chequeamos)
+    if (!isset($_POST['antiguedad']) || !is_numeric($_POST['antiguedad'])) {
+        $vMensaje .= 'Antigüedad no válida.<br />';
+    }
+
+    // Validar fecha de inicio
+    if (empty($_POST['fecha_inicio'])) {
+        $vMensaje .= 'Debe ingresar la fecha de inicio.<br />';
+    }
+
+    // Validar fecha de fin
+    if (empty($_POST['fecha_fin'])) {
+        $vMensaje .= 'Debe ingresar la fecha de fin.<br />';
+    }
+
+    // Si ambas fechas existen, validar que inicio <= fin
+    if (!empty($_POST['fecha_inicio']) && !empty($_POST['fecha_fin'])) {
+        $inicio = strtotime($_POST['fecha_inicio']);
+        $fin = strtotime($_POST['fecha_fin']);
+        if ($inicio > $fin) {
+            $vMensaje .= 'La fecha de inicio no puede ser posterior a la fecha de fin.<br />';
+        }
+    }
+
+    // Validar cantidad de días seleccionados
+    if (empty($_POST['cantidad_dias']) || $_POST['cantidad_dias'] <= 0) {
+        $vMensaje .= 'Cantidad de días seleccionados inválida.<br />';
+    }
+
+    // Validar que no se superen los días por antigüedad
+    if (!empty($_POST['dias_antiguedad']) && !empty($_POST['cantidad_dias'])) {
+        if ($_POST['cantidad_dias'] > $_POST['dias_antiguedad']) {
+            $vMensaje .= 'La cantidad de días seleccionados excede los días disponibles según antigüedad.<br />';
+        }
+    }
+
+    // Observaciones (opcional, pero limpiamos igual)
+    if (isset($_POST['observaciones']) && strlen($_POST['observaciones']) > 255) {
+        $vMensaje .= 'Las observaciones no pueden superar los 255 caracteres.<br />';
+    }
+
+    return $vMensaje;
+}

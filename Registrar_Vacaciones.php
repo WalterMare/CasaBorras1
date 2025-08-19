@@ -1,33 +1,60 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Verificar si la sesión está activa
 if (empty($_SESSION['Usuario_Nombre'])) {
-    header('Location: cerrarsesion.php');
+    header("Location: cerrarsesion.php");
     exit;
 }
 
-// Incluir la conexión a la base de datos
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
-require_once 'Insertar_Vacacion.php';
-require_once 'Validacion_vacaciones.php';
+
 require_once 'select_empleado.php';
 $listadoEmpleado = Listar_empleado($conexion);
 $CantidadEmpleado = count($listadoEmpleado);
-?>
 
+require_once 'Validacion_vacaciones.php';
+require_once 'Listar_Vacacionesempleado.php';
+$CantidadVaca = 0;
+
+require_once 'Insertar_Vacacion.php';
+
+
+function calcularDiasPorAntiguedad($fechaIngreso)
+{
+    $hoy = new DateTime();
+    $inicio = new DateTime($fechaIngreso);
+    $intervalo = $inicio->diff($hoy);
+
+    $anos = $intervalo->y;
+    $meses = $intervalo->m;
+
+    if ($anos < 0 || ($anos == 0 && $meses < 6)) {
+        return 0; // menos de 6 meses
+    } elseif ($anos < 5) {
+        return 14;
+    } elseif ($anos < 10) {
+        return 21;
+    } elseif ($anos < 20) {
+        return 28;
+    } else {
+        return 35;
+    }
+}
+
+?>
 
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Vacaciones</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <title>Listado de Horas Extras de un empleado</title>
     <meta content="" name="description">
     <meta content="" name="keywords">
 
@@ -43,20 +70,76 @@ $CantidadEmpleado = count($listadoEmpleado);
     <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
+
     <!-- Template Main CSS File -->
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
 
 <body>
-
-    <h5 class="card-title">Registro de Vacaciones</h5>
+    <h5 class="card-title">Ingresa los datos</h5>
 
     <?php
     $Mensaje = '';
     $Estilo = 'warning';
-    if (!empty($_POST['BotonRegistrar'])) {
-        //estoy en condiciones de poder validar los datos
+    if (!empty($_POST['BotonBuscar'])) {
         $Mensaje = Validar_Datos();
+
+        if (empty($Mensaje)) {
+            $empleadoId = $_POST['empleado'];
+
+            foreach ($listadoEmpleado as $emp) {
+                if ($emp['ID'] == $empleadoId) {
+                    $id = $emp['ID'];
+                    $fechaInicio = new DateTime($emp['FECHAINGRESO']);
+                    $diasAntiguedad = calcularDiasPorAntiguedad($emp['FECHAINGRESO']);
+                    $hoy = new DateTime();
+                    $antiguedad = $fechaInicio->diff($hoy)->y;
+                    break;
+                }
+            }
+            $listadoVacaciones = Listar_VacacionesEmpleado($conexion, $empleadoId);
+            if ($listadoVacaciones != false) {
+                $CantidadVaca = count($listadoVacaciones);
+                $Mensaje = 'Datos encontrados.';
+                $Estilo = 'success';
+            }
+        }
+    }
+    ?>
+
+
+    <form class="row g-6" method="post"> <!--se agrego el metodo post para la captura de datos -->
+
+        <div class="col-6">
+            <label name="selector" for="selector" class="form-label">Listado de Empleados</label>
+            <select class="form-select" aria-label="Selector" id="selector" name="empleado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
+                <option value="">Selecciona una opción</option>
+                <?php
+
+                $selected = '';
+                for ($i = 0; $i < $CantidadEmpleado; $i++) {
+                    if (!empty($_POST['empleado']) && $_POST['empleado'] ==  $listadoEmpleado[$i]['ID']) { //recuerda el elemento seleccionado
+                        $selected = 'selected';
+                    } else {
+                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
+                    } ?>
+                    <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
+                        <?php echo $listadoEmpleado[$i]['NOMBRE'] . " " . $listadoEmpleado[$i]['APELLIDO']; ?>
+                    </option>
+                <?php } ?>
+            </select>
+
+        </div>
+        <div class="col-2 row g-3 text-center">
+            <button class="btn btn-primary" type="submit" value="Buscar" name="BotonBuscar">Buscar</button>
+        </div>
+    </form>
+
+    <?php
+
+    if (isset($_POST['guardarVacacion'])) {
+        //estoy en condiciones de poder validar los datos
+        $Mensaje = Validar_DatosRegistro();
         if (empty($Mensaje)) {
             if (InsertarVacacion($conexion) != false) {
                 $Mensaje = 'Se ha registrado correctamente.';
@@ -75,280 +158,129 @@ $CantidadEmpleado = count($listadoEmpleado);
             } ?>
 
 
-
-
-    <form class="row g-3" method="POST">
-        <div class="col-6">
-            <label for="empleado" class="form-label">Empleado:</label>
-            <select class="form-select" aria-label="Selector" id="empleado" name="empleado" onchange="calcularDiasVacaciones()">
-                <option value="">Selecciona una opcion</option>
-                <?php
-                $selected = '';
-                for ($i = 0; $i < $CantidadEmpleado; $i++) {
-                    if (!empty($_POST['empleado']) && $_POST['empleado'] ==  $listadoEmpleado[$i]['ID']) { //recuerda el elemento seleccionado
-                        $selected = 'selected';
-                    } else {
-                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
-                    }
-                ?>
-                    <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadoEmpleado[$i]['NOMBRE'] . " " . $listadoEmpleado[$i]['APELLIDO']; ?>
-                    </option>
-                <?php } ?>
-            </select>
-        </div>
-        <div class="col-6">
-            <label for="dias" class="form-label">Cantidad de días que corresponde por la antigüedad</label>
-            <input class="form-control" type="text" id="dias" name="dias" readonly>
+    <form class="row g-6" method="post">
+        <div class="mb-3">
+            <label>Id</label>
+            <input type="number" class="form-control" name="empleadoid" value="<?= htmlspecialchars($id) ?>" readonly>
         </div>
 
 
-        <div class="col-6">
-            <label for="fecha_inicio" class="form-label">Fecha de Inicio:</label>
-            <input class="form-control" type="date" id="fecha_inicio" name="fecha_inicio">
+        <div class="mb-3">
+            <label>Antigüedad (años)</label>
+            <input type="number" class="form-control" name="antiguedad" value="<?= htmlspecialchars($antiguedad) ?>" readonly>
         </div>
 
-        <div class="col-6">
-            <label for="fecha_fin" class="form-label">Fecha de Fin:</label>
-            <input class="form-control" type="date" id="fecha_fin" name="fecha_fin">
+        <div class="mb-3">
+            <label>Fecha Inicio</label>
+            <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control">
         </div>
 
-        <div class="col-6">
-            <label for="año" class="form-label">Año:</label>
-            <input class="form-control" type="number" id="año" name="año">
-        </div>
-        <div class="col-6">
-            <label for="cantidad_dias" class="form-label">Cantidad de Días:</label>
-            <input class="form-control" type="number" id="cantidad_dias" name="cantidad_dias">
+        <div class="mb-3">
+            <label>Fecha Fin</label>
+            <input type="date" name="fecha_fin" id="fecha_fin" class="form-control">
         </div>
 
-        <div class="col-6">
-            <label for="vacaciones_restantes" class="form-label">Vacaciones Restantes:</label>
-            <input class="form-control" type="number" id="vacaciones_restantes" name="vacaciones_restantes">
-        </div>
-        <div class="col-6">
-            <label for="estado" class="form-label">Estado</label>
-            <select class="form-select" name="estado" id="estado">
-                <option value="Aprobado">Aprobado</option>
-                <option value="Rechazado">Rechazado</option>
-            </select>
+        <div class="mb-3">
+            <label>Cantidad de días seleccionados</label>
+            <input type="number" name="cantidad_dias" id="cantidad_dias" class="form-control" value="<?= $cantidad_dias ?>" readonly>
         </div>
 
-        <div class="col-6">
-            <button class="btn btn-primary" type="submit" value="Registrar" name="BotonRegistrar">Registrar</button>
+        <div class="mb-3">
+            <label>Cantidad de días disponibles según antiguedad</label>
+            <input type="number" name="dias_antiguedad" id="dias_antiguedad" class="form-control" value="<?= htmlspecialchars($diasAntiguedad) ?>" readonly>
+
         </div>
+
+        <div class="mb-3">
+            <label>Observaciones</label>
+            <textarea name="observaciones" class="form-control"></textarea>
+        </div>
+
+        <button type="submit" name="guardarVacacion" class="btn btn-primary">Guardar</button>
+
     </form>
-    
+    <?php if ($CantidadVaca != 0 && $CantidadVaca != null) { ?>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Vacaciones del empleado</h5>
+                        <!-- Default Table -->
+
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Empleado</th>
+                                    <th scope="col">Año</th>
+                                    <th scope="col">Fecha Inicio</th>
+                                    <th scope="col">Fecha Fin</th>
+                                    <th scope="col">Cantidad de Días</th>
+                                    <th scope="col">Restantes</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Observaciones</th>
+                                </tr>
+                            </thead>
+
+                            <?php if ($CantidadVaca != 0 && $CantidadVaca != null) { ?>
+                                <tbody>
+                                    <?php for ($i = 0; $i < $CantidadVaca; $i++) { ?>
+                                        <tr>
+                                            <th scope="row"><?php echo $i + 1; ?></th>
+                                            <td><?php echo $listadoVacaciones[$i]['NOMBRE'] . " " . $listadoVacaciones[$i]['APELLIDO']; ?></td>
+                                            <td><?php echo $listadoVacaciones[$i]['ANIO']; ?></td>
+                                            <td><?php echo $listadoVacaciones[$i]['FECHA_INICIO']; ?></td>
+                                            <td><?php echo $listadoVacaciones[$i]['FECHA_FIN']; ?></td>
+                                            <td><?php echo $listadoVacaciones[$i]['CANTIDAD_DIAS']; ?></td>
+                                            <td><?php echo $listadoVacaciones[$i]['VACACIONES_RESTANTES']; ?></td>
+                                            <td><?php echo $listadoVacaciones[$i]['ESTADO']; ?></td>
+                                            <td><?php echo $listadoVacaciones[$i]['OBSERVACIONES']; ?></td>
+                                        </tr>
+                                    <?php }; ?>
+                                </tbody>
+                            <?php } else { ?>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="9" class="text-center">No hay registros de vacaciones</td>
+                                    </tr>
+                                </tbody>
+                            <?php } ?>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <?php } ?>
+
     <script>
-        function calcularDiasVacaciones() {
-            var empleadoId = document.getElementById('empleado').value;
-            console.log("ID Empleado seleccionado:", empleadoId);
+        // Obtener los elementos
+        const fechaInicio = document.getElementById('fecha_inicio');
+        const fechaFin = document.getElementById('fecha_fin');
+        const cantidadDias = document.getElementById('cantidad_dias');
 
-            if (empleadoId !== "") {
-                var xhr = new XMLHttpRequest();
-                var url = 'obtener_fecha_ingreso.php?empleado_id=' + empleadoId;
-                console.log("URL de solicitud:", url);
+        // Función para calcular los días
+        function calcularDias() {
+            if (fechaInicio.value && fechaFin.value) {
+                const inicio = new Date(fechaInicio.value);
+                const fin = new Date(fechaFin.value);
 
-                xhr.open('GET', url, true);
-                xhr.onreadystatechange = function() {
-                    console.log("Estado:", xhr.readyState, "Status:", xhr.status);
-
-                    if (xhr.readyState == 4) {
-                        if (xhr.status == 200) {
-                            console.log("Respuesta recibida:", xhr.responseText);
-
-                            try {
-                                var response = JSON.parse(xhr.responseText);
-                                console.log("JSON parseado:", response);
-
-                                if (response.success) {
-                                    console.log("Fecha ingreso:", response.fecha_inicio);
-                                    var diasVacaciones = calcularDias(response.fecha_inicio);
-                                    console.log("Días calculados:", diasVacaciones);
-
-                                    document.getElementById('dias').value = diasVacaciones + " días";
-                                } else {
-                                    console.error("Error del servidor:", response.message);
-                                    document.getElementById('dias').value = "Error: " + response.message;
-                                }
-                            } catch (e) {
-                                console.error("Error al parsear JSON:", e, "Respuesta:", xhr.responseText);
-                                document.getElementById('dias').value = "Error en formato de datos";
-                            }
-                        } else {
-                            console.error("Error HTTP:", xhr.status);
-                            document.getElementById('dias').value = "Error de conexión (" + xhr.status + ")";
-                        }
-                    }
-                };
-                xhr.onerror = function() {
-                    console.error("Error de red");
-                    document.getElementById('dias').value = "Error de red";
-                };
-                xhr.send();
-            } else {
-                document.getElementById('dias').value = "";
-            }
-        }
-
-        function calcularDias(fechaIngreso) {
-            if (!fechaIngreso) return 0;
-
-            try {
-                var fechaActual = new Date();
-                var fechaIngresoObj = new Date(fechaIngreso);
-
-                // Validar que la fecha sea correcta
-                if (isNaN(fechaIngresoObj.getTime())) {
-                    console.error("Fecha inválida:", fechaIngreso);
-                    return 0;
-                }
-
-                // Calcular diferencia en meses
-                var mesesTrabajados = (fechaActual.getFullYear() - fechaIngresoObj.getFullYear()) * 12;
-                mesesTrabajados += fechaActual.getMonth() - fechaIngresoObj.getMonth();
-
-                // Ajustar si el día actual es menor al día de ingreso
-                if (fechaActual.getDate() < fechaIngresoObj.getDate()) {
-                    mesesTrabajados--;
-                }
-
-                console.log("Meses trabajados:", mesesTrabajados);
-
-                // Calcular días según tiempo de servicio
-                if (mesesTrabajados < 6) {
-                    return 0; // Menos de 6 meses - no tiene vacaciones
-                } else if (mesesTrabajados <= 12) {
-                    return mesesTrabajados; // 6-12 meses - 1 día por mes
+                if (fin >= inicio) {
+                    // Calcular la diferencia en milisegundos
+                    const diferencia = fin - inicio;
+                    // Convertir a días (+1 para incluir el día de inicio)
+                    cantidadDias.value = Math.floor(diferencia / (1000 * 60 * 60 * 24)) + 1;
                 } else {
-                    // Más de 1 año - cálculo por antigüedad
-                    var antiguedad = Math.floor(mesesTrabajados / 12);
-
-                    if (antiguedad < 5) return 14; // 1-4 años
-                    if (antiguedad < 10) return 21; // 5-9 años
-                    if (antiguedad < 20) return 28; // 10-19 años
-                    return 35; // 20+ años
+                    cantidadDias.value = 0;
                 }
-            } catch (e) {
-                console.error("Error en cálculo de días:", e);
-                return 0;
             }
         }
 
-        // Función para calcular días entre fechas
-        function calcularDiasEntreFechas() {
-            var inicio = new Date(document.getElementById('fecha_inicio').value);
-            var fin = new Date(document.getElementById('fecha_fin').value);
-
-            // Validar que ambas fechas estén seleccionadas
-            if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
-                return;
-            }
-
-            // Calcular diferencia en días (incluyendo ambos días)
-            var diffTiempo = fin - inicio;
-            var diffDias = Math.floor(diffTiempo / (1000 * 60 * 60 * 24)) + 1;
-
-            // Asignar el valor calculado
-            document.getElementById('cantidad_dias').value = diffDias > 0 ? diffDias : 0;
-
-            // Validar contra días disponibles
-            validarDiasDisponibles();
-        }
-
-        // Función para validar días disponibles
-        function validarDiasDisponibles() {
-            var diasDisponibles = parseInt(document.getElementById('dias').value) || 0;
-            var diasSolicitados = parseInt(document.getElementById('cantidad_dias').value) || 0;
-            var campoCantidad = document.getElementById('cantidad_dias');
-
-            // Resetear estilo
-            campoCantidad.style.color = '';
-            campoCantidad.style.borderColor = '';
-
-            // Validar si excede
-            if (diasSolicitados > diasDisponibles) {
-                campoCantidad.style.color = 'red';
-                campoCantidad.style.borderColor = 'red';
-
-                // Opcional: Mostrar mensaje de alerta
-                alert(`¡Atención! Está solicitando ${diasSolicitados} días pero sólo tiene ${diasDisponibles} disponibles.`);
-            }
-        }
-        // Función para calcular días restantes
-        function calcularDiasRestantes() {
-            var diasDisponibles = parseInt(document.getElementById('dias').value) || 0;
-            var diasSolicitados = parseInt(document.getElementById('cantidad_dias').value) || 0;
-            var campoRestantes = document.getElementById('vacaciones_restantes');
-
-            // Calcular días restantes
-            var diasRestantes = diasDisponibles - diasSolicitados;
-
-            // Asegurarnos que no sea negativo
-            diasRestantes = diasRestantes >= 0 ? diasRestantes : 0;
-
-            // Actualizar el campo
-            campoRestantes.value = diasRestantes;
-
-            // Validar si excede (mantenemos la función anterior)
-            validarDiasDisponibles();
-        }
-
-        // Modificar el evento de cantidad_dias para que llame a esta función
-        document.getElementById('cantidad_dias').addEventListener('input', function() {
-            calcularDiasRestantes();
-            validarDiasDisponibles();
-        });
-
-        // También actualizar cuando cambian las fechas
-        document.getElementById('fecha_inicio').addEventListener('change', function() {
-            calcularDiasEntreFechas();
-            calcularDiasRestantes();
-            var año = new Date(this.value).getFullYear();
-            document.getElementById('año').value = año;
-        });
-
-        document.getElementById('fecha_fin').addEventListener('change', function() {
-            calcularDiasEntreFechas();
-            calcularDiasRestantes();
-        });
-
-        // Asignar eventos a los campos de fecha
-        document.getElementById('fecha_inicio').addEventListener('change', function() {
-            calcularDiasEntreFechas();
-            // Actualizar año automáticamente
-            var año = new Date(this.value).getFullYear();
-            document.getElementById('año').value = año;
-        });
-
-        document.getElementById('fecha_fin').addEventListener('change', calcularDiasEntreFechas);
-
-        // Validar también cuando se modifica manualmente la cantidad
-        document.getElementById('cantidad_dias').addEventListener('input', validarDiasDisponibles);
-
-        // Al final de tu script, llama a la función para calcular valores iniciales
-        window.addEventListener('DOMContentLoaded', function() {
-            calcularDiasRestantes();
-        });
-
-        document.querySelector('form').addEventListener('submit', function(e) {
-            var diasDisponibles = parseInt(document.getElementById('dias').value) || 0;
-            var diasSolicitados = parseInt(document.getElementById('cantidad_dias').value) || 0;
-
-            if (diasSolicitados > diasDisponibles) {
-                e.preventDefault();
-                alert('No puede solicitar más días de los disponibles');
-            }
-        });
+        // Ejecutar la función cuando cambien las fechas
+        fechaInicio.addEventListener('change', calcularDias);
+        fechaFin.addEventListener('change', calcularDias);
     </script>
-    <!-- ======= Footer ======= -->
-    <?php include_once 'partes/footer.php' ?>
-    <!-- End Footer -->
-    <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/vendor/tinymce/tinymce.min.js"></script>
-    <script src="assets/js/cartel.js"></script>
-
 </body>
 
 </html>

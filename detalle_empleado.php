@@ -13,12 +13,15 @@ if (!isset($_GET['id']) || !isset($_GET['preliquidacion'])) {
 
 $idEmpleado = intval($_GET['id']);
 $idPreliquidacion = intval($_GET['preliquidacion']);
+$diasADescontar = 0;
+$totalMonto = 0;
+$diasSuspension = 0;
 
 function Obtener_Detalles_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
 {
     $consulta = "SELECT 
         e.nombre, e.apellido, e.dni, e.fecha_inicio,
-        c.descripcion AS cargo,  
+        c.sueldo_basico, c.descripcion AS cargo,  
         dp.idLicencia, dp.idAnticipo, 
         dp.idObraSocial, dp.idFamiliar, dp.idSancion, 
         dp.idEmbargo, dp.idViatico,
@@ -36,11 +39,11 @@ function Obtener_Detalles_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
     LEFT JOIN
         tipolicencia tl ON dp.tiposLicencias = tl.idtipoLicencia
     LEFT JOIN
-        vacaciones v ON v.idempleado = e.idempleado AND v.año = YEAR(CURDATE())  
+        vacaciones v ON v.idempleado = e.idempleado AND v.anio = YEAR(CURDATE())  
     WHERE 
         dp.idEmpleado = ? AND dp.idPreliquidacion = ?
     GROUP BY 
-        e.idempleado, c.descripcion, dp.idLicencia, dp.idAnticipo, 
+        e.idempleado, c.sueldo_basico, c.descripcion, dp.idLicencia, dp.idAnticipo, 
         dp.idObraSocial, dp.idFamiliar, dp.idSancion, dp.idEmbargo, dp.idViatico, 
         dp.diasTrabajados, dp.tiposSanciones, dp.tiposLicencias, dp.vacacionesTomadas";
 
@@ -145,6 +148,7 @@ function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquid
         return [
             'periodoTexto' => 'No disponible',
             'diasPeriodo' => 0,
+            'diasLaboralesProgramados' => 0,
             'diasTrabajados' => 0,
             'inasistencias' => 0
         ];
@@ -156,45 +160,118 @@ function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquid
         return [
             'periodoTexto' => 'Formato inválido',
             'diasPeriodo' => 0,
+            'diasLaboralesProgramados' => 0,
             'diasTrabajados' => 0,
             'inasistencias' => 0
         ];
     }
 
-    $fechaInicio = new DateTime(trim($periodo[0]));
-    $fechaFin = new DateTime(trim($periodo[1]));
+    $fechaInicio = trim($periodo[0]);
+    $fechaFin = trim($periodo[1]);
 
     // 3. Calcular días del periodo
-    $intervalo = $fechaInicio->diff($fechaFin);
-    $diasDelPeriodo = $intervalo->days + 1; // se suma 1 porque incluye ambos extremos
+    $fechaInicioDT = new DateTime($fechaInicio);
+    $fechaFinDT = new DateTime($fechaFin);
+    $intervalo = $fechaInicioDT->diff($fechaFinDT);
+    $diasDelPeriodo = $intervalo->days + 1;
 
-    // 4. Días trabajados = cantidad de asistencias con estado "Presente" (idEstado = 1)
-    $consultaAsistencias = "SELECT COUNT(*) AS diasTrabajados 
+    // 4. Contar días laborales programados usando la función creada
+    $diasLaboralesProgramados = contarDiasLaboralesProgramados($idEmpleado, $fechaInicio, $fechaFin, $vConexion);
+
+    // 5. Estados que cuentan como trabajados
+    $estadosValidos = [1, 3, 4]; // 1=Presente, 3=Justificado, 4=Licencia
+    $placeholders = implode(',', array_fill(0, count($estadosValidos), '?'));
+
+    $consultaAsistencias = "
+        SELECT COUNT(*) AS diasTrabajados 
         FROM asistencia 
         WHERE idEmpleado = ? 
         AND fecha BETWEEN ? AND ? 
-        AND idEstado = 1";
+        AND idEstado IN ($placeholders)
+    ";
 
     $stmt2 = mysqli_prepare($vConexion, $consultaAsistencias);
-    $fechaIniStr = $fechaInicio->format('Y-m-d');
-    $fechaFinStr = $fechaFin->format('Y-m-d');
-    mysqli_stmt_bind_param($stmt2, "iss", $idEmpleado, $fechaIniStr, $fechaFinStr);
+
+    $tipos = 'iss' . str_repeat('i', count($estadosValidos));
+    mysqli_stmt_bind_param(
+        $stmt2,
+        $tipos,
+        $idEmpleado,
+        $fechaInicio,
+        $fechaFin,
+        ...$estadosValidos
+    );
+
     mysqli_stmt_execute($stmt2);
     $resultado2 = mysqli_stmt_get_result($stmt2);
     $fila2 = mysqli_fetch_assoc($resultado2);
     $diasTrabajados = $fila2['diasTrabajados'] ?? 0;
 
-    // 5. Inasistencias = días del período - días trabajados
-    $inasistencias = $diasDelPeriodo - $diasTrabajados;
+    // 6. Inasistencias = días laborales programados - días trabajados
+    $inasistencias = $diasLaboralesProgramados - $diasTrabajados;
 
     return [
-        'periodoTexto' => $fechaInicio->format('Y-m-d') . ' a ' . $fechaFin->format('Y-m-d'),
+        'periodoTexto' => $fechaInicio . ' a ' . $fechaFin,
         'diasPeriodo' => $diasDelPeriodo,
+        'diasLaboralesProgramados' => $diasLaboralesProgramados,
         'diasTrabajados' => $diasTrabajados,
         'inasistencias' => $inasistencias
     ];
 }
 
+function contarDiasLaboralesProgramados($idEmpleado, $fechaInicio, $fechaFin, $conexion)
+{
+    $diasLaborales = 0;
+
+    // Paso 1: Obtener turnos asignados al empleado para el período
+    $sqlTurnos = "SELECT idturno, fecha_asignacion FROM empleado_turno 
+                  WHERE idempleado = ? AND fecha_asignacion <= ? ORDER BY fecha_asignacion DESC";
+    $stmtTurnos = mysqli_prepare($conexion, $sqlTurnos);
+    mysqli_stmt_bind_param($stmtTurnos, "is", $idEmpleado, $fechaFin);
+    mysqli_stmt_execute($stmtTurnos);
+    $resultadoTurnos = mysqli_stmt_get_result($stmtTurnos);
+    $turnos = mysqli_fetch_all($resultadoTurnos, MYSQLI_ASSOC);
+
+    if (empty($turnos)) {
+        return 0; // No tiene turno asignado
+    }
+
+    // Tomamos el turno vigente más reciente antes o en fechaFin
+    $turnoVigente = $turnos[0]['idturno'];
+
+    // Paso 2: Obtener días laborales para ese turno
+    $sqlDiasTurno = "SELECT dia_semana FROM turno_dia_horario WHERE idturno = ?";
+    $stmtDiasTurno = mysqli_prepare($conexion, $sqlDiasTurno);
+    mysqli_stmt_bind_param($stmtDiasTurno, "i", $turnoVigente);
+    mysqli_stmt_execute($stmtDiasTurno);
+    $resultadoDiasTurno = mysqli_stmt_get_result($stmtDiasTurno);
+    $diasTurno = array_map('strtolower', array_column(mysqli_fetch_all($resultadoDiasTurno, MYSQLI_ASSOC), 'dia_semana'));
+
+    // Paso 3: contar días en el período que coinciden con días laborales
+    $mapDias = [
+        'monday' => 'lunes',
+        'tuesday' => 'martes',
+        'wednesday' => 'miércoles',
+        'thursday' => 'jueves',
+        'friday' => 'viernes',
+        'saturday' => 'sábado',
+        'sunday' => 'domingo',
+    ];
+
+    $fechaIter = new DateTime($fechaInicio);
+    $fechaFinDT = new DateTime($fechaFin);
+
+    while ($fechaIter <= $fechaFinDT) {
+        $nombreDiaEng = strtolower($fechaIter->format('l'));
+        $nombreDiaEsp = $mapDias[$nombreDiaEng] ?? '';
+        if (in_array($nombreDiaEsp, $diasTurno)) {
+            $diasLaborales++;
+        }
+        $fechaIter->modify('+1 day');
+    }
+
+    return $diasLaborales;
+}
 
 $infoJornada = Obtener_Detalles_Jornada_Empleado($conexion, $idEmpleado, $idPreliquidacion);
 $detalle = Obtener_Detalles_Empleado($conexion, $idEmpleado, $idPreliquidacion);
@@ -264,7 +341,8 @@ $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $i
                             <div class="mb-4 p-3 bg-light border rounded">
                                 <h4 class="mb-2">Detalles de <strong><?php echo $detalle['nombre'] . " " . $detalle['apellido']; ?></strong></h4>
                                 <p class="mb-1"><strong>DNI:</strong> <?php echo $detalle['dni']; ?></p>
-                                <p class="mb-1"><strong>Cargo:</strong> <?php echo $detalle['cargo']; ?></p>
+                                <p class="mb-1"><strong>Cargo:</strong><?php echo $detalle['cargo']; ?></p>
+
                                 <p class="mb-1"><strong>Fecha de inicio de actividad:</strong> <?php echo date('d/m/Y', strtotime($detalle['fecha_inicio'])); ?></p>
                                 <?php
                                 // Calcular antigüedad
@@ -279,18 +357,33 @@ $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $i
                         <!-- Contenido distribuido en tarjetas -->
                         <div class="row g-3">
 
-                            <!-- Jornada -->
                             <div class="mb-4">
-                                <div class="card border-secondary">
-                                    <div class="card-header bg-secondary text-white"><i class="fas fa-calendar-check"></i> Jornada</div>
-                                    <div class="card-body">
-                                        <p><strong>Periodo:</strong> <?php echo $infoJornada['periodoTexto']; ?></p>
-                                        <p><strong>Días del Periodo:</strong> <?php echo $infoJornada['diasPeriodo']; ?></p>
-                                        <p><strong>Días Trabajados:</strong> <?php echo $infoJornada['diasTrabajados']; ?></p>
-                                        <p><strong>Inasistencias:</strong> <?php echo $infoJornada['inasistencias']; ?></p>
-                                    </div>
-                                </div>
+                                <h5 class="text-dark"><i class="fas fa-calendar-check"></i> Jornada</h5>
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-info">
+                                        <tr>
+                                            <th>Periodo</th>
+                                            <th>Días del Periodo</th>
+                                            <th>Días laborales programados</th>
+                                            <th>Días trabajados</th>
+                                            <th>Inasistencias</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($infoJornada['periodoTexto']); ?></td>
+                                            <td><?php echo intval($infoJornada['diasPeriodo']); ?></td>
+                                            <td><?php echo intval($infoJornada['diasLaboralesProgramados']); ?></td>
+                                            <td><?php echo intval($infoJornada['diasTrabajados']); ?></td>
+                                            <td><?php echo intval($infoJornada['inasistencias']); ?></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
+
+
+
+
 
                             <!-- LICENCIAS -->
                             <div class="mb-4">
@@ -443,7 +536,9 @@ $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $i
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($sanciones as $san): ?>
+                                        <?php
+                                        $diasSuspension = 0;
+                                        foreach ($sanciones as $san): ?>
                                             <tr>
                                                 <td><?php echo htmlspecialchars($san['NOMBRETIPO']); ?></td>
                                                 <td><?php echo htmlspecialchars($san['FECHAINICIO']); ?></td>
@@ -451,12 +546,111 @@ $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $i
                                                 <td><?php echo htmlspecialchars($san['DIAS']); ?></td>
                                                 <td><?php echo htmlspecialchars($san['ESTADO']); ?></td>
                                             </tr>
-                                        <?php endforeach; ?>
+
+                                        <?php $diasSuspension += (int)$san['DIAS'];
+                                        endforeach; ?>
                                     </tbody>
                                 </table>
                             <?php else: ?>
                                 <p class="text-muted">No registra sanciones activas.</p>
                             <?php endif; ?>
+                        </div>
+
+
+                        <?php
+                        // Total de días a descontar
+                        $diasADescontar = $infoJornada['inasistencias'] + $diasSuspension;
+
+                        // Valor día
+                        $valorDia = ($infoJornada['diasLaboralesProgramados'] > 0)
+                            ? $detalle['sueldo_basico'] / $infoJornada['diasLaboralesProgramados']
+                            : 0;
+
+                        // Descuento total
+                        $descuentoTotal = $valorDia * $diasADescontar;
+
+                        // Sueldo ajustado después de descuentos por inasistencias/suspensiones (mínimo 0)
+                        $sueldoAjustado = max(0, $detalle['sueldo_basico'] - $descuentoTotal);
+
+                        // Sueldo bruto sumando horas extras
+                        $sueldoBruto = $sueldoAjustado + $totalMonto;
+
+                        // Porcentajes
+                        $porcentajeObraSocial = 0.03;  // 3%
+                        $porcentajeJubilacion = 0.11;  // 11%
+
+                        // Descuentos sobre sueldo ajustado, nunca sobre negativo
+                        $descuentoObraSocial = $sueldoAjustado * $porcentajeObraSocial;
+                        $descuentoJubilacion = $sueldoAjustado * $porcentajeJubilacion;
+
+                        // Total descuentos
+                        $totalDescuentos = $descuentoTotal + $descuentoObraSocial + $descuentoJubilacion;
+
+                        // Sueldo neto final, mínimo 0
+                        $sueldoNeto = max(0, $sueldoBruto - $descuentoObraSocial - $descuentoJubilacion);
+                        ?>
+
+
+                        <div style="max-width: 500px; margin: 20px auto; padding: 20px; border: 1px solid #999; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5; background-color: #f9f9f9;">
+                            <h3 style="text-align: center; margin-bottom: 20px;">Detalle</h3>
+
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Sueldo Basico:</strong></td>
+                                        <td style="text-align: right;">$<?php echo $detalle['sueldo_basico']; ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Días Inasistidos:</strong></td>
+                                        <td style="text-align: right;"><?php echo $infoJornada['inasistencias']; ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Días de Suspensión:</strong></td>
+                                        <td style="text-align: right;"><?php echo $diasSuspension; ?></td>
+                                    </tr>
+                                    <tr style="border-top: 1px solid #ccc;">
+                                        <td><strong>Total días a descontar:</strong></td>
+                                        <td style="text-align: right;"><?php echo $diasADescontar; ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Valor por día:</strong></td>
+                                        <td style="text-align: right;">$<?php echo number_format($valorDia, 0, ',', '.'); ?></td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #ccc;">
+                                        <td><strong>Descuento total:</strong></td>
+                                        <td style="text-align: right;">$<?php echo number_format($descuentoTotal, 0, ',', '.'); ?></td>
+                                    </tr>
+                                    <tr style="border-top: 1px solid #ccc;">
+                                        <td><strong>Total Horas Extras:</strong></td>
+                                        <td style="text-align: right;">$<?php echo number_format($totalMonto, 2, ',', '.'); ?></td>
+                                    </tr>
+
+                                    <tr>
+                                        <td><strong>Sueldo Bruto:</strong></td>
+                                        <td style="text-align: right;">$<?php echo number_format($sueldoBruto, 2, ',', '.'); ?></td>
+                                    </tr>
+
+                                    <tr>
+                                        <td><strong>Descuento Obra Social (3%):</strong></td>
+                                        <td style="text-align: right;">$<?php echo number_format($descuentoObraSocial, 2, ',', '.'); ?></td>
+                                    </tr>
+
+                                    <tr>
+                                        <td><strong>Descuento Jubilación (11%):</strong></td>
+                                        <td style="text-align: right;">$<?php echo number_format($descuentoJubilacion, 2, ',', '.'); ?></td>
+                                    </tr>
+
+                                    <tr style="border-top: 2px solid #333; font-weight: bold; background-color: #eaeaea;">
+                                        <td>Total Descuentos:</td>
+                                        <td style="text-align: right;">$<?php echo number_format($totalDescuentos, 2, ',', '.'); ?></td>
+                                    </tr>
+
+                                    <tr style="font-weight: bold; font-size: 1.1em;">
+                                        <td>Sueldo Neto a Pagar:</td>
+                                        <td style="text-align: right;">$<?php echo number_format($sueldoNeto, 2, ',', '.'); ?></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
 
 

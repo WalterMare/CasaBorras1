@@ -29,6 +29,9 @@ $total_dias_periodo = 0;
 $empleado_top = null;
 $empleados_con_licencias = [];
 $licencias_por_mes = [];
+$total_dias_ausentes = 0;
+$total_dias_ausentes_pagos = 0;
+$licencias_pago = [];
 
 // Procesar formulario
 if (isset($_POST['fechainicio']) && isset($_POST['fechafin'])) {
@@ -50,7 +53,7 @@ if (isset($_POST['fechainicio']) && isset($_POST['fechafin'])) {
         $licencias_por_mes = LicenciasPorMes($MiConexion, $fechaInicio, $fechaFin);
         $empleado_top = EmpleadoConMasLicencias($MiConexion, $fechaInicio, $fechaFin);
         $empleados_con_licencias = EmpleadosConLicencias($MiConexion, $fechaInicio, $fechaFin);
-
+        $licencias_pago = LicenciasPago($MiConexion, $fechaInicio, $fechaFin);
 
 
         if (!$licencias_data && !$licencia_por_cargo) {
@@ -59,23 +62,43 @@ if (isset($_POST['fechainicio']) && isset($_POST['fechafin'])) {
     }
 }
 
-if (isset($_POST['generar_pdf'])) {
-    $grafico_img_cargo = isset($_POST['grafico_img_cargo']) && is_string($_POST['grafico_img_cargo']) ? $_POST['grafico_img_cargo'] : null;
+foreach ($licencias_data as $lic) {
+    $total_dias_ausentes += $lic['total_dias'];
 
-    $grafico_img_lineal = isset($_POST['grafico_img_lineal']) && is_string($_POST['grafico_img_lineal']) ? $_POST['grafico_img_lineal'] : null;
+    // Ajustá según cómo guardás el tipo (ejemplo: "pago", "no pago")
+    if (isset($lic['es_pago']) && $lic['es_pago'] == 1) {
+        $total_dias_ausentes_pagos += $lic['total_dias'];
+    }
+}
+
+$dias_trabajados = max(0, $total_dias_periodo - $total_dias_ausentes);
+$dias_trabajados_pago = max(0, $total_dias_periodo - $total_dias_ausentes_pagos);
+
+if (isset($_POST['generar_pdf'])) {
+
+    $grafico_img_cargo = isset($_POST['grafico_img_cargo']) && is_string($_POST['grafico_img_cargo'])
+        ? $_POST['grafico_img_cargo']
+        : null;
+
+    $grafico_img_lineal = isset($_POST['grafico_img_lineal']) && is_string($_POST['grafico_img_lineal'])
+        ? $_POST['grafico_img_lineal']
+        : null;
+
+    $grafico_img_pago = isset($_POST['grafico_img_pago']) && is_string($_POST['grafico_img_pago'])
+        ? $_POST['grafico_img_pago']
+        : null;
+
+    $empleado_top = $empleado_top ?? null; // si querés mostrar el top
 
     generarReportePDF(
-        $licencias_data,
-        $licencia_por_cargo,
-        $fechaInicio,
-        $fechaFin,
         $grafico_img_cargo,
         $grafico_img_lineal,
-        $empleados_con_licencias,
-        $total_dias_periodo,
-        $empleado_top,
-
+        $grafico_img_pago,
+        $_POST['fechainicio'] ?? '',
+        $_POST['fechafin'] ?? '',
+        $empleado_top
     );
+
     exit;
 }
 
@@ -128,114 +151,79 @@ if (isset($_POST['generar_pdf'])) {
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">Reporte Estadístico de Licencias</h5>
-                            <form method="POST" class="row g-3 my-4">
+                            <h4 class="card-title mb-4">Reporte Estadístico de Licencias</h4>
+
+                            <!-- Formulario de selección de fechas -->
+                            <form method="POST" class="row g-3 mb-5">
                                 <div class="col-md-6">
-                                    <label for="fechainicio" class="form-label">Fecha Inicio</label>
+                                    <label for="fechainicio" class="form-label fw-semibold">Fecha Inicio</label>
                                     <input type="date" class="form-control" id="fechainicio" name="fechainicio" value="<?= htmlspecialchars($fechaInicio) ?>" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="fechafin" class="form-label">Fecha Fin</label>
+                                    <label for="fechafin" class="form-label fw-semibold">Fecha Fin</label>
                                     <input type="date" class="form-control" id="fechafin" name="fechafin" value="<?= htmlspecialchars($fechaFin) ?>" required>
                                 </div>
-                                <div class="col-md-4 d-flex align-items-end">
+                                <div class="col-12 d-flex justify-content-start mt-3">
                                     <button type="submit" class="btn btn-primary me-2">Generar Reporte</button>
                                     <?php if ($licencias_data): ?>
-                                        <button type="submit" name="generar_pdf" id="btnPdf" class="btn btn-success"> Exportar a PDF</button>
+                                        <button type="submit" name="generar_pdf" id="btnPdf" class="btn btn-success">Exportar a PDF</button>
                                     <?php endif; ?>
                                 </div>
                             </form>
 
-                            <?php if ($mensaje): ?>
-                                <div class="alert alert-warning"><?= htmlspecialchars($mensaje) ?></div>
-                            <?php endif; ?>
-                            <div class="alert alert-info mt-4">
-                                <strong>Cantidad de empleados que tomaron al menos una licencia:</strong> <?= $total_empleados_con_licencia ?>
-                            </div>
-                            <?php if ($empleado_top): ?>
-                                <div class="alert alert-success mt-4">
-                                    <strong>Empleado con más licencias:</strong>
-                                    <?= $empleado_top['nombre'] . ' ' . $empleado_top['apellido'] ?>
-                                    (<?= $empleado_top['total_licencias'] ?> licencias, <?= $empleado_top['total_dias'] ?> días)
+                            <!-- Gráficos en cards separadas -->
+                            <div class="row g-4">
+
+                                <!-- Ausentismo Total -->
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-light fw-semibold">Ausentismo Total</div>
+                                        <div class="card-body d-flex justify-content-center">
+                                            <canvas id="graficoTortaAusentismoPago" style="max-width: 100%; height: 300px;"></canvas>
+                                        </div>
+                                    </div>
                                 </div>
-                            <?php endif; ?>
 
-                            <?php if (!empty($licencia_por_cargo)): ?>
+                                <!-- Ausentismo Pago -->
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-light fw-semibold">Ausentismo Pago por Tipo</div>
+                                        <div class="card-body d-flex justify-content-center">
+                                            <canvas id="graficoTortaPago" style="max-width: 100%; height: 300px;"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>Cargo</th>
-                                            <th>Tipo de Licencia</th>
-                                            <th>Estado</th>
-                                            <th>Total Licencias</th>
-                                            <th>Total Días</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($licencia_por_cargo as $cargo): ?>
-                                            <tr>
-                                                <td><?= htmlspecialchars($cargo['cargo']) ?></td>
-                                                <td><?= htmlspecialchars($cargo['tipo_licencia']) ?></td>
-                                                <td><?= htmlspecialchars($cargo['estado']) ?></td>
-                                                <td><?= htmlspecialchars($cargo['total_licencias']) ?></td>
-                                                <td><?= htmlspecialchars($cargo['total_dias']) ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
+                                <!-- Licencias por Mes -->
+                                <div class="col-12">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-light fw-semibold">Licencias por Mes</div>
+                                        <div class="card-body">
+                                            <canvas id="graficoLinealMeses" style="width: 100%; height: 350px;"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
 
+                                <!-- Licencias por Cargo -->
+                                <div class="col-12">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-light fw-semibold">Licencias por Cargo</div>
+                                        <div class="card-body">
+                                            <canvas id="graficoCargo" style="width: 100%; height: 400px;"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                <?php if (!empty($empleados_con_licencias)): ?>
-                                    <h5 class="card-title mt-5">Empleados que tomaron licencias</h5>
-                                    <table class="table table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th>Nombre</th>
-                                                <th>Apellido</th>
-                                                <th>Cargo</th>
-                                                <th>% Días de Licencia</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($empleados_con_licencias as $emp): ?>
-                                                <tr>
-                                                    <td><?= htmlspecialchars($emp['nombre']) ?></td>
-                                                    <td><?= htmlspecialchars($emp['apellido']) ?></td>
-                                                    <td><?= htmlspecialchars($emp['cargo']) ?></td>
-                                                    <td>
-                                                        <?= round(($emp['total_dias'] / $total_dias_periodo) * 100, 2) ?>%
-                                                    </td>
-
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                <?php endif; ?>
-                            <?php endif; ?>
-
-
-                            <div style="width: 800px; height: 400px;">
-                                <canvas id="graficoLinealMeses" width="800" height="400"></canvas>
                             </div>
-                            <h5 class="card-title mt-5">Licencias por Cargo</h5>
-                            <div style="width: 800px; height: 400px;">
-                                <canvas id="graficoCargo" width="800" height="400"></canvas>
-                            </div>
-
                         </div>
                     </div>
                 </div>
             </div>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    const datos = <?= json_encode($licencia_por_cargo) ?>;
-
-                    // Obtener labels únicos para cargos y tipos de licencia
-                    const cargos = [...new Set(datos.map(d => d.cargo))];
-                    const tipos = [...new Set(datos.map(d => d.tipo_licencia))];
-
-                    // Generar colores por tipo
+                    // === Función reutilizable para generar colores ===
                     function generarColores(n) {
                         const colores = [];
                         for (let i = 0; i < n; i++) {
@@ -244,77 +232,81 @@ if (isset($_POST['generar_pdf'])) {
                         }
                         return colores;
                     }
-                    const colores = generarColores(tipos.length);
 
-                    // Preparar datasets
-                    const datasets = tipos.map((tipo, i) => {
-                        return {
-                            label: tipo,
-                            data: cargos.map(cargo => {
-                                const registro = datos.find(d => d.cargo === cargo && d.tipo_licencia === tipo);
-                                return registro ? registro.total_licencias : 0;
-                            }),
-                            backgroundColor: colores[i],
-                            borderColor: colores[i].replace('70%', '40%'), // un poco más oscuro
-                            borderWidth: 1
-                        };
+                    // === Datos desde PHP ===
+                    const datosCargo = <?= json_encode($licencia_por_cargo, JSON_NUMERIC_CHECK) ?>;
+                    const licenciasPorMes = <?= json_encode($licencias_por_mes, JSON_NUMERIC_CHECK) ?>;
+                    const diasPeriodo = <?= json_encode($total_dias_periodo) ?>;
+                    const diasAusentes = <?= json_encode($total_dias_ausentes) ?>;
+                    const diasTrabajados = <?= json_encode($dias_trabajados) ?>;
+                    const licenciasPago = <?= json_encode($licencias_pago, JSON_NUMERIC_CHECK) ?>;
+                    const diasAusentesPago = <?= json_encode($total_dias_ausentes_pagos) ?>;
+                    const diasTrabajadosPago = <?= json_encode($dias_trabajados_pago) ?>;
+
+                    // -------------------------
+                    // Gráfico torta por Cargo SOLO % 
+                    // -------------------------
+                    const cargos = [...new Set(datosCargo.map(d => d.cargo))];
+                    const totalPorCargo = cargos.map(cargo => {
+                        return datosCargo
+                            .filter(d => d.cargo === cargo)
+                            .reduce((sum, item) => sum + item.total_licencias, 0);
                     });
+                    const coloresCargo = generarColores(cargos.length);
 
-                    // Crear gráfico agrupado
-                    const ctxCargo = document.getElementById('graficoCargo').getContext('2d');
-                    const chartCargo = new Chart(ctxCargo, {
-                        type: 'bar',
+                    new Chart(document.getElementById('graficoCargo').getContext('2d'), {
+                        type: 'pie',
                         data: {
                             labels: cargos,
-                            datasets: datasets
+                            datasets: [{
+                                data: totalPorCargo,
+                                backgroundColor: coloresCargo
+                            }]
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: false,
                             plugins: {
                                 legend: {
-                                    position: 'top',
-                                    labels: {
-                                        boxWidth: 20
-                                    }
+                                    position: 'right'
                                 },
                                 tooltip: {
-                                    mode: 'index',
-                                    intersect: false
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    stacked: false,
-                                    title: {
-                                        display: true,
-                                        text: 'Cargo'
+                                    callbacks: {
+                                        label: function(context) {
+                                            const dataset = context.dataset.data;
+                                            const total = dataset.reduce((a, b) => a + b, 0);
+                                            const value = context.raw;
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return percentage + '%';
+                                        }
                                     }
                                 },
-                                y: {
-                                    stacked: false,
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Cantidad de Licencias'
+                                datalabels: {
+                                    formatter: (value, ctx) => {
+                                        const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${percentage}%`; // ✅ Solo porcentaje en la torta
                                     },
-                                    ticks: {
-                                        stepSize: 1
+                                    color: '#fff',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 12
                                     }
                                 }
                             }
-                        }
+                        },
+                        plugins: [ChartDataLabels]
                     });
 
-                    // Gráfico lineal
-                    const ctxLineal = document.getElementById('graficoLinealMeses').getContext('2d');
-                    const chartLineal = new Chart(ctxLineal, {
+                    // -------------------------
+                    // Gráfico lineal por mes
+                    // -------------------------
+                    new Chart(document.getElementById('graficoLinealMeses').getContext('2d'), {
                         type: 'line',
                         data: {
-                            labels: <?= json_encode(array_column($licencias_por_mes, 'mes')) ?>,
+                            labels: licenciasPorMes.map(d => d.mes),
                             datasets: [{
                                 label: 'Licencias por Mes',
-                                data: <?= json_encode(array_column($licencias_por_mes, 'cantidad')) ?>,
+                                data: licenciasPorMes.map(d => d.cantidad),
                                 borderColor: 'rgba(255, 99, 132, 1)',
                                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                                 fill: true,
@@ -323,23 +315,88 @@ if (isset($_POST['generar_pdf'])) {
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: false,
-                            animation: {
-                                duration: 1000,
-                                onComplete: function() {}
+                            maintainAspectRatio: false
+                        }
+                    });
+
+                    // -------------------------
+                    // Gráfico torta - Ausentismo total
+                    // -------------------------
+                    new Chart(document.getElementById('graficoTortaAusentismoPago').getContext('2d'), {
+                        type: 'pie',
+                        data: {
+                            labels: ['Días Trabajados', 'Días Ausentes'],
+                            datasets: [{
+                                data: [diasTrabajados, diasAusentes],
+                                backgroundColor: ['#4CAF50', '#F44336']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const total = diasTrabajados + diasAusentes;
+                                            const value = context.raw;
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return context.label + ': ' + value + ' (' + percentage + '%)';
+                                        }
+                                    }
+                                }
                             }
                         }
                     });
 
+                    // -------------------------
+                    // Gráfico torta - Licencias pago por tipo
+                    // -------------------------
+                    const labelsPago = licenciasPago.map(d => d.tipo_licencia);
+                    const dataPago = licenciasPago.map(d => parseInt(d.total_dias));
+                    const coloresPago = generarColores(dataPago.length);
+
+                    new Chart(document.getElementById('graficoTortaPago').getContext('2d'), {
+                        type: 'pie',
+                        data: {
+                            labels: labelsPago,
+                            datasets: [{
+                                data: dataPago,
+                                backgroundColor: coloresPago
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'right'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const total = dataPago.reduce((a, b) => a + b, 0);
+                                            const value = context.raw;
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return context.label + ': ' + value + ' (' + percentage + '%)';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // -------------------------
                     // Exportar a PDF
+                    // -------------------------
                     document.getElementById('btnPdf').addEventListener('click', async function(e) {
                         e.preventDefault();
-                        chartCargo.update();
-                        chartLineal.update();
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await new Promise(resolve => setTimeout(resolve, 500));
 
-                        const cargoImg = chartCargo.canvas.toDataURL('image/png', 1.0);
-                        const linealImg = chartLineal.canvas.toDataURL('image/png', 1.0);
+                        const cargoImg = document.getElementById('graficoCargo').toDataURL('image/png', 1.0);
+                        const linealImg = document.getElementById('graficoLinealMeses').toDataURL('image/png', 1.0);
+                        const pagoImg = document.getElementById('graficoTortaPago').toDataURL('image/png', 1.0);
 
                         const form = document.createElement('form');
                         form.method = 'POST';
@@ -358,6 +415,7 @@ if (isset($_POST['generar_pdf'])) {
                         addField('generar_pdf', '1');
                         addField('grafico_img_cargo', cargoImg);
                         addField('grafico_img_lineal', linealImg);
+                        addField('grafico_img_pago', pagoImg);
 
                         document.body.appendChild(form);
                         form.submit();

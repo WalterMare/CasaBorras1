@@ -455,7 +455,7 @@ function Listar_Reporte_Empleado_Vacaciones($vConexion, $empleado)
         v.fecha_fin, 
         v.cantidad_dias, 
         v.estado, 
-        v.año, 
+        v.anio, 
         v.vacaciones_restantes
     FROM 
         vacaciones v
@@ -473,7 +473,7 @@ function Listar_Reporte_Empleado_Vacaciones($vConexion, $empleado)
         $Listado[$i]['FECHA_FIN'] = $data['fecha_fin'];
         $Listado[$i]['CANTIDAD_DIAS'] = $data['cantidad_dias'];
         $Listado[$i]['ESTADO'] = $data['estado'];
-        $Listado[$i]['AÑO'] = $data['año'];
+        $Listado[$i]['AÑO'] = $data['anio'];
         $Listado[$i]['VACACIONES_RESTANTES'] = $data['vacaciones_restantes'];
         $i++;
     }
