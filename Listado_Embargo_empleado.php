@@ -102,21 +102,15 @@ require_once 'Validad_Datos_Busqueda.php';
 
         <div class="col-6">
             <label name="selector" for="selector" class="form-label">Listado de Empleados</label>
-            <select class="form-select" aria-label="Selector" id="selector" name="empleado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
+            <select class="form-select" aria-label="Selector" id="selector" name="empleado">
                 <option value="">Selecciona una opción</option>
                 <?php
-                $selected = '';
                 for ($i = 0; $i < $CantidadEmpleado; $i++) {
-                    if (!empty($_POST['empleado']) && $_POST['empleado'] ==  $listadoEmpleado[$i]['ID']) { //recuerda el elemento seleccionado
-                        $selected = 'selected';
-                    } else {
-                        $selected = ''; //limpia la variable para que solo se seleccione una opcion
-                    } ?>
-                    <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadoEmpleado[$i]['NOMBRE'] . " " . $listadoEmpleado[$i]['APELLIDO']; ?>
-                    </option>
-                <?php } ?>
-
+                    $selected = (!empty($_POST['empleado']) && $_POST['empleado'] == $listadoEmpleado[$i]['ID']) ? 'selected' : '';
+                    echo '<option value="' . $listadoEmpleado[$i]['ID'] . '" ' . $selected . '>' .
+                        $listadoEmpleado[$i]['NOMBRE'] . ' ' . $listadoEmpleado[$i]['APELLIDO'] . '</option>';
+                }
+                ?>
             </select>
 
         </div>
@@ -136,36 +130,47 @@ require_once 'Validad_Datos_Busqueda.php';
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Empleado</th>
-                                    <th scope="col">Fecha</th>
-                                    <th scope="col">Descripción</th>
-                                    <th scope="col">Monto</th>
-                                    <th scope="col">Acciones</th>
+                                    <th>#</th>
+                                    <th>Empleado</th>
+                                    <th>Fecha</th>
+                                    <th>Expediente</th>
+                                    <th>Tipo</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
+                                    <th>Monto</th>
+                                    <th>% Sueldo</th>
+                                    <th>Estado</th>
+                                    <th>Descripción</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
-
-                            <?php if ($Cantidad != 0 && $Cantidad != null) { ?>
-                                <tbody>
-                                    <?php for ($i = 0; $i < $Cantidad; $i++) { ?>
-                                        <tr>
-                                            <th scope="row"><?php echo $i + 1; ?></th>
-                                            <td><?php echo $listado[$i]['NOMBRE'] . " " . $listado[$i]['APELLIDO']; ?></td>
-                                            <td><?php echo $listado[$i]['FECHA']; ?></td>
-                                            <td><?php echo $listado[$i]['DESCRIPCION']; ?></td>
-                                            <td><?php echo $listado[$i]['MONTO']; ?></td>
-                                            <td>
-                                                <a href="Modificar_embargo_principal.php?ID=<?php echo $listado[$i]['ID']; ?>" role="button" title="Modificar" <span class="badge bg-info text-write"><i class="bi bi-info-circle "></i></span> </a>
-                                                <a href="Eliminar_Embargo.php?ID=<?php echo $listado[$i]['ID']; ?>" type="button" title="Eliminar" onclick="if (confirm('Esta seguro que desea eliminar el registro?')){return true;}else {return false;}" class="badge bg-danger text-write"><i class="bi bi-x-circle"></i>
-
-                                                </a>
-
-                                            </td>
-                                        </tr>
-                                    <?php }; ?>
-                                </tbody>
-                            <?php } ?>
-
+                            <tbody>
+                                <?php foreach ($listado as $index => $embargo) { ?>
+                                    <tr>
+                                        <th scope="row"><?php echo $index + 1; ?></th>
+                                        <td><?php echo $embargo['NOMBRE'] . ' ' . $embargo['APELLIDO']; ?></td>
+                                        <td><?php echo $embargo['FECHA']; ?></td>
+                                        <td><?php echo $embargo['EXPEDIENTE']; ?></td>
+                                        <td><?php echo $embargo['TIPO']; ?></td>
+                                        <td><?php echo $embargo['FECHA_INICIO']; ?></td>
+                                        <td><?php echo $embargo['FECHA_FIN']; ?></td>
+                                        <td><?php echo $embargo['MONTO']; ?></td>
+                                        <td><?php echo $embargo['PORCENTAJE']; ?></td>
+                                        <td><?php echo ($embargo['ESTADO'] == 1) ? 'Activo' : 'Inactivo'; ?></td>
+                                        <td><?php echo $embargo['DESCRIPCION']; ?></td>
+                                        <td>
+                                            <a href="Modificar_embargo_principal.php?ID=<?php echo $embargo['IDEMBARGO']; ?>" title="Modificar" class="badge bg-info text-write">
+                                                <i class="bi bi-info-circle"></i>
+                                            </a>
+                                            <a href="Eliminar_Embargo.php?ID=<?php echo $embargo['IDEMBARGO']; ?>"
+                                                onclick="return confirm('¿Está seguro que desea eliminar el registro?')"
+                                                class="badge bg-danger text-write">
+                                                <i class="bi bi-x-circle"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php } ?>
+                            </tbody>
                         </table>
                         <!-- End Default Table Example -->
 

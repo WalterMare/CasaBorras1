@@ -21,7 +21,12 @@ function Obtener_Detalles_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
 {
     $consulta = "SELECT 
         e.nombre, e.apellido, e.dni, e.fecha_inicio,
-        c.sueldo_basico, c.descripcion AS cargo,  
+        c.sueldo_basico, c.descripcion AS cargo,
+        ec.descripcion AS estado_civil,
+            (SELECT COUNT(*) 
+             FROM familiar f 
+             WHERE f.IdEmpleado = e.idempleado 
+               AND f.Idrelacion = 3) AS cantidad_hijos,  
         dp.idLicencia, dp.idAnticipo, 
         dp.idObraSocial, dp.idFamiliar, dp.idSancion, 
         dp.idEmbargo, dp.idViatico,
@@ -36,6 +41,8 @@ function Obtener_Detalles_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
         empleado e ON dp.idEmpleado = e.idempleado
     LEFT JOIN
         cargo c ON e.idCargo = c.idcargo
+    LEFT JOIN
+        estadocivil ec ON e.IdestadoCivil = ec.idestadocivil
     LEFT JOIN
         tipolicencia tl ON dp.tiposLicencias = tl.idtipoLicencia
     LEFT JOIN
@@ -219,6 +226,54 @@ function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquid
     ];
 }
 
+function Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion)
+{
+    // Obtener el periodo de la preliquidación
+    $consultaPeriodo = "SELECT periodo FROM preliquidacion WHERE idpreliquidacion = ?";
+    $stmtPeriodo = mysqli_prepare($conexion, $consultaPeriodo);
+    mysqli_stmt_bind_param($stmtPeriodo, "i", $idPreliquidacion);
+    mysqli_stmt_execute($stmtPeriodo);
+    $resultadoPeriodo = mysqli_stmt_get_result($stmtPeriodo);
+    $filaPeriodo = mysqli_fetch_assoc($resultadoPeriodo);
+
+    if (!$filaPeriodo) {
+        return []; // No se encontró el período
+    }
+
+    $partes = explode(' a ', $filaPeriodo['periodo']);
+    if (count($partes) != 2) {
+        return []; // Formato incorrecto
+    }
+    $fechaInicio = $partes[0];
+    $fechaFin = $partes[1];
+
+    // Consultar embargos del empleado que se crucen con el período o que sean indefinidos
+    $consultaEmbargos = "SELECT e.idempleado, e.nombre, e.apellido, em.idembargo, em.expediente,
+                                em.tipo, em.fecha, em.fecha_inicio, em.fecha_fin, em.monto, em.porcentaje, em.estado,
+                                em.descripcion, c.sueldo_basico
+                         FROM embargo em
+                         INNER JOIN empleado e ON em.idEmpleado = e.idempleado
+                         LEFT JOIN cargo c ON e.idCargo = c.idcargo
+                         WHERE em.idEmpleado = ?
+                         AND (
+                             (em.fecha_inicio <= ? AND (em.fecha_fin >= ? OR em.fecha_fin IS NULL))
+                             OR (em.fecha_fin IS NULL)
+                         )
+                         ORDER BY em.fecha_inicio ASC";
+
+    $stmtEmbargos = mysqli_prepare($conexion, $consultaEmbargos);
+    mysqli_stmt_bind_param($stmtEmbargos, "iss", $idEmpleado, $fechaFin, $fechaInicio);
+    mysqli_stmt_execute($stmtEmbargos);
+    $resultadoEmbargos = mysqli_stmt_get_result($stmtEmbargos);
+
+    $embargos = [];
+    while ($fila = mysqli_fetch_assoc($resultadoEmbargos)) {
+        $embargos[] = $fila;
+    }
+
+    return $embargos;
+}
+
 function contarDiasLaboralesProgramados($idEmpleado, $fechaInicio, $fechaFin, $conexion)
 {
     $diasLaborales = 0;
@@ -280,6 +335,7 @@ $licencias = Listar_Licencia_Empleado_preliquidacion($conexion, $idEmpleado, $id
 $viaticos = Listar_Viaticos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
 $sanciones = Listar_Sancion_Empleado_Preliquidacion($conexion, $idEmpleado, $idPreliquidacion);
 $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $idPreliquidacion);
+$embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
 
 ?>
 
@@ -351,6 +407,8 @@ $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $i
                                 $antiguedad = $inicio->diff($hoy);
                                 ?>
                                 <p class="mb-1"><strong>Antigüedad:</strong> <?php echo $antiguedad->y . ' años, ' . $antiguedad->m . ' meses'; ?></p>
+                                <p class="mb-1"><strong>Estado Civil:</strong> <?php echo $detalle['estado_civil']; ?></p>
+                                <p class="mb-1"><strong>Hijos a cargo:</strong> <?php echo !empty($detalle['cantidad_hijos']) ? $detalle['cantidad_hijos'] : 0; ?></p>
                             </div>
                         </div>
 
@@ -521,6 +579,61 @@ $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $i
                             <p class="text-muted">No registra Horas Extras.</p>
                         <?php endif; ?>
 
+                        <div class="mb-4">
+                            <h5 class="text-primary"><i class="fas fa-gavel"></i> Embargos Judiciales</h5>
+                            <?php if (!empty($embargos)): ?>
+                                <table class="table table-striped table-bordered">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>Fecha Registro</th>
+                                            <th>Empleado</th>
+                                            <th>Expediente</th>
+                                            <th>Tipo</th>
+                                            <th>Fecha Inicio</th>
+                                            <th>Fecha Fin</th>
+                                            <th>Monto ($)</th>
+                                            <th>% del Sueldo</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        $totalMontoE = 0;
+                                        foreach ($embargos as $e):
+                                            // Calcular monto si solo hay porcentaje y sueldo básico disponible
+                                            if (empty($e['monto']) && !empty($e['porcentaje']) && isset($e['sueldo_basico'])) {
+                                                $montoCalculado = ($e['porcentaje'] / 100) * $e['sueldo_basico'];
+                                            } else {
+                                                $montoCalculado = $e['monto'];
+                                            }
+                                            $totalMontoE += $montoCalculado;
+                                        ?>
+                                            <tr>
+                                                <td><?php echo date('d/m/Y', strtotime($e['fecha'])); ?></td>
+                                                <td><?php echo htmlspecialchars($e['nombre'] . ' ' . $e['apellido']); ?></td>
+                                                <td><?php echo htmlspecialchars($e['expediente']); ?></td>
+                                                <td><?php echo htmlspecialchars($e['tipo']); ?></td>
+                                                <td><?php echo date('d/m/Y', strtotime($e['fecha_inicio'])); ?></td>
+                                                <td><?php echo !empty($e['fecha_fin']) ? date('d/m/Y', strtotime($e['fecha_fin'])) : 'Indefinido'; ?></td>
+                                                <td>$<?php echo number_format($montoCalculado, 2); ?></td>
+                                                <td><?php echo !empty($e['porcentaje']) ? $e['porcentaje'] . '%' : '-'; ?></td>
+                                                <td><?php echo $e['estado'] ? 'Activo' : 'Inactivo'; ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-light">
+                                            <td colspan="6" class="text-end"><strong>Total Embargos</strong></td>
+                                            <td colspan="3"><strong>$<?php echo number_format($totalMontoE, 2); ?></strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            <?php else: ?>
+                                <p class="text-muted">No registra Embargos Judiciales.</p>
+                            <?php endif; ?>
+                        </div>
+
+
 
                         <div class="mb-4">
                             <h5 class="text-danger"><i class="fas fa-gavel"></i> Sanciones activas</h5>
@@ -560,7 +673,7 @@ $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $i
                         <?php
                         // Total de días a descontar
                         $diasADescontar = $infoJornada['inasistencias'] + $diasSuspension;
-
+                        $basico = $detalle['sueldo_basico'];
                         // Valor día
                         $valorDia = ($infoJornada['diasLaboralesProgramados'] > 0)
                             ? $detalle['sueldo_basico'] / $infoJornada['diasLaboralesProgramados']
@@ -580,19 +693,31 @@ $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $i
                         $porcentajeJubilacion = 0.11;  // 11%
 
                         // Descuentos sobre sueldo ajustado, nunca sobre negativo
-                        $descuentoObraSocial = $sueldoAjustado * $porcentajeObraSocial;
-                        $descuentoJubilacion = $sueldoAjustado * $porcentajeJubilacion;
+                        $descuentoObraSocial = $basico * $porcentajeObraSocial;
+                        $descuentoJubilacion = $basico * $porcentajeJubilacion;
+
+                        // 7. Descuento por embargos
+                        $descuentoEmbargos = 0;
+                        if (!empty($embargos)) {
+                            foreach ($embargos as $em) {
+                                if (!empty($em['monto']) && $em['monto'] > 0) {
+                                    $descuentoEmbargos += $em['monto'];
+                                } elseif (!empty($em['porcentaje']) && $em['porcentaje'] > 0) {
+                                    $descuentoEmbargos += $sueldoAjustado * ($em['porcentaje'] / 100);
+                                }
+                            }
+                        }
 
                         // Total descuentos
-                        $totalDescuentos = $descuentoTotal + $descuentoObraSocial + $descuentoJubilacion;
+                        $totalDescuentos = $descuentoTotal + $descuentoObraSocial + $descuentoJubilacion + $descuentoEmbargos;
 
                         // Sueldo neto final, mínimo 0
-                        $sueldoNeto = max(0, $sueldoBruto - $descuentoObraSocial - $descuentoJubilacion);
+                        $sueldoNeto = max(0, $sueldoBruto - $descuentoObraSocial - $descuentoJubilacion - $descuentoEmbargos);
                         ?>
 
 
                         <div style="max-width: 500px; margin: 20px auto; padding: 20px; border: 1px solid #999; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5; background-color: #f9f9f9;">
-                            <h3 style="text-align: center; margin-bottom: 20px;">Detalle</h3>
+                            <h3 style="text-align: center; margin-bottom: 20px;">Detalle no válido como liquidación final</h3>
 
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tbody>
@@ -628,6 +753,10 @@ $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $i
                                     <tr>
                                         <td><strong>Sueldo Bruto:</strong></td>
                                         <td style="text-align: right;">$<?php echo number_format($sueldoBruto, 2, ',', '.'); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Descuento Embargos:</strong></td>
+                                        <td style="text-align: right;">$<?php echo number_format($descuentoEmbargos, 2, ',', '.'); ?></td>
                                     </tr>
 
                                     <tr>

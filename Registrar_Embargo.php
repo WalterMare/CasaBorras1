@@ -88,20 +88,16 @@ require_once 'Insertar_Embargo.php';
         } ?>
 
 
-  <form class="row g-3" method="post"> <!--se agrego el metodo post para la captura de datos -->
+  <form class="row g-3" method="post">
 
+    <!-- Empleado -->
     <div class="col-6">
-      <label name="selector" for="selector" class="form-label">Empleado al que se asignará(*)</label>
-      <select class="form-select" aria-label="Selector" id="selector" name="empleado"> <!--combobox ya cargado con las marcas traidas desde la bd -->
+      <label for="selector" class="form-label">Empleado(*)</label>
+      <select class="form-select" id="selector" name="empleado" required>
         <option value="">Selecciona una opción</option>
         <?php
-        $selected = '';
         for ($i = 0; $i < $CantidadEmpleado; $i++) {
-          if (!empty($_POST['empleado']) && $_POST['empleado'] ==  $listadoEmpleado[$i]['ID']) { //recuerda el elemento seleccionado
-            $selected = 'selected';
-          } else {
-            $selected = ''; //limpia la variable para que solo se seleccione una opcion
-          }
+          $selected = (!empty($_POST['empleado']) && $_POST['empleado'] == $listadoEmpleado[$i]['ID']) ? 'selected' : '';
         ?>
           <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
             <?php echo $listadoEmpleado[$i]['NOMBRE'] . " " . $listadoEmpleado[$i]['APELLIDO']; ?>
@@ -110,18 +106,68 @@ require_once 'Insertar_Embargo.php';
       </select>
     </div>
 
+    <!-- Fecha de alta (registro) -->
     <div class="col-6">
-      <label for="fecha" class="form-label">Fecha(*)</label>
-      <input type="date" class="form-control" id="fecha" name="fecha">
+      <label for="fecha" class="form-label">Fecha de Registro(*)</label>
+      <input type="date" class="form-control" id="fecha" name="fecha" required>
     </div>
+
+    <!-- Expediente -->
     <div class="col-6">
-      <label for="monto" class="form-label">Monto(*)</label>
-      <input type="number" step="0.1" class="form-control" id="monto" name="monto">
+      <label for="expediente" class="form-label">Nro. Expediente(*)</label>
+      <input type="text" class="form-control" id="expediente" name="expediente" required>
+    </div>
+
+    <!-- Tipo -->
+    <div class="col-6">
+      <label for="tipo" class="form-label">Tipo de Embargo(*)</label>
+      <select class="form-select" id="tipo" name="tipo" required>
+        <option value="">Selecciona...</option>
+        <option value="Alimentos">Alimentos</option>
+        <option value="Bancario">Bancario</option>
+        <option value="AFIP">AFIP</option>
+        <option value="Otro">Otro</option>
+      </select>
+    </div>
+
+    <!-- Fechas de vigencia -->
+    <div class="col-6">
+      <label for="fecha_inicio" class="form-label">Fecha Inicio(*)</label>
+      <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
     </div>
 
     <div class="col-6">
+      <label for="fecha_fin" class="form-label">Fecha Fin</label>
+      <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
+      <small class="text-muted">Dejar vacío si es indefinido</small>
+    </div>
+
+    <!-- Monto fijo -->
+    <div class="col-6">
+      <label for="monto" class="form-label">Monto Fijo Mensual</label>
+      <input type="number" step="0.01" class="form-control" id="monto" name="monto">
+    </div>
+
+    <!-- Porcentaje -->
+    <div class="col-6">
+      <label for="porcentaje" class="form-label">% del Sueldo</label>
+      <input type="number" step="0.01" class="form-control" id="porcentaje" name="porcentaje">
+      <small class="text-muted">Ejemplo: 20 = 20%</small>
+    </div>
+
+    <!-- Estado -->
+    <div class="col-6">
+      <label for="estado" class="form-label">Estado</label>
+      <select class="form-select" id="estado" name="estado">
+        <option value="1" selected>Activo</option>
+        <option value="0">Inactivo</option>
+      </select>
+    </div>
+
+    <!-- Descripción -->
+    <div class="col-12">
       <label for="descripcion" class="form-label">Descripción(*)</label>
-      <input type="text" class="form-control" id="descripcion" name="descripcion">
+      <input type="text" class="form-control" id="descripcion" name="descripcion" required>
     </div>
 
     <div class="text-center">
@@ -129,8 +175,22 @@ require_once 'Insertar_Embargo.php';
       <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
       <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
     </div>
-  </form><!-- Vertical Form -->
+  </form>
   <script src="assets/js/cartel.js"></script>
+  <script>
+    const monto = document.getElementById('monto');
+    const porcentaje = document.getElementById('porcentaje');
+
+    monto.addEventListener('input', () => {
+      // Si hay valor en monto, deshabilita porcentaje
+      porcentaje.disabled = monto.value.trim() !== '';
+    });
+
+    porcentaje.addEventListener('input', () => {
+      // Si hay valor en porcentaje, deshabilita monto
+      monto.disabled = porcentaje.value.trim() !== '';
+    });
+  </script>
 </body>
 
 </html>

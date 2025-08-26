@@ -59,6 +59,8 @@ try {
   $mensaje = 'Error al actualizar los estados de las vacaiones : ' . $e->getMessage();
 }
 
+require_once 'Actualizar_Embargo_Vencido.php';
+ActualizarEstadoEmbargos($conexion);
 
 require_once 'select_empleado.php';
 
