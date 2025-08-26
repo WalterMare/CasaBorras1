@@ -43,6 +43,29 @@ $diasSemana = ['Monday' => 'Lunes', 'Tuesday' => 'Martes', 'Wednesday' => 'Miér
 $diaSemanaIngles = date('l');
 $diaSemana = $diasSemana[$diaSemanaIngles];
 
+// 📌 Asegurar registros diarios de asistencia
+// 1. Obtener idEstado para "Sin registrar"
+$idEstadoSinRegistrar = obtenerIdEstado('Sin registrar', $conexion);
+
+if ($idEstadoSinRegistrar) {
+    // 2. Insertar asistencia con "Sin registrar" para todos los empleados activos que no tengan registro hoy
+    $sqlInsert = "
+        INSERT INTO asistencia (idEmpleado, fecha, idEstado)
+        SELECT e.idempleado, ?, ?
+        FROM empleado e
+        WHERE e.estado = 1
+        AND e.fecha_baja IS NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM asistencia a 
+            WHERE a.idEmpleado = e.idempleado AND a.fecha = ?
+        )
+    ";
+    $stmt = $conexion->prepare($sqlInsert);
+    $stmt->bind_param("sis", $fechaHoy, $idEstadoSinRegistrar, $fechaHoy);
+    $stmt->execute();
+    $stmt->close();
+}
+
 // Función para crear o actualizar asistencia y detalle_asistencia
 function guardarAsistenciaEstado($conexion, $idEmpleado, $idEstado, $fechaHoy)
 {
