@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_recuperacio
             FROM usuario U
             JOIN empleado E ON U.IdEmpleado = E.idempleado
             WHERE E.email = ?";
-    
+
     $stmt = mysqli_prepare($MiConexion, $SQL);
     mysqli_stmt_bind_param($stmt, "s", $email);
     mysqli_stmt_execute($stmt);
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_recuperacio
             mysqli_stmt_execute($stmt);
             $resultado = mysqli_stmt_get_result($stmt);
 
-            if (mysqli_num_rows($resultado) == 0) { 
+            if (mysqli_num_rows($resultado) == 0) {
                 // Generar nuevo token
                 $token = bin2hex(random_bytes(32));
                 $expiracion = date("Y-m-d H:i:s", strtotime('+1 hour'));
@@ -52,18 +52,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_recuperacio
                 $mail = new PHPMailer(true);
 
                 try {
-                    // Configuración SMTP
+                    // Configuración SMTP con Mailtrap
                     $mail->isSMTP();
-                    $mail->Host = 'smtp.gmail.com'; // Cambia esto por el servidor SMTP de tu proveedor
+                    $mail->Host = 'sandbox.smtp.mailtrap.io';
                     $mail->SMTPAuth = true;
-                    $mail->Username = 'maregawalter86@gmail.com'; // Tu email
-                    $mail->Password = 'Melisa2024'; // Clave o contraseña de aplicación
-                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; 
-                    $mail->Port = 587;
+                    $mail->Username = 'c8d64ce5d0ac4a'; // tu usuario de Mailtrap
+                    $mail->Password = '2fa2556a442707'; // tu password de Mailtrap
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 465; // uno de los puertos válidos (2525 es el más usado)
 
-                    // Configurar destinatario y contenido
-                    $mail->setFrom('maregawalter86@gmail.com', 'Casa Borras');
+                    // Configurar remitente y destinatario
+                    $mail->setFrom('no-reply@casaborras.com', 'Casa Borras');
                     $mail->addAddress($email, "{$usuario['nombre']} {$usuario['apellido']}");
+
                     $mail->Subject = 'Recuperación de contraseña - Casa Borras';
 
                     // Cuerpo del correo
@@ -80,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_recuperacio
 
                     // Enviar correo
                     $mail->send();
-                    $Mensaje = "Se ha enviado un enlace de recuperación a tu correo electrónico registrado (" . htmlspecialchars($email) . ").";
+                    $Mensaje = "Se ha enviado un enlace de recuperación a tu correo (revisa tu inbox de Mailtrap).";
                 } catch (Exception $e) {
                     $Mensaje = "Error al enviar el correo: " . $mail->ErrorInfo;
                 }
@@ -95,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_recuperacio
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,6 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_recuperacio
     <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
+
 <body>
     <main>
         <div class="container">
@@ -131,28 +134,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_recuperacio
                                     <?php endif; ?>
 
                                     <?php if ($MostrarFormulario): ?>
-                                    <div class="pt-4 pb-2">
-                                        <h5 class="card-title text-center pb-0 fs-4">Recuperar contraseña</h5>
-                                        <p class="text-center small">Ingresa tu correo electrónico registrado</p>
-                                    </div>
+                                        <div class="pt-4 pb-2">
+                                            <h5 class="card-title text-center pb-0 fs-4">Recuperar contraseña</h5>
+                                            <p class="text-center small">Ingresa tu correo electrónico registrado</p>
+                                        </div>
 
-                                    <form class="row g-3 needs-validation" method="post" novalidate>
-                                        <div class="col-12">
-                                            <label for="email" class="form-label">Correo electrónico</label>
-                                            <div class="input-group has-validation">
-                                                <span class="input-group-text" id="inputGroupPrepend">@</span>
-                                                <input type="email" name="email" class="form-control" id="email" required>
-                                                <div class="invalid-feedback">Ingresa tu correo electrónico.</div>
+                                        <form class="row g-3 needs-validation" method="post" novalidate>
+                                            <div class="col-12">
+                                                <label for="email" class="form-label">Correo electrónico</label>
+                                                <div class="input-group has-validation">
+                                                    <span class="input-group-text" id="inputGroupPrepend">@</span>
+                                                    <input type="email" name="email" class="form-control" id="email" required>
+                                                    <div class="invalid-feedback">Ingresa tu correo electrónico.</div>
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        <div class="col-12">
-                                            <button class="btn btn-primary w-100" type="submit" name="solicitar_recuperacion">Enviar enlace</button>
-                                        </div>
-                                        <div class="col-12 text-center">
-                                            <a href="login.php" class="small">Volver al login</a>
-                                        </div>
-                                    </form>
+                                            <div class="col-12">
+                                                <button class="btn btn-primary w-100" type="submit" name="solicitar_recuperacion">Enviar enlace</button>
+                                            </div>
+                                            <div class="col-12 text-center">
+                                                <a href="login.php" class="small">Volver al login</a>
+                                            </div>
+                                        </form>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -163,4 +166,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_recuperacio
         </div>
     </main>
 </body>
+
 </html>

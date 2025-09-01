@@ -202,27 +202,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
 
 
     // Empleados ausentes hoy
+    // Empleados ausentes hoy (incluye ausentes, licencia y sin registrar)
     elseif (strpos($mensaje, 'ausentes hoy') !== false) {
         $fecha = date('Y-m-d');
         $query = "
-        SELECT e.nombre, e.apellido 
+        SELECT e.nombre, e.apellido, ea.nombreEstado
         FROM empleado e
-        LEFT JOIN asistencia a ON e.idempleado = a.idEmpleado AND a.fecha = ?
-        WHERE a.idAsistencia IS NULL
+        INNER JOIN asistencia a ON e.idempleado = a.idEmpleado
+        INNER JOIN estadoasistencia ea ON a.idEstado = ea.idEstado
+        WHERE a.fecha = ? AND a.idEstado IN (2,4,7)
     ";
         $stmt = mysqli_prepare($conexion, $query);
         mysqli_stmt_bind_param($stmt, 's', $fecha);
         mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $nombre, $apellido);
+        mysqli_stmt_bind_result($stmt, $nombre, $apellido, $estado);
 
-        $nombres = [];
+        $grupos = [
+            'Ausentes' => [],
+            'Licencia' => [],
+            'Sin registrar' => []
+        ];
+
         while (mysqli_stmt_fetch($stmt)) {
-            $nombres[] = "$nombre $apellido";
+            if ($estado === 'Ausente') {
+                $grupos['Ausentes'][] = "$nombre $apellido";
+            } elseif ($estado === 'Licencia') {
+                $grupos['Licencia'][] = "$nombre $apellido";
+            } elseif ($estado === 'Sin registrar') {
+                $grupos['Sin registrar'][] = "$nombre $apellido";
+            }
         }
         mysqli_stmt_close($stmt);
 
-        $respuesta = count($nombres) ? "Ausentes hoy: " . implode(", ", $nombres) : "Todos registraron asistencia hoy.";
+        $respuesta = "Situación de hoy:\n";
+        foreach ($grupos as $tipo => $empleados) {
+            $respuesta .= $tipo . ": " . (count($empleados) ? implode(", ", $empleados) : "Ninguno") . "\n";
+        }
     }
+
 
     echo $respuesta;
 }

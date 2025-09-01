@@ -16,7 +16,7 @@ $conexion = ConexionBD();
 // -------------------------------------------
 function actualizarEstadoEmpleadoPorVacacion($conexion, $idvacaciones) {
     // Obtener la vacación
-    $stmt = $conexion->prepare("SELECT idempleado, fecha_inicio, fecha_fin FROM vacaciones WHERE idvacaciones = ?");
+    $stmt = $conexion->prepare("SELECT idempleado, fecha_inicio, fecha_fin FROM vacaciones WHERE idvacaciones = ? AND estado = 'Aprobado'");
     $stmt->bind_param("i", $idvacaciones);
     $stmt->execute();
     $resultado = $stmt->get_result()->fetch_assoc();
