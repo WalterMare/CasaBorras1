@@ -69,7 +69,7 @@ $conexion = ConexionBD();
 
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Gastion de Licencias</h5>
+                <h5 class="card-title">Licencias</h5>
 
                 <!-- Nav Tabs -->
                 <ul class="nav nav-tabs" id="LicenciasTabs" role="tablist">

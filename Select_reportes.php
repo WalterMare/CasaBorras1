@@ -229,35 +229,46 @@ function Listar_Reporte_Empleado3_Detalle_pdf($vConexion, $idLicencia)
 
 
 <?php
-function Listar_Reporte_Empleado_Embargo($vConexion, $empleado)
+function Listar_Reporte_Empleado_Embargo($vConexion, $idEmpleado)
 {
-
     $Listado = array();
 
-    //1) genero la consulta que deseo
     $consulta = "SELECT 
-    e.idembargo, 
-    e.fecha, 
-    e.monto, 
-    e.descripcion
-FROM 
-    embargo e
-WHERE 
-    e.idEmpleado = $empleado";
-    //2) a la conexion actual le brindo mi consulta, y el resultado lo entrego a variable $rs
-    $rs = mysqli_query($vConexion, $consulta);
+                    idembargo, 
+                    expediente, 
+                    tipo, 
+                    fecha, 
+                    fecha_inicio, 
+                    fecha_fin, 
+                    estado, 
+                    monto, 
+                    porcentaje, 
+                    descripcion
+                 FROM embargo
+                 WHERE idEmpleado = ?
+                 ORDER BY fecha";
 
-    //3) el resultado deberá organizarse en una matriz, entonces lo recorro
+    $stmt = mysqli_prepare($vConexion, $consulta);
+    mysqli_stmt_bind_param($stmt, "i", $idEmpleado);
+    mysqli_stmt_execute($stmt);
+    $resultado = mysqli_stmt_get_result($stmt);
+
     $i = 0;
-    while ($data = mysqli_fetch_array($rs)) {
+    while ($data = mysqli_fetch_assoc($resultado)) {
         $Listado[$i]['ID'] = $data['idembargo'];
+        $Listado[$i]['EXPEDIENTE'] = $data['expediente'];
+        $Listado[$i]['TIPO'] = $data['tipo'];
         $Listado[$i]['FECHA'] = $data['fecha'];
+        $Listado[$i]['FECHA_INICIO'] = $data['fecha_inicio'];
+        $Listado[$i]['FECHA_FIN'] = $data['fecha_fin'];
+        $Listado[$i]['ESTADO'] = $data['estado'];
         $Listado[$i]['MONTO'] = $data['monto'];
+        $Listado[$i]['PORCENTAJE'] = $data['porcentaje'];
         $Listado[$i]['DESCRIPCION'] = $data['descripcion'];
-
         $i++;
     }
-    //devuelvo el listado generado en el array $Listado. (Podra salir vacio o con datos)..
+
+    mysqli_stmt_close($stmt);
     return $Listado;
 }
 ?>
@@ -272,7 +283,8 @@ function Listar_Reporte_Empleado_Sancion($vConexion, $empleado)
         s.idsancion, 
         s.fecha_inicio, 
         s.fecha_fin, 
-        s.cantidadDias, 
+        s.cantidadDias,
+        s.descripcion, 
         ts.nombreTipo AS tipo_sancion, 
         es.nombres AS estado_sancion
     FROM sancion s
@@ -293,6 +305,7 @@ function Listar_Reporte_Empleado_Sancion($vConexion, $empleado)
         $Listado[$i]['CANTIDAD_DIAS'] = $data['cantidadDias'];
         $Listado[$i]['TIPO'] = $data['tipo_sancion'];
         $Listado[$i]['ESTADO'] = $data['estado_sancion'];
+        $Listado[$i]['DESCRIPCION'] = $data['descripcion'];
         $i++;
     }
 
@@ -303,43 +316,46 @@ function Listar_Reporte_Empleado_Sancion($vConexion, $empleado)
 <?php
 function Listar_Reporte_Empleado_HorasExtras($vConexion, $idEmpleado)
 {
-    $Listado = array();
 
-    // Genero la consulta para obtener las horas extras del empleado
+    $Listado = [];
+
+    // Consulta para obtener todas las horas extras del empleado
     $consulta = "SELECT 
                     h.idhoraextra, 
-                    h.fecha, 
+                    h.fecha,
+                    h.hora_inicio,
                     h.cantidadHoras, 
-                    h.IdEmpleado
-                FROM horaextra h
-                WHERE h.IdEmpleado = ?
-                ORDER BY h.fecha";
+                    h.IdEmpleado,
+                    h.tipoHora,
+                    h.tipoRecargo,
+                    h.valorHoraExtra
+                 FROM horaextra h
+                 WHERE h.IdEmpleado = ?
+                 ORDER BY h.fecha, h.hora_inicio";
 
-    // Preparar la consulta
     $stmt = mysqli_prepare($vConexion, $consulta);
-
-    // Vincular los parámetros (el ID del empleado es un entero)
     mysqli_stmt_bind_param($stmt, "i", $idEmpleado);
-
-    // Ejecutar la consulta
     mysqli_stmt_execute($stmt);
 
-    // Obtener el resultado
     $rs = mysqli_stmt_get_result($stmt);
 
-    // Verificar si la consulta devolvió datos y recorrerlos
-    $i = 0;
-    while ($data = mysqli_fetch_array($rs)) {
-        $Listado[$i]['ID'] = $data['idhoraextra'];
-        $Listado[$i]['FECHA'] = $data['fecha'];
-        $Listado[$i]['CANTIDAD_HORAS'] = $data['cantidadHoras'];
-        $Listado[$i]['IDEMPLEADO'] = $data['IdEmpleado'];
-        $i++;
+    while ($data = mysqli_fetch_assoc($rs)) {
+        $Listado[] = [
+            'ID' => $data['idhoraextra'],
+            'FECHA' => $data['fecha'],
+            'HORA_INICIO' => $data['hora_inicio'],
+            'CANTIDAD_HORAS' => $data['cantidadHoras'],
+            'IDEMPLEADO' => $data['IdEmpleado'],
+            'TIPO_HORA' => $data['tipoHora'],
+            'TIPO_RECARGO' => $data['tipoRecargo'],
+            'VALOR_HORA_EXTRA' => $data['valorHoraExtra']
+        ];
     }
 
-    // Devolver el listado generado (puede estar vacío si no se encuentran registros)
+    mysqli_stmt_close($stmt);
     return $Listado;
 }
+
 ?>
 <?php
 function Listar_Reporte_Viaticos_Empleado($vConexion, $idEmpleado)
@@ -448,7 +464,7 @@ function Listar_Reporte_Empleado_Vacaciones($vConexion, $empleado)
 {
     $Listado = array();
 
-    // 1) Genero la consulta que deseo
+    // 1) Genero la consulta que deseo, incluyendo todos los campos relevantes
     $consulta = "SELECT 
         v.idvacaciones, 
         v.fecha_inicio, 
@@ -456,16 +472,20 @@ function Listar_Reporte_Empleado_Vacaciones($vConexion, $empleado)
         v.cantidad_dias, 
         v.estado, 
         v.anio, 
-        v.vacaciones_restantes
+        v.vacaciones_restantes,
+        v.observaciones,
+        v.fecha_registro
     FROM 
         vacaciones v
     WHERE 
-        v.idempleado = $empleado";
+        v.idempleado = $empleado
+    ORDER BY 
+        v.fecha_inicio DESC"; // opcional, ordena por fecha de inicio
 
-    // 2) A la conexión actual le brindo mi consulta, y el resultado lo entrego a la variable $rs
+    // 2) Ejecuto la consulta en la conexión actual
     $rs = mysqli_query($vConexion, $consulta);
 
-    // 3) El resultado deberá organizarse en una matriz, entonces lo recorro
+    // 3) Recorro el resultado y lo organizo en un array
     $i = 0;
     while ($data = mysqli_fetch_assoc($rs)) {
         $Listado[$i]['ID'] = $data['idvacaciones'];
@@ -475,9 +495,12 @@ function Listar_Reporte_Empleado_Vacaciones($vConexion, $empleado)
         $Listado[$i]['ESTADO'] = $data['estado'];
         $Listado[$i]['AÑO'] = $data['anio'];
         $Listado[$i]['VACACIONES_RESTANTES'] = $data['vacaciones_restantes'];
+        $Listado[$i]['OBSERVACIONES'] = $data['observaciones'];
+        $Listado[$i]['FECHA_REGISTRO'] = $data['fecha_registro'];
         $i++;
     }
-    // Devuelvo el listado generado en el array $Listado (puede estar vacío o contener datos).
+
+    // Devuelvo el listado generado en el array $Listado
     return $Listado;
 }
 ?>

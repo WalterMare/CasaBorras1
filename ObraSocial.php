@@ -68,7 +68,7 @@ $conexion = ConexionBD();
 
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Gestión de Obra Social</h5>
+                <h5 class="card-title">Obra Social</h5>
 
                 <!-- Nav Tabs -->
                 <ul class="nav nav-tabs" id="ObrasocialTabs" role="tablist">

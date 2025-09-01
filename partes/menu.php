@@ -189,7 +189,7 @@ function TieneAcceso($nivelUsuario, $rolesFuncionales, $rolesNecesarios = [])
             </a>
           </li>
           <li>
-            <a href="Reporte_Ausencias_Empleados.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reporte_Ausencias_Empleados.php' ? 'active' : ''; ?>">
+            <a href="Reporte_asistencia_global.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reporte_asistencia_global.php' ? 'active' : ''; ?>">
               <i class="bi bi-file-earmark-plus"></i><span>Reporte Asistencia </span>
             </a>
           </li>

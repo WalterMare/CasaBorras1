@@ -71,7 +71,7 @@ $conexion = ConexionBD();
 
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Gestión de Anticipos</h5>
+                <h5 class="card-title">Anticipos</h5>
 
                 <!-- Nav Tabs -->
                 <ul class="nav nav-tabs" id="viaticoTabs" role="tablist">

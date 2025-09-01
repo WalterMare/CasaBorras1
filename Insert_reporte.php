@@ -143,80 +143,91 @@ require_once('TCPDF-main/tcpdf.php');
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">Licencias con Detalles</h5>
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">#</th>
-                                            <th scope="col">Fecha Inicio</th>
-                                            <th scope="col">Fecha Fin</th>
-                                            <th scope="col">Cantidad de Días</th>
-                                            <th scope="col">Tipo de Licencia</th>
-                                            <th scope="col">Estado de Licencia</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php for ($i = 0; $i < $Cantidad; $i++) { ?>
-                                            <tr>
-                                                <th scope="row"><?php echo $i + 1; ?></th>
-                                                <td><?php echo $listado[$i]['FECHAINICIO']; ?></td>
-                                                <td><?php echo $listado[$i]['FECHAFIN']; ?></td>
-                                                <td><?php echo $listado[$i]['CANTIDADDIAS']; ?></td>
-                                                <td><?php echo $listado[$i]['TIPO']; ?></td>
-                                                <td><?php echo $listado[$i]['ESTADO']; ?></td>
-                                            </tr>
-                                            <!-- Detalles de la Licencia -->
-                                            <?php
-                                            $idLicencia = $listado[$i]['ID'];
-                                            $listadoDetalle = Listar_Reporte_Empleado3_Detalle($conexion, $idLicencia);
-                                            ?>
-                                            <tr>
-                                                <td colspan="6">
-                                                    <strong>Detalles para la Licencia ID <?php echo $idLicencia; ?>:</strong>
-                                                    <?php if (!empty($listadoDetalle)) { ?>
-                                                        <table class="table table-bordered mt-3">
-                                                            <thead>
+                                <?php if (!empty($listado)): ?>
+                                    <?php $contadorLicencias = 1; ?>
+                                    <?php foreach ($listado as $licencia): ?>
+                                        <!-- Encabezado de la licencia -->
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                Licencia <?= $contadorLicencias; ?>
+                                            </div>
+                                            <div class="card-body p-2">
+                                                <!-- Tabla principal de la licencia -->
+                                                <table class="table table-striped mb-2">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha Inicio</th>
+                                                            <th>Fecha Fin</th>
+                                                            <th>Días</th>
+                                                            <th>Tipo</th>
+                                                            <th>Estado</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><?= $licencia['FECHAINICIO']; ?></td>
+                                                            <td><?= $licencia['FECHAFIN']; ?></td>
+                                                            <td><?= $licencia['CANTIDADDIAS']; ?></td>
+                                                            <td><?= $licencia['TIPO']; ?></td>
+                                                            <td><?= $licencia['ESTADO']; ?></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+
+                                                <!-- Detalles de la licencia -->
+                                                <?php
+                                                $listadoDetalles = Listar_Reporte_Empleado3_Detalle($conexion, $licencia['ID']);
+                                                ?>
+                                                <?php if (!empty($listadoDetalles) && !isset($listadoDetalles['mensaje'])): ?>
+                                                    <table class="table table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>#</th>
+                                                                <th>Descripción</th>
+                                                                <th>Fecha de Creación</th>
+                                                                <th>Usuario Otorga</th>
+                                                                <th>Documentación</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php foreach ($listadoDetalles as $j => $detalle): ?>
                                                                 <tr>
-                                                                    <th scope="col">#</th>
-                                                                    <th scope="col">Descripción</th>
-                                                                    <th scope="col">Fecha de Creación</th>
-                                                                    <th scope="col">Usuario Otorga</th>
-                                                                    <th scope="col">Documentación</th>
+                                                                    <th><?= $j + 1; ?></th>
+                                                                    <td><?= $detalle['DESCRIPCION']; ?></td>
+                                                                    <td><?= $detalle['FECHACREACION']; ?></td>
+                                                                    <td><?= $detalle['USUARIO']; ?></td>
+                                                                    <td>
+                                                                        <a href="download_document.php?file_id=<?= $detalle['IDDETALLELICENCIA']; ?>" class="btn btn-link">
+                                                                            Descargar Documentación
+                                                                        </a>
+                                                                    </td>
                                                                 </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php foreach ($listadoDetalle as $j => $detalle) { ?>
-                                                                    <tr>
-                                                                        <th scope="row"><?php echo $j + 1; ?></th>
-                                                                        <td><?php echo $detalle['DESCRIPCION']; ?></td>
-                                                                        <td><?php echo $detalle['FECHACREACION']; ?></td>
-                                                                        <td><?php echo $detalle['USUARIO']; ?></td>
-                                                                        <td>
-                                                                            <a href="download_document.php?file_id=<?php echo $detalle['IDDETALLELICENCIA']; ?>" class="btn btn-link">
-                                                                                Descargar Documentación
-                                                                            </a>
-                                                                        </td>
-                                                                    </tr>
-                                                                <?php } ?>
-                                                            </tbody>
-                                                        </table>
-                                                    <?php } else { ?>
-                                                        <p class="text-muted">No hay detalles disponibles para esta licencia.</p>
-                                                    <?php } ?>
-                                                </td>
+                                                            <?php endforeach; ?>
+                                                        </tbody>
+                                                    </table>
+                                                <?php else: ?>
+                                                    <p class="text-muted mb-0">No hay detalles disponibles para esta licencia.</p>
+                                                <?php endif; ?>
 
-                                            </tr>
-                                        <?php } ?>
+                                            </div>
+                                        </div>
+                                        <?php $contadorLicencias++; ?>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <p class="text-center text-muted">El empleado seleccionado no tiene licencias.</p>
+                                <?php endif; ?>
 
-                                    </tbody>
-                                </table>
+                            </div>
+                            <div class="d-flex justify-content-end pe-3">
                                 <form action="generar_pdf_Reporte_Licencia.php" method="get">
                                     <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
                                     <input type="hidden" name="tipo_reporte" value="1"> <!-- Agregar el parámetro adicional -->
                                     <input type="hidden" name="id_licencia" value="<?php echo $idLicencia; ?>">
-                                    <button type="submit" class="btn btn-primary" <?php echo $listadoDetalle == 0 ? 'disabled' : ''; ?>>Generar PDF</button>
+                                    <button type="submit" class="btn btn-primary" <?php echo $listadoDetalles == 0 ? 'disabled' : ''; ?>>Generar PDF</button>
                                 </form>
                             </div>
                         </div>
+
                     </div>
                 </div>
             <?php } else if ($Cantidad == 0 && $Cantidad == null && $tipo_reporte == '1') { ?>
@@ -231,42 +242,50 @@ require_once('TCPDF-main/tcpdf.php');
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">Embargos</h5>
-                                <?php if ($CantidadEmbargo != 0 && $CantidadEmbargo != null) { ?>
+                                <?php if (!empty($listadoEmbargo)) { ?>
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
-                                                <th scope="col">#</th>
-                                                <th scope="col">Fecha</th>
-                                                <th scope="col">Monto</th>
-                                                <th scope="col">Descripción</th>
+                                                <th>#</th>
+                                                <th>Expediente</th>
+                                                <th>Tipo</th>
+                                                <th>Fecha</th>
+                                                <th>Inicio</th>
+                                                <th>Fin</th>
+                                                <th>Estado</th>
+                                                <th>Monto</th>
+                                                <th>%</th>
+                                                <th>Descripción</th>
                                             </tr>
                                         </thead>
-
-                                        <?php if ($CantidadEmbargo != 0 && $CantidadEmbargo != null) { ?>
-                                            <tbody>
-                                                <?php for ($i = 0; $i < $CantidadEmbargo; $i++) { ?>
-                                                    <tr>
-                                                        <th scope="row"><?php echo $i + 1; ?></th>
-                                                        <td><?php echo $listadoEmbargo[$i]['FECHA']; ?></td>
-                                                        <td><?php echo $listadoEmbargo[$i]['MONTO']; ?></td>
-                                                        <td><?php echo $listadoEmbargo[$i]['DESCRIPCION']; ?></td>
-                                                    </tr>
-                                                <?php } ?>
-                                            </tbody>
-                                        <?php } ?>
+                                        <tbody>
+                                            <?php foreach ($listadoEmbargo as $index => $embargo) { ?>
+                                                <tr>
+                                                    <th scope="row"><?= $index + 1 ?></th>
+                                                    <td><?= htmlspecialchars($embargo['EXPEDIENTE']) ?></td>
+                                                    <td><?= htmlspecialchars($embargo['TIPO']) ?></td>
+                                                    <td><?= $embargo['FECHA'] ?></td>
+                                                    <td><?= $embargo['FECHA_INICIO'] ?></td>
+                                                    <td><?= $embargo['FECHA_FIN'] ?></td>
+                                                    <td><?= ($embargo['ESTADO'] == 1) ? 'Activo' : 'Finalizado' ?></td>
+                                                    <td>$<?= number_format($embargo['MONTO'], 2) ?></td>
+                                                    <td><?= $embargo['PORCENTAJE'] ?>%</td>
+                                                    <td><?= htmlspecialchars($embargo['DESCRIPCION']) ?></td>
+                                                </tr>
+                                            <?php } ?>
+                                        </tbody>
                                     </table>
                                 <?php } else {
-                                    echo "No se encontraron registros";
-                                } ?> <!-- End Default Table Example -->
-                                <form action="generar_pdf_Reporte_Licencia.php" method="get">
-                                    <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
-                                    <input type="hidden" name="tipo_reporte" value="6">
+                                    echo "<p>No se encontraron registros de embargos.</p>";
+                                } ?>
+                                <div class="d-flex justify-content-end pe-3">
+                                    <form action="generar_pdf_Reporte_Licencia.php" method="get">
+                                        <input type="hidden" name="empleado" value="<?= $empleado['ID'] ?>">
+                                        <input type="hidden" name="tipo_reporte" value="6">
+                                        <button type="submit" class="btn btn-primary">Generar PDF</button>
+                                    </form>
+                                </div>
 
-                                    <button type="submit" class="btn btn-primary">Generar PDF</button>
-
-
-
-                                </form>
                             </div>
                         </div>
                     </div>
@@ -294,6 +313,7 @@ require_once('TCPDF-main/tcpdf.php');
                                                 <th scope="col">Cantidad de Días</th>
                                                 <th scope="col">Tipo de Sanción</th>
                                                 <th scope="col">Estado</th>
+                                                <th scope="col">Descripción</th>
                                             </tr>
                                         </thead>
 
@@ -307,6 +327,7 @@ require_once('TCPDF-main/tcpdf.php');
                                                         <td><?php echo $listadoSancion[$i]['CANTIDAD_DIAS']; ?></td>
                                                         <td><?php echo $listadoSancion[$i]['TIPO']; ?></td>
                                                         <td><?php echo $listadoSancion[$i]['ESTADO']; ?></td>
+                                                        <td><?php echo $listadoSancion[$i]['DESCRIPCION']; ?></td>
                                                     </tr>
                                                 <?php } ?>
                                             </tbody>
@@ -315,15 +336,15 @@ require_once('TCPDF-main/tcpdf.php');
                                 <?php } else {
                                     echo "No se encontraron registros";
                                 } ?> <!-- End Default Table Example -->
-                                <form action="generar_pdf_Reporte_Licencia.php" method="get">
-                                    <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
-                                    <input type="hidden" name="tipo_reporte" value="2">
+                                <div class="d-flex justify-content-end pe-3">
+                                    <form action="generar_pdf_Reporte_Licencia.php" method="get">
+                                        <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
+                                        <input type="hidden" name="tipo_reporte" value="2">
 
-                                    <button type="submit" class="btn btn-primary">Generar PDF</button>
+                                        <button type="submit" class="btn btn-primary">Generar PDF</button>
 
-
-
-                                </form>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -340,41 +361,44 @@ require_once('TCPDF-main/tcpdf.php');
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">Horas Extras</h5>
-                                <?php if ($Cantidadhorasextras != 0 && $Cantidadhorasextras != null) { ?>
+                                <?php if (!empty($listadoHorasExtras)) : ?>
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
                                                 <th scope="col">#</th>
                                                 <th scope="col">Fecha</th>
+                                                <th scope="col">Hora Inicio</th>
                                                 <th scope="col">Cantidad de Horas</th>
+                                                <th scope="col">Tipo de Hora</th>
+                                                <th scope="col">Recargo</th>
+                                                <th scope="col">Valor</th>
                                             </tr>
                                         </thead>
-
-                                        <?php if ($Cantidadhorasextras != 0 && $Cantidadhorasextras != null) { ?>
-                                            <tbody>
-                                                <?php for ($i = 0; $i < $Cantidadhorasextras; $i++) { ?>
-                                                    <tr>
-                                                        <th scope="row"><?php echo $i + 1; ?></th>
-                                                        <td><?php echo $listadoHorasExtras[$i]['FECHA']; ?></td>
-                                                        <td><?php echo $listadoHorasExtras[$i]['CANTIDAD_HORAS']; ?></td>
-
-                                                    </tr>
-                                                <?php } ?>
-                                            </tbody>
-                                        <?php } ?>
+                                        <tbody>
+                                            <?php foreach ($listadoHorasExtras as $index => $horaExtra) : ?>
+                                                <tr>
+                                                    <th scope="row"><?= $index + 1 ?></th>
+                                                    <td><?= htmlspecialchars($horaExtra['FECHA']) ?></td>
+                                                    <td><?= htmlspecialchars($horaExtra['HORA_INICIO']) ?></td>
+                                                    <td><?= htmlspecialchars($horaExtra['CANTIDAD_HORAS']) ?></td>
+                                                    <td><?= htmlspecialchars($horaExtra['TIPO_HORA']) ?></td>
+                                                    <td><?= htmlspecialchars($horaExtra['TIPO_RECARGO']) ?></td>
+                                                    <td>$ <?= number_format($horaExtra['VALOR_HORA_EXTRA'], 2) ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
                                     </table>
-                                <?php } else {
-                                    echo "No se encontraron registros";
-                                } ?> <!-- End Default Table Example -->
-                                <form action="generar_pdf_Reporte_Licencia.php" method="get">
-                                    <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
-                                    <input type="hidden" name="tipo_reporte" value="3">
+                                <?php else : ?>
+                                    <p>No se encontraron registros</p>
+                                <?php endif; ?>
 
-                                    <button type="submit" class="btn btn-primary">Generar PDF</button>
-
-
-
-                                </form>
+                                <div class="d-flex justify-content-end pe-3">
+                                    <form action="generar_pdf_Reporte_Licencia.php" method="get">
+                                        <input type="hidden" name="empleado" value="<?= htmlspecialchars($empleado['ID']) ?>">
+                                        <input type="hidden" name="tipo_reporte" value="3">
+                                        <button type="submit" class="btn btn-primary">Generar PDF</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -420,15 +444,13 @@ require_once('TCPDF-main/tcpdf.php');
                                 <?php } else {
                                     echo "No se encontraron registros";
                                 } ?> <!-- End Default Table Example -->
-                                <form action="generar_pdf_Reporte_Licencia.php" method="get">
-                                    <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
-                                    <input type="hidden" name="tipo_reporte" value="5">
-
-                                    <button type="submit" class="btn btn-primary">Generar PDF</button>
-
-
-
-                                </form>
+                                <div class="d-flex justify-content-end pe-3">
+                                    <form action="generar_pdf_Reporte_Licencia.php" method="get">
+                                        <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
+                                        <input type="hidden" name="tipo_reporte" value="5">
+                                        <button type="submit" class="btn btn-primary">Generar PDF</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -480,11 +502,13 @@ require_once('TCPDF-main/tcpdf.php');
                                 } ?>
 
                                 <!-- Botón para Generar PDF -->
-                                <form action="generar_pdf_Reporte_Licencia.php" method="get">
-                                    <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
-                                    <input type="hidden" name="tipo_reporte" value="4">
-                                    <button type="submit" class="btn btn-primary">Generar PDF</button>
-                                </form>
+                                <div class="d-flex justify-content-end pe-3">
+                                    <form action="generar_pdf_Reporte_Licencia.php" method="get">
+                                        <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
+                                        <input type="hidden" name="tipo_reporte" value="4">
+                                        <button type="submit" class="btn btn-primary">Generar PDF</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -499,7 +523,8 @@ require_once('TCPDF-main/tcpdf.php');
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">Vacaciones</h5>
-                                <?php if ($CantidadVacaciones != 0 && $CantidadVacaciones != null) { ?>
+                                <h5 class="card-title">Vacaciones</h5>
+                                <?php if (!empty($listadoVacaciones)) { ?>
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
@@ -510,34 +535,53 @@ require_once('TCPDF-main/tcpdf.php');
                                                 <th scope="col">Año</th>
                                                 <th scope="col">Días restantes</th>
                                                 <th scope="col">Estado</th>
+                                                <th scope="col">Observaciones</th>
+                                                <th scope="col">Fecha Registro</th>
                                             </tr>
                                         </thead>
-
-                                        <?php if ($CantidadVacaciones != 0 && $CantidadVacaciones != null) { ?>
-                                            <tbody>
-                                                <?php for ($i = 0; $i < $CantidadVacaciones; $i++) { ?>
-                                                    <tr>
-                                                        <th scope="row"><?php echo $i + 1; ?></th>
-                                                        <td><?php echo $listadoVacaciones[$i]['FECHA_INICIO']; ?></td>
-                                                        <td><?php echo $listadoVacaciones[$i]['FECHA_FIN']; ?></td>
-                                                        <td><?php echo $listadoVacaciones[$i]['CANTIDAD_DIAS']; ?></td>
-                                                        <td><?php echo $listadoVacaciones[$i]['AÑO']; ?></td>
-                                                        <td><?php echo $listadoVacaciones[$i]['VACACIONES_RESTANTES']; ?></td>
-                                                        <td><?php echo $listadoVacaciones[$i]['ESTADO']; ?></td>
-                                                    </tr>
-                                                <?php } ?>
-                                            </tbody>
-                                        <?php } ?>
+                                        <tbody>
+                                            <?php foreach ($listadoVacaciones as $index => $vac) { ?>
+                                                <tr>
+                                                    <th scope="row"><?php echo $index + 1; ?></th>
+                                                    <td><?php echo $vac['FECHA_INICIO']; ?></td>
+                                                    <td><?php echo $vac['FECHA_FIN']; ?></td>
+                                                    <td><?php echo $vac['CANTIDAD_DIAS']; ?></td>
+                                                    <td><?php echo $vac['AÑO']; ?></td>
+                                                    <td><?php echo $vac['VACACIONES_RESTANTES']; ?></td>
+                                                    <td>
+                                                        <?php
+                                                        // Mostrar el estado con color
+                                                        switch ($vac['ESTADO']) {
+                                                            case 'Aprobado':
+                                                                echo '<span class="badge bg-success">Aprobado</span>';
+                                                                break;
+                                                            case 'Pendiente':
+                                                                echo '<span class="badge bg-warning text-dark">Pendiente</span>';
+                                                                break;
+                                                            case 'Rechazado':
+                                                                echo '<span class="badge bg-danger">Rechazado</span>';
+                                                                break;
+                                                            default:
+                                                                echo $vac['ESTADO'];
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                    <td><?php echo !empty($vac['OBSERVACIONES']) ? $vac['OBSERVACIONES'] : '-'; ?></td>
+                                                    <td><?php echo $vac['FECHA_REGISTRO']; ?></td>
+                                                </tr>
+                                            <?php } ?>
+                                        </tbody>
                                     </table>
                                 <?php } else {
-                                    echo "No se encontraron registros";
-                                } ?> <!-- End Default Table Example -->
-                                <form action="generar_pdf_Reporte_Licencia.php" method="get">
-                                    <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
-                                    <input type="hidden" name="tipo_reporte" value="7">
-
-                                    <button type="submit" class="btn btn-primary">Generar PDF</button>
-                                </form>
+                                    echo "<p>No se encontraron registros.</p>";
+                                } ?>
+                                <div class="d-flex justify-content-end pe-3">
+                                    <form action="generar_pdf_Reporte_Licencia.php" method="get">
+                                        <input type="hidden" name="empleado" value="<?php echo $empleado['ID']; ?>">
+                                        <input type="hidden" name="tipo_reporte" value="7">
+                                        <button type="submit" class="btn btn-primary">Generar PDF</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -545,7 +589,9 @@ require_once('TCPDF-main/tcpdf.php');
             </section>
         <?php } ?>
         <br>
-        <a href="Reportes.php" class="text-primary fw-bold">Regresar</a>
+        <div class="text-center">
+            <a href="Reportes.php" class="text-primary fw-bold">Regresar</a>
+        </div>
     </main>
     <!-- ======= Footer ======= -->
     <?php include_once 'partes/footer.php'; ?>

@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -105,6 +104,7 @@ $Cantidadreporte = count($listadoReporte);
                                     <select class="form-select" id="tipo_reporte" name="tipo_reporte" required>
                                         <option value="">Selecciona una opción</option>
                                         <?php foreach ($listadoReporte as $reporte): ?>
+                                            <?php if ($reporte['ID'] == 4) continue; ?> <!-- Omitir Asistencia -->
                                             <option value="<?= $reporte['ID']; ?>" <?= (isset($_POST['tipo']) && $_POST['tipo'] == $reporte['ID']) ? 'selected' : ''; ?>>
                                                 <?= $reporte['DESCRIPCION']; ?>
                                             </option>
@@ -112,9 +112,9 @@ $Cantidadreporte = count($listadoReporte);
                                     </select>
                                 </div>
 
-                                
+
                                 <div class="text-center">
-                                    <button class="btn btn-primary" type="submit" value="Generar Reporte" >Generar</button>
+                                    <button class="btn btn-primary" type="submit" value="Generar Reporte">Generar</button>
                                     <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
                                     <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
                                 </div>

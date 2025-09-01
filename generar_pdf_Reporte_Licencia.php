@@ -174,32 +174,41 @@ if ($tipo_reporte == '1') {
     }
 }
 if ($tipo_reporte == '6') {
-    // Ajuste de la tabla para que ocupe el ancho completo de la página
-    $anchoTotal = $pdf->getPageWidth();
-    $anchoColumna = $anchoTotal / 8; // Ajustamos el número de columnas
-
     $pdf->Ln(5);
     $pdf->SetFont('helvetica', 'B', 16);
-    $pdf->Cell(0, 10, 'EMBARGOS', 0, 1, 'L');
+    $pdf->Cell(0, 10, 'EMBARGOS DEL EMPLEADO', 0, 1, 'L');
     $pdf->SetFont('helvetica', 'B', 10);
-    $pdf->Cell(8, 10, '#', 1, 0, 'C');
-    $pdf->Cell(18, 10, 'Fecha', 1, 0, 'C');
-    $pdf->Cell(25, 10, 'Monto', 1, 0, 'C');
-    $pdf->Cell(130, 10, 'Descripción', 1, 1, 'C');
 
     if (!empty($listadoEmbargo)) {
-        // Agregar las licencias al PDF
+        // Cabecera
+        $pdf->Cell(10, 10, '#', 1, 0, 'C');
+        $pdf->Cell(25, 10, 'Expediente', 1, 0, 'C');
+        $pdf->Cell(15, 10, 'Tipo', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'Fecha', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'Inicio', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'Fin', 1, 0, 'C');
+        $pdf->Cell(15, 10, 'Estado', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'Monto', 1, 0, 'C');
+        $pdf->Cell(15, 10, '%', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'Descripción', 1, 1, 'C');
+
+        // Datos
         foreach ($listadoEmbargo as $index => $embargo) {
             $pdf->SetFont('helvetica', '', 8);
-            $pdf->Cell(8, 10, $index + 1, 1, 0, 'C');
-            $pdf->Cell(18, 10, $embargo['FECHA'], 1, 0, 'C');
-            $pdf->Cell(25, 10, $embargo['MONTO'], 1, 0, 'C');
-            $pdf->Cell(130, 10, $embargo['DESCRIPCION'], 1, 0, 'C');
+            $pdf->Cell(10, 10, $index + 1, 1, 0, 'C');
+            $pdf->Cell(25, 10, $embargo['EXPEDIENTE'], 1, 0, 'C');
+            $pdf->Cell(15, 10, $embargo['TIPO'], 1, 0, 'C');
+            $pdf->Cell(20, 10, $embargo['FECHA'], 1, 0, 'C');
+            $pdf->Cell(20, 10, $embargo['FECHA_INICIO'], 1, 0, 'C');
+            $pdf->Cell(20, 10, $embargo['FECHA_FIN'], 1, 0, 'C');
+            $pdf->Cell(15, 10, ($embargo['ESTADO'] == 1) ? 'Activo' : 'Finalizado', 1, 0, 'C');
+            $pdf->Cell(20, 10, '$' . number_format($embargo['MONTO'], 2), 1, 0, 'C');
+            $pdf->Cell(15, 10, $embargo['PORCENTAJE'] . '%', 1, 0, 'C');
+            $pdf->MultiCell(30, 10, $embargo['DESCRIPCION'], 1, 'L');
         }
     } else {
-        // Si no hay licencias, muestra un mensaje indicando que no hay licencias
         $pdf->SetFont('helvetica', 'I', 10);
-        $pdf->Cell(0, 10, 'El empleado seleccionado no tiene Embargos.', 0, 1, 'C');
+        $pdf->Cell(0, 10, 'El empleado seleccionado no tiene embargos registrados.', 0, 1, 'C');
     }
 }
 if ($tipo_reporte == '2') {
@@ -215,9 +224,10 @@ if ($tipo_reporte == '2') {
         $pdf->Cell(10, 10, '#', 1, 0, 'C');
         $pdf->Cell($anchoColumna, 10, 'Fecha Inicio', 1, 0, 'C');
         $pdf->Cell($anchoColumna, 10, 'Fecha Fin', 1, 0, 'C');
-        $pdf->Cell(40, 10, 'Cantidad de Días', 1, 0, 'C');
-        $pdf->Cell(40, 10, 'Tipo de Sanción', 1, 0, 'C');
-        $pdf->Cell(50, 10, 'Estado', 1, 1, 'C');
+        $pdf->Cell(20, 10, 'Cant. Días', 1, 0, 'C');
+        $pdf->Cell(35, 10, 'Tipo de Sanción', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'Estado', 1, 0, 'C');
+        $pdf->Cell(50, 10, 'Descripción', 1, 1, 'C');
 
 
         // Agregar las licencias al PDF
@@ -226,9 +236,10 @@ if ($tipo_reporte == '2') {
             $pdf->Cell(10, 10, $index + 1, 1, 0, 'C');
             $pdf->Cell($anchoColumna, 10, $sancion['FECHA_INICIO'], 1, 0, 'C');
             $pdf->Cell($anchoColumna, 10, $sancion['FECHA_FIN'], 1, 0, 'C');
-            $pdf->Cell(40, 10, $sancion['CANTIDAD_DIAS'], 1, 0, 'C');
-            $pdf->Cell(40, 10, $sancion['TIPO'], 1, 0, 'C');
-            $pdf->Cell(50, 10, $sancion['ESTADO'], 1, 1, 'C');
+            $pdf->Cell(20, 10, $sancion['CANTIDAD_DIAS'], 1, 0, 'C');
+            $pdf->Cell(35, 10, $sancion['TIPO'], 1, 0, 'C');
+            $pdf->Cell(20, 10, $sancion['ESTADO'], 1, 0, 'C');
+            $pdf->MultiCell(50, 10, $sancion['DESCRIPCION'], 1, 1, 'L');
         }
     } else {
         // Si no hay SANCIONES, muestra un mensaje indicando que no hay 
@@ -238,26 +249,32 @@ if ($tipo_reporte == '2') {
 }
 if ($tipo_reporte == '3') {
     // Ajuste de la tabla para que ocupe el ancho completo de la página
-    $anchoTotal = $pdf->getPageWidth();
-    $anchoColumna = $anchoTotal / 8; // Ajustamos el número de columnas
-
     $pdf->Ln(5);
     $pdf->SetFont('helvetica', 'B', 16);
     $pdf->Cell(0, 10, 'HORAS EXTRAS', 0, 1, 'L');
-    $pdf->SetFont('helvetica', 'B', 10);
+
     if (!empty($listadoExtras)) {
+        $pdf->SetFont('helvetica', 'B', 10);
+
+        // Encabezado de la tabla
         $pdf->Cell(10, 10, '#', 1, 0, 'C');
-        $pdf->Cell($anchoColumna, 10, 'Fecha', 1, 0, 'C');
-        $pdf->Cell(40, 10, 'Cantidad de Horas', 1, 1, 'C');
+        $pdf->Cell(25, 10, 'Fecha', 1, 0, 'C');
+        $pdf->Cell(25, 10, 'Hora Inicio', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'Cantidad Horas', 1, 0, 'C');
+        $pdf->Cell(25, 10, 'Tipo Hora', 1, 0, 'C');
+        $pdf->Cell(25, 10, 'Recargo', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'Valor', 1, 1, 'C');
 
-
-
-        // Agregar las licencias al PDF
+        // Contenido de la tabla
+        $pdf->SetFont('helvetica', '', 9);
         foreach ($listadoExtras as $index => $extra) {
-            $pdf->SetFont('helvetica', '', 8);
             $pdf->Cell(10, 10, $index + 1, 1, 0, 'C');
-            $pdf->Cell($anchoColumna, 10, $extra['FECHA'], 1, 0, 'C');
-            $pdf->Cell(40, 10, $extra['CANTIDAD_HORAS'], 1, 0, 'C');
+            $pdf->Cell(25, 10, $extra['FECHA'], 1, 0, 'C');
+            $pdf->Cell(25, 10, $extra['HORA_INICIO'], 1, 0, 'C');
+            $pdf->Cell(30, 10, $extra['CANTIDAD_HORAS'], 1, 0, 'C');
+            $pdf->Cell(25, 10, $extra['TIPO_HORA'], 1, 0, 'C');
+            $pdf->Cell(25, 10, $extra['TIPO_RECARGO'], 1, 0, 'C');
+            $pdf->Cell(30, 10, '$' . number_format($extra['VALOR_HORA_EXTRA'], 2), 1, 1, 'C');
         }
     } else {
         // Si no hay Extras, muestra un mensaje indicando que no hay 
@@ -337,10 +354,6 @@ if ($tipo_reporte == '4') {
     }
 }
 if ($tipo_reporte == '7') {
-    // Ajuste de la tabla para que ocupe el ancho completo de la página
-    $anchoTotal = $pdf->getPageWidth();
-    $anchoColumna = $anchoTotal / 4; // Ajustamos el número de columnas
-
     $pdf->Ln(5);
     $pdf->SetFont('helvetica', 'B', 16);
     $pdf->Cell(0, 10, 'VACACIONES', 0, 1, 'L');
@@ -351,28 +364,34 @@ if ($tipo_reporte == '7') {
         $pdf->Cell(7, 10, '#', 1, 0, 'C');
         $pdf->Cell(21, 10, 'Fecha Inicio', 1, 0, 'C');
         $pdf->Cell(18, 10, 'Fecha Fin', 1, 0, 'C');
-        $pdf->Cell(30, 10, 'Cantidad de Días', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'Cant. Días', 1, 0, 'C');
         $pdf->Cell(10, 10, 'Año', 1, 0, 'C');
-        $pdf->Cell(30, 10, 'Días Restantes', 1, 0, 'C');
-        $pdf->Cell(30, 10, 'Estado', 1, 1, 'C');
+        $pdf->Cell(20, 10, 'Días Rest.', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'Estado', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'Fecha Registro', 1, 0, 'C');
+        $pdf->Cell(40, 10, 'Observaciones', 1, 1, 'C');
+       
 
-        // Agregar las asistencias al PDF
-        foreach ($listadoVacaciones as $index => $vacaciones) {
+        // Agregar los registros
+        foreach ($listadoVacaciones as $index => $vac) {
             $pdf->SetFont('helvetica', '', 8);
             $pdf->Cell(7, 10, $index + 1, 1, 0, 'C');
-            $pdf->Cell(21, 10, $vacaciones['FECHA_INICIO'], 1, 0, 'C');
-            $pdf->Cell(18, 10, $vacaciones['FECHA_FIN'], 1, 0, 'C');
-            $pdf->Cell(30, 10, $vacaciones['CANTIDAD_DIAS'], 1, 0, 'C');
-            $pdf->Cell(10, 10, $vacaciones['AÑO'], 1, 0, 'C');
-            $pdf->Cell(30, 10, $vacaciones['VACACIONES_RESTANTES'], 1, 0, 'C');
-            $pdf->Cell(30, 10, $vacaciones['ESTADO'], 1, 1, 'C');
+            $pdf->Cell(21, 10, date('d/m/Y', strtotime($vac['FECHA_INICIO'])), 1, 0, 'C');
+            $pdf->Cell(18, 10, date('d/m/Y', strtotime($vac['FECHA_FIN'])), 1, 0, 'C');
+            $pdf->Cell(20, 10, $vac['CANTIDAD_DIAS'], 1, 0, 'C');
+            $pdf->Cell(10, 10, $vac['AÑO'], 1, 0, 'C');
+            $pdf->Cell(20, 10, $vac['VACACIONES_RESTANTES'], 1, 0, 'C');
+            $pdf->Cell(20, 10, $vac['ESTADO'], 1, 0, 'C');
+            $pdf->Cell(30, 10, date('d/m/Y H:i', strtotime($vac['FECHA_REGISTRO'])), 1, 0, 'C');
+            $pdf->MultiCell(40, 10, !empty($vac['OBSERVACIONES']) ? $vac['OBSERVACIONES'] : '-', 1, 1, 'L');
+            
         }
     } else {
-        // Si no hay asistencias, muestra un mensaje
         $pdf->SetFont('helvetica', 'I', 10);
         $pdf->Cell(0, 10, 'El empleado seleccionado no tiene vacaciones registradas.', 0, 1, 'C');
     }
 }
+
 
 
 
