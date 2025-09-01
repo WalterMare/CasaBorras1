@@ -47,7 +47,7 @@ $sql ="SELECT
             AND CURDATE() BETWEEN s.fecha_inicio AND s.fecha_fin
         LEFT JOIN tiposancion ts ON s.IdTipoSancion = ts.idtipoSancion
         LEFT JOIN vacaciones v ON e.idempleado = v.idempleado 
-            AND CURDATE() BETWEEN v.fecha_inicio AND v.fecha_fin
+            AND CURDATE() BETWEEN v.fecha_inicio AND v.fecha_fin AND v.estado = 'Aprobado'
         LEFT JOIN cargo c ON e.idCargo = c.idcargo
         WHERE e.idempleado = ?";
 
