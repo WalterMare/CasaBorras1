@@ -3,7 +3,7 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background-color:rgb(215, 24, 24);
+  background-color:rgba(51, 61, 197, 1);
   color: white;
   border-radius: 50%;
   width: 70px;
@@ -36,7 +36,7 @@
   z-index: 9999;
   box-shadow: 0 0 10px rgba(0,0,0,0.3);">
   
-  <div style="padding: 10px; background:rgb(164, 11, 11); color: white; border-radius: 10px 10px 0 0;">
+  <div style="padding: 10px; background:rgba(35, 63, 156, 1); color: white; border-radius: 10px 10px 0 0;">
     Asistente de RRHH
     <span style="float: right; cursor: pointer;" onclick="cerrarChat()">✖</span>
   </div>

@@ -10,9 +10,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
     if (preg_match('/vino hoy ([a-záéíóúñ\s]+)/i', $mensaje, $coincidencia)) {
         $nombreCompleto = ucwords(trim($coincidencia[1]));
         $partes = explode(" ", $nombreCompleto);
+
         if (count($partes) >= 2) {
             $nombre = $partes[0];
-            $apellido = $partes[1];
+            // Apellido puede tener más de una palabra
+            $apellido = implode(" ", array_slice($partes, 1));
             $fecha = date('Y-m-d');
 
             $stmt = mysqli_prepare(
@@ -27,12 +29,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
             mysqli_stmt_bind_param($stmt, 'sss', $nombre, $apellido, $fecha);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_bind_result($stmt, $estado);
+
             if (mysqli_stmt_fetch($stmt)) {
-                $respuesta = "$nombre $apellido si esta $estado.";
+                switch ($estado) {
+                    case 'Presente':
+                        $respuesta = "$nombre $apellido sí vino hoy.";
+                        break;
+                    case 'Ausente':
+                        $respuesta = "$nombre $apellido no vino hoy (Ausente).";
+                        break;
+                    case 'Justificado':
+                        $respuesta = "$nombre $apellido no vino hoy (Ausencia justificada).";
+                        break;
+                    case 'Licencia':
+                        $respuesta = "$nombre $apellido no vino hoy (Licencia).";
+                        break;
+                    case 'Sin registrar':
+                        $respuesta = "$nombre $apellido figura como 'Sin registrar'.";
+                        break;
+                    default:
+                        $respuesta = "$nombre $apellido está marcado como $estado.";
+                }
             } else {
                 $respuesta = "$nombre $apellido no registró asistencia hoy.";
             }
+
             mysqli_stmt_close($stmt);
+        } else {
+            $respuesta = "Por favor indicá nombre y apellido para verificar la asistencia.";
         }
     }
 
@@ -49,44 +73,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
 
             // Verifica si el empleado está de vacaciones hoy
             $stmt = mysqli_prepare($conexion, "
-                SELECT v.fecha_inicio, v.fecha_fin, v.cantidad_dias, e.idempleado
-                FROM vacaciones v
-                JOIN empleado e ON v.idempleado = e.idempleado
-                WHERE e.nombre = ? AND e.apellido = ?
-                AND ? BETWEEN v.fecha_inicio AND v.fecha_fin
-                LIMIT 1
-            ");
+            SELECT v.fecha_inicio, v.fecha_fin, v.cantidad_dias, v.anio, v.vacaciones_restantes, e.idempleado
+    FROM vacaciones v
+    JOIN empleado e ON v.idempleado = e.idempleado
+    WHERE LOWER(e.nombre) = LOWER(?) 
+      AND LOWER(e.apellido) = LOWER(?)
+      AND ? BETWEEN v.fecha_inicio AND v.fecha_fin
+      AND v.estado = 'Aprobado'
+    LIMIT 1
+        ");
             mysqli_stmt_bind_param($stmt, 'sss', $nombre, $apellido, $hoy);
             mysqli_stmt_execute($stmt);
-            mysqli_stmt_bind_result($stmt, $fechaInicio, $fechaFin, $diasTomados, $idEmpleado);
+            mysqli_stmt_bind_result($stmt, $fechaInicio, $fechaFin, $diasTomados, $anioCorrespondiente, $vacacionesRestantes, $idEmpleado);
 
             if (mysqli_stmt_fetch($stmt)) {
                 mysqli_stmt_close($stmt);
 
-                // Año al que corresponde la vacación (año anterior a la fecha de inicio)
-                $anioCorrespondiente = date('Y', strtotime($fechaInicio)) - 1;
-                $limiteUso = ($anioCorrespondiente + 1) . "-04-01"; // 1 de abril del año siguiente
+                // Fecha límite de uso → 31 de marzo del año siguiente al de la vacación
+                $limiteUso = ($anioCorrespondiente + 1) . "-03-31";
 
-                if ($hoy >= $limiteUso) {
+                if ($hoy > $limiteUso) {
                     $respuesta = "$nombre $apellido está de vacaciones hoy, pero ya no debería estar usándolas porque vencían el 31 de marzo de " . ($anioCorrespondiente + 1) . ".";
                 } else {
-                    // Traer todas las vacaciones tomadas del año correspondiente
+                    // Traer todos los días ya tomados en ese año
                     $stmt2 = mysqli_prepare($conexion, "
-                        SELECT SUM(v.cantidad_dias)
-                        FROM vacaciones v
-                        WHERE v.idempleado = ? AND YEAR(v.fecha_inicio) = ?
-                    ");
-                    mysqli_stmt_bind_param($stmt2, 'ii', $idEmpleado, $anioCorrespondiente + 1); // vacaciones tomadas entre oct-abril
+                    SELECT COALESCE(SUM(v.cantidad_dias),0)
+                    FROM vacaciones v
+                    WHERE v.idempleado = ? AND v.anio = ? AND v.estado = 'Aprobado'
+                ");
+                    mysqli_stmt_bind_param($stmt2, 'ii', $idEmpleado, $anioCorrespondiente);
                     mysqli_stmt_execute($stmt2);
                     mysqli_stmt_bind_result($stmt2, $totalTomado);
                     mysqli_stmt_fetch($stmt2);
                     mysqli_stmt_close($stmt2);
 
-                    // Definimos que el total disponible es 14 días (puede ajustarse si tenés un campo para eso)
-                    $totalDisponible = 14;
-                    $diasRestantes = $totalDisponible - $totalTomado;
-
-                    $respuesta = "$nombre $apellido está de vacaciones hoy. Tomó $diasTomados día(s) en este tramo, correspondientes al año $anioCorrespondiente. Le quedan $diasRestantes día(s) disponibles para usar antes del 31 de marzo de " . ($anioCorrespondiente + 1) . ".";
+                    $respuesta = "$nombre $apellido está de vacaciones hoy. Tomó $diasTomados día(s) en este tramo, correspondientes al año $anioCorrespondiente. En total ya usó $totalTomado día(s) y le quedan $vacacionesRestantes día(s) disponibles hasta el 31 de marzo de " . ($anioCorrespondiente + 1) . ".";
                 }
             } else {
                 mysqli_stmt_close($stmt);
@@ -199,26 +220,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
             "🔎 Escribí por ejemplo: <b>vino hoy Juan Perez</b> o <b>vacaciones de Laura Pérez</b>";
     }
 
-
-
-    // Empleados ausentes hoy
     // Empleados ausentes hoy (incluye ausentes, licencia y sin registrar)
     elseif (strpos($mensaje, 'ausentes hoy') !== false) {
         $fecha = date('Y-m-d');
         $query = "
+    (
         SELECT e.nombre, e.apellido, ea.nombreEstado
         FROM empleado e
         INNER JOIN asistencia a ON e.idempleado = a.idEmpleado
         INNER JOIN estadoasistencia ea ON a.idEstado = ea.idEstado
-        WHERE a.fecha = ? AND a.idEstado IN (2,4,7)
+        WHERE a.fecha = ? AND a.idEstado IN (2,3,4,7)
+    )
+    UNION
+    (
+        SELECT e.nombre, e.apellido, 'Sin registrar' AS nombreEstado
+        FROM empleado e
+        WHERE NOT EXISTS (
+            SELECT 1 FROM asistencia a 
+            WHERE a.idEmpleado = e.idempleado AND a.fecha = ?
+        )
+    )
     ";
         $stmt = mysqli_prepare($conexion, $query);
-        mysqli_stmt_bind_param($stmt, 's', $fecha);
+
+        // ✅ Dos parámetros porque hay dos "?"
+        mysqli_stmt_bind_param($stmt, 'ss', $fecha, $fecha);
         mysqli_stmt_execute($stmt);
+
+        // ✅ Traemos las 3 columnas
         mysqli_stmt_bind_result($stmt, $nombre, $apellido, $estado);
 
         $grupos = [
             'Ausentes' => [],
+            'Justificados' => [],
             'Licencia' => [],
             'Sin registrar' => []
         ];
@@ -226,6 +260,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mensaje'])) {
         while (mysqli_stmt_fetch($stmt)) {
             if ($estado === 'Ausente') {
                 $grupos['Ausentes'][] = "$nombre $apellido";
+            } elseif ($estado === 'Justificado') {
+                $grupos['Justificados'][] = "$nombre $apellido";
             } elseif ($estado === 'Licencia') {
                 $grupos['Licencia'][] = "$nombre $apellido";
             } elseif ($estado === 'Sin registrar') {

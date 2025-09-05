@@ -155,20 +155,18 @@ if (isset($_POST['generar_pdf'])) {
 
                             <!-- Formulario de selección de fechas -->
                             <form method="POST" class="row g-3 mb-5">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label for="fechainicio" class="form-label fw-semibold">Fecha Inicio</label>
                                     <input type="date" class="form-control" id="fechainicio" name="fechainicio" value="<?= htmlspecialchars($fechaInicio) ?>" required>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label for="fechafin" class="form-label fw-semibold">Fecha Fin</label>
                                     <input type="date" class="form-control" id="fechafin" name="fechafin" value="<?= htmlspecialchars($fechaFin) ?>" required>
                                 </div>
-                                <div class="col-12 d-flex justify-content-start mt-3">
+                                <div class="col-md-3 d-flex flex-column justify-content-end">
                                     <button type="submit" class="btn btn-primary me-2">Generar Reporte</button>
-                                    <?php if ($licencias_data): ?>
-                                        <button type="submit" name="generar_pdf" id="btnPdf" class="btn btn-success">Exportar a PDF</button>
-                                    <?php endif; ?>
                                 </div>
+                                <hr>
                             </form>
 
                             <!-- Gráficos en cards separadas -->
@@ -195,25 +193,30 @@ if (isset($_POST['generar_pdf'])) {
                                 </div>
 
                                 <!-- Licencias por Mes -->
-                                <div class="col-12">
+                                <div class="col-6">
                                     <div class="card shadow-sm">
                                         <div class="card-header bg-light fw-semibold">Licencias por Mes</div>
-                                        <div class="card-body">
-                                            <canvas id="graficoLinealMeses" style="width: 100%; height: 350px;"></canvas>
+                                        <div class="card-body d-flex justify-content-center">
+                                            <canvas id="graficoLinealMeses" style="width: 100%; height: 395px;"></canvas>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Licencias por Cargo -->
-                                <div class="col-12">
+                                <div class="col-6">
                                     <div class="card shadow-sm">
                                         <div class="card-header bg-light fw-semibold">Licencias por Cargo</div>
-                                        <div class="card-body">
-                                            <canvas id="graficoCargo" style="width: 100%; height: 400px;"></canvas>
+                                        <div class="card-body d-flex justify-content-center">
+                                            <canvas id="graficoCargo" style="width: 100%; height: 200px;"></canvas>
                                         </div>
                                     </div>
                                 </div>
 
+                            </div>
+                            <div class="text-center">
+                                <?php if ($licencias_data): ?>
+                                    <button type="submit" name="generar_pdf" id="btnPdf" class="btn btn-success">Exportar a PDF</button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -305,6 +308,7 @@ if (isset($_POST['generar_pdf'])) {
                         data: {
                             labels: licenciasPorMes.map(d => d.mes),
                             datasets: [{
+                                display: false,
                                 label: 'Licencias por Mes',
                                 data: licenciasPorMes.map(d => d.cantidad),
                                 borderColor: 'rgba(255, 99, 132, 1)',
@@ -315,13 +319,24 @@ if (isset($_POST['generar_pdf'])) {
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: false
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: false
+                                }, // ← apaga el título de Chart.js
+                                legend: {
+                                    display: false
+                                } // ← opcional: oculta la leyenda ("Licencias por Mes")
+                            },
+                            layout: {
+                                padding: {
+                                    top: 8
+                                }
+                            } // ← opcional: un poco de aire arriba
+
                         }
                     });
 
-                    // -------------------------
-                    // Gráfico torta - Ausentismo total
-                    // -------------------------
                     new Chart(document.getElementById('graficoTortaAusentismoPago').getContext('2d'), {
                         type: 'pie',
                         data: {
@@ -346,9 +361,23 @@ if (isset($_POST['generar_pdf'])) {
                                             return context.label + ': ' + value + ' (' + percentage + '%)';
                                         }
                                     }
+                                },
+                                datalabels: {
+                                    formatter: (value, ctx) => {
+                                        const total = ctx.chart.data.datasets[0].data
+                                            .reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${percentage}%`; // 👈 solo porcentaje
+                                    },
+                                    color: '#fff',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 12
+                                    }
                                 }
                             }
-                        }
+                        },
+                        plugins: [ChartDataLabels] // 👈 necesario
                     });
 
                     // -------------------------
@@ -382,10 +411,25 @@ if (isset($_POST['generar_pdf'])) {
                                             return context.label + ': ' + value + ' (' + percentage + '%)';
                                         }
                                     }
+                                },
+                                datalabels: {
+                                    formatter: (value, ctx) => {
+                                        const total = ctx.chart.data.datasets[0].data
+                                            .reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${percentage}%`; // ✅ Solo porcentaje en la torta
+                                    },
+                                    color: '#fff',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 12
+                                    }
                                 }
                             }
-                        }
+                        },
+                        plugins: [ChartDataLabels]
                     });
+
 
                     // -------------------------
                     // Exportar a PDF

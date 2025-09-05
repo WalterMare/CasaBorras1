@@ -160,13 +160,13 @@ function TieneAcceso($nivelUsuario, $rolesFuncionales, $rolesNecesarios = [])
     <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Gerente de Departamento', 'Administrador'])): ?>
       <!-- Gestor de Reportes -->
       <li class="nav-item">
-        <a class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php', 'Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'active' : ''; ?>"
+        <a class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), [ 'Reportes.php','Preliquidacion.php', 'reporte_estadistico.php', 'Reporte_Organigrama.php', 'Reporte_asistencia_global.php','Reporte_rotacion_personal.php','Informe_Ultimos_e.php' ]) ? 'active' : ''; ?>"
           href="#forms-nav-reportes"
           data-bs-toggle="collapse"
-          aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php', 'Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'true' : 'false'; ?>">
+          aria-expanded="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['Reportes.php','Preliquidacion.php', 'reporte_estadistico.php', 'Reporte_Organigrama.php', 'Reporte_asistencia_global.php','Reporte_rotacion_personal.php','Informe_Ultimos_e.php' ]) ? 'true' : 'false'; ?>">
           <i class="bi bi-file-earmark"></i><span>Gestor de Reportes</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="forms-nav-reportes" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Informe_Ultimos_e.php', 'Reportes.php', 'reporte_estadistico.php', 'Reporte_Organigrama.php', 'Reporte_Ausencias_Empleados.php', 'Preliquidacion.php']) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
+        <ul id="forms-nav-reportes" class="nav-content collapse <?php echo in_array(basename($_SERVER['PHP_SELF']), ['Reportes.php','Preliquidacion.php', 'reporte_estadistico.php', 'Reporte_Organigrama.php', 'Reporte_asistencia_global.php','Reporte_rotacion_personal.php','Informe_Ultimos_e.php']) ? 'show' : ''; ?>" data-bs-parent="#sidebar-nav">
 
           <li>
             <a href="Reportes.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reportes.php' ? 'active' : ''; ?>">
@@ -191,6 +191,11 @@ function TieneAcceso($nivelUsuario, $rolesFuncionales, $rolesNecesarios = [])
           <li>
             <a href="Reporte_asistencia_global.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reporte_asistencia_global.php' ? 'active' : ''; ?>">
               <i class="bi bi-file-earmark-plus"></i><span>Reporte Asistencia </span>
+            </a>
+          </li>
+          <li>
+            <a href="Reporte_rotacion_personal.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'Reporte_rotacion_personal.php' ? 'active' : ''; ?>">
+              <i class="bi bi-file-earmark-plus"></i><span>Reporte de Rotación</span>
             </a>
           </li>
           <li>

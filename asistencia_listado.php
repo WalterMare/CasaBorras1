@@ -66,7 +66,7 @@ if ($idEstadoSinRegistrar) {
     $stmt->close();
 }
 
-// Función para crear o actualizar asistencia y detalle_asistencia
+/* Función para crear o actualizar asistencia y detalle_asistencia
 function guardarAsistenciaEstado($conexion, $idEmpleado, $idEstado, $fechaHoy)
 {
     $idAsistencia = null;
@@ -158,7 +158,104 @@ function guardarAsistenciaEstado($conexion, $idEmpleado, $idEstado, $fechaHoy)
 
         return $idAsistencia;
     }
+}*/
+function guardarAsistenciaEstado($conexion, $idEmpleado, $fechaHoy)
+{
+    $idAsistencia = null;
+    $estadoNombre = 'Presente'; // por defecto
+
+    // 1️⃣ Licencia aprobada
+    $stmt = $conexion->prepare("
+        SELECT l.idlicencia
+        FROM licencia l
+        INNER JOIN estadolicencia el ON l.IdEstado = el.idestadoLicencia
+        WHERE l.idEmpleado = ? AND ? BETWEEN l.fechainicio AND l.fechafin
+        AND el.nombreEstado = 'Aprobada'
+        LIMIT 1
+    ");
+    $stmt->bind_param("is", $idEmpleado, $fechaHoy);
+    $stmt->execute();
+    if ($stmt->get_result()->fetch_assoc()) {
+        $estadoNombre = 'Licencia';
+    }
+    $stmt->close();
+
+    // 2️⃣ Vacaciones aprobadas
+    if ($estadoNombre == 'Presente') {
+        $stmt = $conexion->prepare("
+            SELECT idvacaciones 
+            FROM vacaciones
+            WHERE idempleado = ? AND ? BETWEEN fecha_inicio AND fecha_fin
+            AND estado = 'Aprobado'
+            LIMIT 1
+        ");
+        $stmt->bind_param("is", $idEmpleado, $fechaHoy);
+        $stmt->execute();
+        if ($stmt->get_result()->fetch_assoc()) {
+            $estadoNombre = 'Licencia'; // usamos mismo estado que Licencia
+        }
+        $stmt->close();
+    }
+
+    // 3️⃣ Sanción aplicada
+    if ($estadoNombre == 'Presente') {
+        $stmt = $conexion->prepare("
+            SELECT s.idsancion
+            FROM sancion s
+            INNER JOIN estadosancion es ON s.idEstadoSancion = es.idestadoSancion
+            WHERE s.idEmpleado = ? AND ? BETWEEN s.fecha_inicio AND s.fecha_fin
+            AND es.nombres = 'Aplicada'
+            LIMIT 1
+        ");
+        $stmt->bind_param("is", $idEmpleado, $fechaHoy);
+        $stmt->execute();
+        if ($stmt->get_result()->fetch_assoc()) {
+            $estadoNombre = 'Justificado'; // marcamos como justificado
+        }
+        $stmt->close();
+    }
+
+    // 4️⃣ Obtener idEstado correspondiente
+    $stmt = $conexion->prepare("SELECT idEstado FROM estadoasistencia WHERE nombreEstado = ?");
+    $stmt->bind_param("s", $estadoNombre);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        $idEstadoAsistencia = $row['idEstado'];
+    } else {
+        die("Estado '$estadoNombre' no encontrado en estadoasistencia.");
+    }
+    $stmt->close();
+
+    // 5️⃣ Insertar o actualizar asistencia
+    $stmt = $conexion->prepare("SELECT idAsistencia FROM asistencia WHERE idEmpleado = ? AND fecha = ?");
+    $stmt->bind_param("is", $idEmpleado, $fechaHoy);
+    $stmt->execute();
+    $stmt->bind_result($idAsistencia);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($idAsistencia) {
+        $stmt = $conexion->prepare("UPDATE asistencia SET idEstado = ? WHERE idAsistencia = ?");
+        $stmt->bind_param("ii", $idEstadoAsistencia, $idAsistencia);
+        $stmt->execute();
+        $stmt->close();
+    } else {
+        $stmt = $conexion->prepare("INSERT INTO asistencia (idEmpleado, fecha, idEstado) VALUES (?, ?, ?)");
+        $stmt->bind_param("isi", $idEmpleado, $fechaHoy, $idEstadoAsistencia);
+        $stmt->execute();
+        $idAsistencia = $stmt->insert_id;
+        $stmt->close();
+
+        $stmt = $conexion->prepare("INSERT INTO detalle_asistencia (idAsistencia, horasTrabajadas, observaciones) VALUES (?, '00:00:00', '')");
+        $stmt->bind_param("i", $idAsistencia);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    return $idAsistencia;
 }
+
 
 
 function obtenerIdEstado($nombre, $conexion)
@@ -274,7 +371,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         // Guardar estado y obtener idAsistencia
-        $idAsistencia = guardarAsistenciaEstado($conexion, $idEmpleado, $idEstado, $fechaHoy);
+        $idAsistencia = guardarAsistenciaEstado($conexion, $idEmpleado, $fechaHoy);
         // Si el estado NO es "Presente", limpiar eventos Entrada/Salida y observaciones
         $idEstadoPresente = obtenerIdEstado('Presente', $conexion);
         if ($idEstado !== $idEstadoPresente) {
@@ -344,6 +441,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Redirigir para evitar reenvío
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
+}
+// Registrar automáticamente Licencias para hoy
+$sqlLicencia = "SELECT idempleado FROM empleado WHERE estado = 0 AND fecha_baja IS NULL";
+$resLicencia = $conexion->query($sqlLicencia);
+while ($emp = $resLicencia->fetch_assoc()) {
+    guardarAsistenciaEstado($conexion, $emp['idempleado'], $fechaHoy);
 }
 
 // Consulta para mostrar empleados + asistencia del día y eventos Entrada/Salida
@@ -524,20 +627,18 @@ function generarObservacion($horaEsperadaEntrada, $horaEsperadaSalida, $horaEntr
         </thead>
         <tbody>
             <?php while ($row = $resultado->fetch_assoc()):
-
-                $estadoEmpleado = $row['estado'];
                 $nombreEstado = $row['nombreEstado'] ?? 'Sin registrar';
+                $estadoMostrar = $nombreEstado;
 
-                if ($estadoEmpleado == 0) {
-                    $estadoMostrar = 'Licencia';
-                } else {
-                    $estadoMostrar = $nombreEstado;
-                }
-                $estadoPresente = ($row['nombreEstado'] ?? '') === 'Presente';
-                $estadoAusente = ($row['nombreEstado'] ?? '') === 'Ausente';
-                $estadoJustificado = ($row['nombreEstado'] ?? '') === 'Justificado';
+                $estadoPresente = $estadoMostrar === 'Presente';
+                $estadoAusente = $estadoMostrar === 'Ausente';
+                $estadoJustificado = $estadoMostrar === 'Justificado';
+                $estadoLicencia = $estadoMostrar === 'Licencia';
+
                 $tieneEntrada = !empty($row['horaEntrada']);
                 $tieneSalida = !empty($row['horaSalida']);
+
+                $trabajaHoy = !empty($row['hora_esperada_entrada']) && !empty($row['hora_esperada_salida']);
             ?>
 
                 <tr>
@@ -554,27 +655,31 @@ function generarObservacion($horaEsperadaEntrada, $horaEsperadaSalida, $horaEntr
                             <form method="POST" style="display:inline-block;">
                                 <input type="hidden" name="idEmpleado" value="<?= $row['idempleado'] ?>">
                                 <div class="d-flex gap-1">
-                                    <button type="submit" name="accion" value="Presente" class="btn btn-sm btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Presente" <?= ($estadoEmpleado == 0 || $estadoPresente || $tieneEntrada || $tieneSalida) ? 'disabled' : '' ?>>
-                                        <i class="bi bi-check-circle"></i></button>
-                                    <button type="submit" name="accion" value="Ausente" class="btn btn-sm btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Ausente" <?= ($estadoEmpleado == 0 || $estadoAusente || $tieneEntrada || $tieneSalida) ? 'disabled' : '' ?>>
-                                        <i class="bi bi-x-circle"></i> </button>
-                                    <button type="submit" name="accion" value="Justificado" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Justificado" <?= ($estadoEmpleado == 0 || $estadoJustificado || $tieneEntrada || $tieneSalida) ? 'disabled' : '' ?>>
-                                        <i class="bi bi-exclamation-circle"></i> </button>
+                                    <button type="submit" name="accion" value="Presente" class="btn btn-sm btn-success"
+                                        <?= ($estadoPresente || $estadoLicencia || $estadoJustificado || $tieneEntrada || $tieneSalida) ? 'disabled' : '' ?>>
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                    <button type="submit" name="accion" value="Ausente" class="btn btn-sm btn-danger"
+                                        <?= ($estadoAusente || $estadoLicencia || $estadoJustificado || $tieneEntrada || $tieneSalida) ? 'disabled' : '' ?>>
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                    <button type="submit" name="accion" value="Justificado" class="btn btn-sm btn-warning"
+                                        <?= ($estadoJustificado || $estadoLicencia || $tieneEntrada || $tieneSalida) ? 'disabled' : '' ?>>
+                                        <i class="bi bi-exclamation-circle"></i>
+                                    </button>
                                 </div>
                             </form>
                         <?php else: ?>
                             <span class="text-muted" style="font-size: 11px">Sin acción</span>
                         <?php endif; ?>
-
                     </td>
-                    <?php
-                    $esPresente = (isset($row['nombreEstado']) && $row['nombreEstado'] === 'Presente');
-                    ?>
                     <td>
                         <form method="POST" style="display:inline-block;">
                             <input type="hidden" name="idEmpleado" value="<?= $row['idempleado'] ?>">
-                            <button type="submit" name="accion" value="Entrada" class="btn btn-sm btn-primary" style="font-size: 10px" <?= (!$esPresente || isset($row['horaEntrada']) ? 'disabled' : '') ?>>Entrada</button>
-                            <button type="submit" name="accion" value="Salida" class="btn btn-sm btn-secondary" style="font-size: 10px" <?= (!$esPresente || isset($row['horaSalida']) ? 'disabled' : '') ?>>Salida</button>
+                            <button type="submit" name="accion" value="Entrada" class="btn btn-sm btn-primary" style="font-size: 10px"
+                                <?= (!$estadoPresente || $tieneEntrada ? 'disabled' : '') ?>>Entrada</button>
+                            <button type="submit" name="accion" value="Salida" class="btn btn-sm btn-secondary" style="font-size: 10px"
+                                <?= (!$estadoPresente || $tieneSalida ? 'disabled' : '') ?>>Salida</button>
                         </form>
                     </td>
                     <td style="font-size: 11px">
@@ -585,12 +690,6 @@ function generarObservacion($horaEsperadaEntrada, $horaEsperadaSalida, $horaEntr
         </tbody>
     </table>
     <?php
-    while ($empleado = $resultado->fetch_assoc()) {
-        if ($empleado['estado'] == 0) {
-            // Actualizar o crear asistencia con estado Licencia
-            guardarAsistenciaEstado($conexion, $empleado['idempleado'], null, $fechaHoy);
-        }
-    }
     ?>
     <nav>
         <ul class="pagination">

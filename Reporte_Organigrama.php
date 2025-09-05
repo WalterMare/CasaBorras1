@@ -193,7 +193,6 @@ $estadisticas = $organigramaService->obtenerEstadisticasEstructura();
                             </script>
                             <div class="text-center">
                                 <button class="btn btn-primary" onclick="exportarOrganigrama()"> Exportar</button>
-                                <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
                                 <a href="index.php" class="text-primary fw-bold">Volver al panel</a>
                             </div>
                             <script>

@@ -75,12 +75,12 @@ $resultado = Obtener_Resumen_Asistencia_Completo(
                             <h2 class="mt-4">Buscar</h2>
                             <form method="get" class="my-3">
                                 <div class="row">
-                                    <div class="col-md-5">
-                                        <label>Fecha Inicio:</label>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Fecha Inicio:</label>
                                         <input type="date" class="form-control" name="fechaInicio" value="<?= $fechaInicio ?>" required>
                                     </div>
-                                    <div class="col-md-5">
-                                        <label>Fecha Fin:</label>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Fecha Fin:</label>
                                         <input type="date" class="form-control" name="fechaFin" value="<?= $fechaFin ?>" required>
                                     </div>
                                     <div class="col-md-3">
@@ -109,11 +109,12 @@ $resultado = Obtener_Resumen_Asistencia_Completo(
                                             <option value="DESC" <?= ($ordenDireccion == 'DESC') ? 'selected' : '' ?>>Descendente</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-3 align-self-end">
+                                    <div class="col-md-3 align-self-end ">
                                         <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                                     </div>
 
                                 </div>
+                                <hr>
                             </form>
 
 

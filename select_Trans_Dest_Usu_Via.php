@@ -1,10 +1,9 @@
 <?php
 
-function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos',$filtro_documento = '')
+function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos', $filtro_documento = '', $filtro_id = '', $filtro_nombre = '', $filtro_apellido = '', $ordenar = 'apellido ASC')
 {
     $Listado = array();
 
-    // Base de la consulta
     $SQL = "
         SELECT 
             E.nombre, 
@@ -29,7 +28,6 @@ function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos',$filtro
             provincia P ON E.idprovincia = P.idprovincia
     ";
 
-    // Arreglo de condiciones dinámicas
     $condiciones = array();
 
     // Filtro por estado
@@ -46,17 +44,34 @@ function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos',$filtro
         $condiciones[] = "E.dni = " . intval($filtro_documento);
     }
 
-    // Unir condiciones si hay alguna
+    // Filtro por ID
+    if (!empty($filtro_id) && ctype_digit($filtro_id)) {
+        $condiciones[] = "E.idempleado = " . intval($filtro_id);
+    }
+
+    // Filtro por nombre
+    if (!empty($filtro_nombre)) {
+        $condiciones[] = "E.nombre LIKE '%" . mysqli_real_escape_string($vConexion, $filtro_nombre) . "%'";
+    }
+
+    // Filtro por apellido
+    if (!empty($filtro_apellido)) {
+        $condiciones[] = "E.apellido LIKE '%" . mysqli_real_escape_string($vConexion, $filtro_apellido) . "%'";
+    }
+
     if (!empty($condiciones)) {
         $SQL .= " WHERE " . implode(" AND ", $condiciones);
     }
 
-    $SQL .= " ORDER BY apellido;";
+    // Orden dinámico
+    $ordenValido = ['idempleado ASC', 'idempleado DESC', 'nombre ASC', 'nombre DESC', 'apellido ASC', 'apellido DESC'];
+    if (!in_array($ordenar, $ordenValido)) {
+        $ordenar = 'apellido ASC';
+    }
+    $SQL .= " ORDER BY $ordenar;";
 
-    // Ejecutar consulta
     $rs = mysqli_query($vConexion, $SQL);
 
-    // Procesar resultados
     $i = 0;
     while ($data = mysqli_fetch_array($rs)) {
         $Listado[$i]['NOMBRE'] = $data['nombre'];
@@ -75,4 +90,3 @@ function Listar_Reporte_2($vConexion, $usuario, $filtro_estado = 'todos',$filtro
 
     return $Listado;
 }
-

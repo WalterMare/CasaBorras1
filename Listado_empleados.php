@@ -20,10 +20,22 @@ require_once 'select_Trans_Dest_Usu_Via.php';
 // Obtener el filtro del estado desde el formulario (si está definido)
 $filtro_estado = isset($_GET['filtro_estado']) ? $_GET['filtro_estado'] : 'todos';
 $filtro_documento = isset($_GET['filtro_documento']) ? trim($_GET['filtro_documento']) : '';
+$filtro_id       = isset($_GET['filtro_id']) ? trim($_GET['filtro_id']) : '';
+$filtro_nombre   = isset($_GET['filtro_nombre']) ? trim($_GET['filtro_nombre']) : '';
+$filtro_apellido = isset($_GET['filtro_apellido']) ? trim($_GET['filtro_apellido']) : '';
+$ordenar         = isset($_GET['ordenar']) ? $_GET['ordenar'] : 'apellido ASC';
 
+$ListadoReporte = Listar_Reporte_2(
+  $MiConexion,
+  $_SESSION['Usuario_Nivel'],
+  $filtro_estado,
+  $filtro_documento,
+  $filtro_id,
+  $filtro_nombre,
+  $filtro_apellido,
+  $ordenar
+);
 
-// Llamar a la función con el filtro seleccionado
-$ListadoReporte = Listar_Reporte_2($MiConexion, $_SESSION['Usuario_Nivel'], $filtro_estado, $filtro_documento);
 $CantidadReportes = count($ListadoReporte);
 
 // Paginación
@@ -68,7 +80,7 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
 
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
- 
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 
@@ -86,6 +98,7 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
 
     <div class="pagetitle">
       <h1>Lista empleados registrados</h1>
+
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.php">Home</a></li>
@@ -102,7 +115,7 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
             <div class="card-body">
 
               <!-- Agregado del filtro activo-Inactivo-De Baja -->
-              <form method="GET" action="listado_empleados.php" class="mb-4">
+              <form method="GET" action="listado_empleados.php" class="mb-3 mt-3">
                 <div class="row">
                   <div class="col-md-4">
                     <label for="filtro_estado" class="form-label">Filtrar por estado:</label>
@@ -119,10 +132,42 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
                       value="<?php echo isset($_GET['filtro_documento']) ? htmlspecialchars($_GET['filtro_documento']) : ''; ?>"
                       min="0" step="1" pattern="\d*">
                   </div>
+
+                  <div class="col-md-3 mb-3">
+                    <label for="filtro_id" class="form-label">Filtrar por ID:</label>
+                    <input type="number" name="filtro_id" id="filtro_id" class="form-control"
+                      value="<?= isset($_GET['filtro_id']) ? htmlspecialchars($_GET['filtro_id']) : ''; ?>">
+                  </div>
+
+                  <div class="col-md-3">
+                    <label for="filtro_nombre" class="form-label">Filtrar por nombre:</label>
+                    <input type="text" name="filtro_nombre" id="filtro_nombre" class="form-control"
+                      value="<?= isset($_GET['filtro_nombre']) ? htmlspecialchars($_GET['filtro_nombre']) : ''; ?>">
+                  </div>
+
+                  <div class="col-md-3">
+                    <label for="filtro_apellido" class="form-label">Filtrar por apellido:</label>
+                    <input type="text" name="filtro_apellido" id="filtro_apellido" class="form-control"
+                      value="<?= isset($_GET['filtro_apellido']) ? htmlspecialchars($_GET['filtro_apellido']) : ''; ?>">
+                  </div>
+
+                  <div class="col-md-2">
+                    <label for="ordenar" class="form-label">Ordenar por:</label>
+                    <select name="ordenar" id="ordenar" class="form-select">
+                      <option value="idempleado ASC" <?= (isset($_GET['ordenar']) && $_GET['ordenar'] == 'idempleado ASC') ? 'selected' : ''; ?>>ID ↑</option>
+                      <option value="idempleado DESC" <?= (isset($_GET['ordenar']) && $_GET['ordenar'] == 'idempleado DESC') ? 'selected' : ''; ?>>ID ↓</option>
+                      <option value="nombre ASC" <?= (isset($_GET['ordenar']) && $_GET['ordenar'] == 'nombre ASC') ? 'selected' : ''; ?>>Nombre ↑</option>
+                      <option value="nombre DESC" <?= (isset($_GET['ordenar']) && $_GET['ordenar'] == 'nombre DESC') ? 'selected' : ''; ?>>Nombre ↓</option>
+                      <option value="apellido ASC" <?= (isset($_GET['ordenar']) && $_GET['ordenar'] == 'apellido ASC') ? 'selected' : ''; ?>>Apellido ↑</option>
+                      <option value="apellido DESC" <?= (isset($_GET['ordenar']) && $_GET['ordenar'] == 'apellido DESC') ? 'selected' : ''; ?>>Apellido ↓</option>
+                    </select>
+                  </div>
+
                   <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Buscar</button>
                   </div>
                 </div>
+                <hr>
               </form>
 
               <h5 class="card-title">Empleados cargados</h5>
@@ -220,24 +265,33 @@ $ListadoReportePagina = array_slice($ListadoReporte, $inicio, $porPagina);
                 </tbody>
 
               </table>
+              <?php
+              // Armamos el query string con todos los filtros y orden
+              $queryString = "&filtro_estado=" . urlencode($filtro_estado)
+                . "&filtro_documento=" . urlencode($filtro_documento)
+                . "&filtro_id=" . urlencode($filtro_id)
+                . "&filtro_nombre=" . urlencode($filtro_nombre)
+                . "&filtro_apellido=" . urlencode($filtro_apellido)
+                . "&ordenar=" . urlencode($ordenar);
+              ?>
               <!-- End Default Table Example -->
               <nav>
                 <ul class="pagination justify-content-center">
                   <?php if ($paginaActual > 1) { ?>
                     <li class="page-item">
-                      <a class="page-link" href="?pagina=<?php echo $paginaActual - 1; ?>&filtro_estado=<?php echo $filtro_estado; ?>">Anterior</a>
+                      <a class="page-link" href="?pagina=<?php echo $paginaActual - 1 . $queryString; ?>">Anterior</a>
                     </li>
                   <?php } ?>
 
                   <?php for ($i = 1; $i <= $totalPaginas; $i++) { ?>
                     <li class="page-item <?php echo ($i == $paginaActual) ? 'active' : ''; ?>">
-                      <a class="page-link" href="?pagina=<?php echo $i; ?>&filtro_estado=<?php echo $filtro_estado; ?>"><?php echo $i; ?></a>
+                      <a class="page-link" href="?pagina=<?php echo $i . $queryString; ?>"><?php echo $i; ?></a>
                     </li>
                   <?php } ?>
 
                   <?php if ($paginaActual < $totalPaginas) { ?>
                     <li class="page-item">
-                      <a class="page-link" href="?pagina=<?php echo $paginaActual + 1; ?>&filtro_estado=<?php echo $filtro_estado; ?>">Siguiente</a>
+                      <a class="page-link" href="?pagina=<?php echo $paginaActual + 1 . $queryString; ?>">Siguiente</a>
                     </li>
                   <?php } ?>
                 </ul>
