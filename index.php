@@ -137,13 +137,8 @@ try {
             <!-- Tarjeta de mensaje de bienvenida -->
             <div class="col-xxl-12 col-xl-12">
               <div class="card info-card customers-card">
-                <div class="card-body">
-                  <h5 class="card-title">Estás trabajando con el sistema de Casa Borras. <span>| ¡Muchos éxitos!</span></h5>
-                  <div class="d-flex align-items-center">
-                    <div class="ps-3">
-                      <img src="assets/img/img1.jpeg" alt="Logo de Casa Borras" class="img-fluid">
-                    </div>
-                  </div>
+                <div class="card-body text-center p-0">
+                  <img src="assets/img/banner.png" alt="Logo de Casa Borras" class="img-fluid w-100 rounded-top">
                 </div>
               </div>
             </div>
