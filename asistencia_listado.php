@@ -159,10 +159,38 @@ function guardarAsistenciaEstado($conexion, $idEmpleado, $idEstado, $fechaHoy)
         return $idAsistencia;
     }
 }*/
-function guardarAsistenciaEstado($conexion, $idEmpleado, $fechaHoy)
+function guardarAsistenciaEstado($conexion, $idEmpleado, $fechaHoy, $idEstadoManual = null)
 {
     $idAsistencia = null;
     $estadoNombre = 'Presente'; // por defecto
+    if ($idEstadoManual !== null) {
+        // Usar el estado elegido por el usuario, ignorar lógica automática
+        $idEstadoAsistencia = $idEstadoManual;
+
+        // Ver si existe asistencia hoy
+        $stmt = $conexion->prepare("SELECT idAsistencia FROM asistencia WHERE idEmpleado = ? AND fecha = ?");
+        $stmt->bind_param("is", $idEmpleado, $fechaHoy);
+        $stmt->execute();
+        $stmt->bind_result($idAsistencia);
+        $stmt->fetch();
+        $stmt->close();
+
+        if ($idAsistencia) {
+            $stmt = $conexion->prepare("UPDATE asistencia SET idEstado = ? WHERE idAsistencia = ?");
+            $stmt->bind_param("ii", $idEstadoAsistencia, $idAsistencia);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            $stmt = $conexion->prepare("INSERT INTO asistencia (idEmpleado, fecha, idEstado) VALUES (?, ?, ?)");
+            $stmt->bind_param("isi", $idEmpleado, $fechaHoy, $idEstadoAsistencia);
+            $stmt->execute();
+            $idAsistencia = $stmt->insert_id;
+            $stmt->close();
+        }
+
+        return $idAsistencia;
+    }
+
 
     // 1️⃣ Licencia aprobada
     $stmt = $conexion->prepare("
@@ -371,7 +399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         // Guardar estado y obtener idAsistencia
-        $idAsistencia = guardarAsistenciaEstado($conexion, $idEmpleado, $fechaHoy);
+        $idAsistencia = guardarAsistenciaEstado($conexion, $idEmpleado, $fechaHoy,$idEstado);
         // Si el estado NO es "Presente", limpiar eventos Entrada/Salida y observaciones
         $idEstadoPresente = obtenerIdEstado('Presente', $conexion);
         if ($idEstado !== $idEstadoPresente) {

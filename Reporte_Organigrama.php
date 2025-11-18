@@ -14,6 +14,7 @@ $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 require_once 'consulta_OrganigramaEstructural.php';
 
+
 $organigramaService = new OrganigramaService();
 $empleados = $organigramaService->obtenerEmpleadosActivosConJerarquia();
 list($jerarquia, $jefes) = $organigramaService->generarJerarquia($empleados);
@@ -101,6 +102,7 @@ $estadisticas = $organigramaService->obtenerEstadisticasEstructura();
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
+
 
                             <div id="chart"></div>
 
@@ -202,7 +204,7 @@ $estadisticas = $organigramaService->obtenerEstadisticasEstructura();
                                     const hoy = new Date();
                                     const fechaStr = hoy.toISOString().slice(0, 10); // "YYYY-MM-DD"
 
-                                    const nombreArchivo = `organigrama_${fechaStr}.png`;
+                                    const nombreArchivo = 'organigrama_${fechaStr}.png';
 
                                     saveSvgAsPng(svg, nombreArchivo, {
                                         scale: 2
