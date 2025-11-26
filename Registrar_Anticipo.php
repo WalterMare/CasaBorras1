@@ -15,8 +15,6 @@ require_once 'conexiondb.php';
 $conexion = ConexionBD();
 
 
-
-
 require_once 'select_empleado.php';
 $listadoEmpleado = Listar_empleado($conexion);
 $CantidadEmpleado = count($listadoEmpleado);

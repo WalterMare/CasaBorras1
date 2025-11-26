@@ -14,7 +14,7 @@ function Validar_Datos() {
         $vMensaje='Debes ingresar el monto. <br />';
     }
     if (empty($_POST['otorgante'])) {//strlen cuenta la cantidad de caracteres de la cadena
-        $vMensaje='Debes ingresar el monto. <br />';
+        $vMensaje='Debes ingresar los datos del empleado que otorga. <br />';
     }
 
     

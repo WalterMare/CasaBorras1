@@ -399,7 +399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         // Guardar estado y obtener idAsistencia
-        $idAsistencia = guardarAsistenciaEstado($conexion, $idEmpleado, $fechaHoy,$idEstado);
+        $idAsistencia = guardarAsistenciaEstado($conexion, $idEmpleado, $fechaHoy, $idEstado);
         // Si el estado NO es "Presente", limpiar eventos Entrada/Salida y observaciones
         $idEstadoPresente = obtenerIdEstado('Presente', $conexion);
         if ($idEstado !== $idEstadoPresente) {
@@ -466,8 +466,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         actualizarHorasTrabajadas($conexion, $idDetalleAsistencia);
     }
 
-    // Redirigir para evitar reenvío
-    header("Location: " . $_SERVER['PHP_SELF']);
+    // Mantener parámetros GET (como ?pagina=2)
+    $redirectUrl = $_SERVER['PHP_SELF'];
+
+    if (!empty($_GET)) {
+        $redirectUrl .= '?' . http_build_query($_GET);
+    }
+
+    header("Location: $redirectUrl");
     exit;
 }
 // Registrar automáticamente Licencias para hoy
@@ -610,7 +616,8 @@ function generarObservacion($horaEsperadaEntrada, $horaEsperadaSalida, $horaEntr
     <!-- Google Fonts -->
     <link href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Vendor CSS Files -->
     <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">

@@ -99,6 +99,8 @@ try {
   <!-- Google Fonts -->
   <link href="https://fonts.gstatic.com" rel="preconnect">
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -138,7 +140,7 @@ try {
             <div class="col-xxl-12 col-xl-12">
               <div class="card info-card customers-card">
                 <div class="card-body text-center p-0">
-                  <img src="assets/img/banner.png" alt="Logo de Casa Borras" class="img-fluid w-100 rounded-top">
+                  <img src="assets/img/banner3.png" alt="Logo de Casa Borras" class="img-fluid w-100 rounded-top">
                 </div>
               </div>
             </div>
@@ -146,17 +148,6 @@ try {
             <!-- Tarjetas de estadísticas de empleados -->
             <div class="col-xxl-4 col-xl-4">
               <div class="card info-card customers-card">
-                <div class="filter">
-                  <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                  <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <li class="dropdown-header text-start">
-                      <h6>Filtrar por</h6>
-                    </li>
-                    <li><a class="dropdown-item" href="#">Hoy</a></li>
-                    <li><a class="dropdown-item" href="#">Este mes</a></li>
-                    <li><a class="dropdown-item" href="#">Este año</a></li>
-                  </ul>
-                </div>
                 <div class="card-body">
                   <h5 class="card-title">Total de Empleados</h5>
                   <div class="d-flex align-items-center">

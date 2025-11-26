@@ -9,17 +9,18 @@ session_start();
 
 //si tengo vacio mi elemento de sesion me tiene q redireccionar al login.. 
 //al cerrarsesion para que mate todo de la sesion y el se encarga de ubicar en el login
-if (empty($_SESSION['Usuario_Nombre']) ) {
+if (empty($_SESSION['Usuario_Nombre'])) {
   header('Location: cerrarsesion.php');
-  exit;}
+  exit;
+}
 
-  require_once 'select_relacion.php';
-  $listadoRelacion = Listar_relacion($conexion);
-  $CantidadRelacion = count($listadoRelacion);
+require_once 'select_relacion.php';
+$listadoRelacion = Listar_relacion($conexion);
+$CantidadRelacion = count($listadoRelacion);
 
-  require_once 'select_empleado.php';
-  $listadoEmpleado = Listar_empleado($conexion);
-  $CantidadEmpleado = count($listadoEmpleado);
+require_once 'select_empleado.php';
+$listadoEmpleado = Listar_empleado($conexion);
+$CantidadEmpleado = count($listadoEmpleado);
 ?>
 
 
@@ -41,7 +42,9 @@ if (empty($_SESSION['Usuario_Nombre']) ) {
   <!-- Google Fonts -->
   <link href="https://fonts.gstatic.com" rel="preconnect">
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
   <!-- Vendor CSS Files -->
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
@@ -66,11 +69,11 @@ if (empty($_SESSION['Usuario_Nombre']) ) {
 <body>
 
   <!-- ======= Header ======= -->
-  <?php include_once 'partes/header.php'?>
+  <?php include_once 'partes/header.php' ?>
   <!-- End Header -->
   <!-- ======= Sidebar ======= -->
-  <?php include_once 'partes/menu.php';?>
-  
+  <?php include_once 'partes/menu.php'; ?>
+
   <!-- End Sidebar-->
   <main id="main" class="main">
 
@@ -137,7 +140,7 @@ if (empty($_SESSION['Usuario_Nombre']) ) {
                   <label for="dni" class="form-label">DNI (*)</label>
                   <input type="number" class="form-control" id="dni" name="dni">
                 </div>
-                
+
                 <div class="col-6">
                   <label name="selector" for="selector" class="form-label">Relacion (*)</label>
                   <select class="form-select" aria-label="Selector" id="selector" name="relacion"> <!--combobox ya cargado con las marcas traidas desde la bd -->
@@ -182,7 +185,7 @@ if (empty($_SESSION['Usuario_Nombre']) ) {
                       }
                     ?>
                       <option value="<?php echo $listadoEmpleado[$i]['ID']; ?>" <?php echo $selected; ?>>
-                        <?php echo $listadoEmpleado[$i]['NOMBRE']." ".$listadoEmpleado[$i]['APELLIDO']; ?>
+                        <?php echo $listadoEmpleado[$i]['NOMBRE'] . " " . $listadoEmpleado[$i]['APELLIDO']; ?>
                       </option>
                     <?php } ?>
                   </select>
@@ -207,7 +210,7 @@ if (empty($_SESSION['Usuario_Nombre']) ) {
 
 
   <!-- ======= Footer ======= -->
-  <?php include_once 'partes/footer.php'?>
+  <?php include_once 'partes/footer.php' ?>
   <!-- End Footer -->
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
