@@ -8,6 +8,7 @@ if (empty($_SESSION['Usuario_Nombre'])) {
 }
 date_default_timezone_set('America/Argentina/Buenos_Aires');
 
+
 require_once 'conexiondb.php';
 try {
     $conexion = ConexionBD();
@@ -66,99 +67,7 @@ if ($idEstadoSinRegistrar) {
     $stmt->close();
 }
 
-/* Función para crear o actualizar asistencia y detalle_asistencia
-function guardarAsistenciaEstado($conexion, $idEmpleado, $idEstado, $fechaHoy)
-{
-    $idAsistencia = null;
-    $estadoEmpleado = null;
 
-    // Obtener estado del empleado
-    $stmt = $conexion->prepare("SELECT estado FROM empleado WHERE idempleado = ?");
-    $stmt->bind_param("i", $idEmpleado);
-    $stmt->execute();
-    $stmt->bind_result($estadoEmpleado);
-    $stmt->fetch();
-    $stmt->close();
-
-    if ($estadoEmpleado == 0) {
-        // Buscar idEstado para 'Licencia'
-        $stmt = $conexion->prepare("SELECT idEstado FROM estadoasistencia WHERE nombreEstado = 'Licencia'");
-        $stmt->execute();
-        $res = $stmt->get_result();
-        if ($rowEstado = $res->fetch_assoc()) {
-            $idEstadoLicencia = $rowEstado['idEstado'];
-        } else {
-            die("Estado 'Licencia' no encontrado en la base de datos.");
-        }
-        $stmt->close();
-
-        // Buscar asistencia existente para licencia
-        $stmt = $conexion->prepare("SELECT idAsistencia FROM asistencia WHERE idEmpleado = ? AND fecha = ?");
-        $stmt->bind_param("is", $idEmpleado, $fechaHoy);
-        $stmt->execute();
-        $stmt->bind_result($idAsistencia);
-        $stmt->fetch();
-        $stmt->close();
-
-        if ($idAsistencia) {
-            // Actualizar estado a Licencia
-
-            $stmt = $conexion->prepare("UPDATE asistencia SET idEstado = ? WHERE idAsistencia = ?");
-            $stmt->bind_param("ii", $idEstadoLicencia, $idAsistencia);
-            $stmt->execute();
-            $stmt->close();
-        } else {
-            // Insertar asistencia con estado Licencia
-
-            $stmt = $conexion->prepare("INSERT INTO asistencia (idEmpleado, fecha, idEstado) VALUES (?, ?, ?)");
-            $stmt->bind_param("isi", $idEmpleado, $fechaHoy, $idEstadoLicencia);
-            $stmt->execute();
-            $idAsistencia = $stmt->insert_id;
-            $stmt->close();
-
-            // Insertar detalle_asistencia con valores por defecto
-            $stmt = $conexion->prepare("INSERT INTO detalle_asistencia (idAsistencia, horasTrabajadas, observaciones) VALUES (?, '00:00:00', '')");
-            $stmt->bind_param("i", $idAsistencia);
-            $stmt->execute();
-            $stmt->close();
-        }
-
-        return $idAsistencia;
-    } else {
-        // Caso normal para otros estados
-
-        // Buscar asistencia existente
-        $stmt = $conexion->prepare("SELECT idAsistencia FROM asistencia WHERE idEmpleado = ? AND fecha = ?");
-        $stmt->bind_param("is", $idEmpleado, $fechaHoy);
-        $stmt->execute();
-        $stmt->bind_result($idAsistencia);
-        $stmt->fetch();
-        $stmt->close();
-
-        if ($idAsistencia) {
-            // Actualizar estado
-            $stmt = $conexion->prepare("UPDATE asistencia SET idEstado = ? WHERE idAsistencia = ?");
-            $stmt->bind_param("ii", $idEstado, $idAsistencia);
-            $stmt->execute();
-            $stmt->close();
-        } else {
-            // Insertar asistencia
-            $stmt = $conexion->prepare("INSERT INTO asistencia (idEmpleado, fecha, idEstado) VALUES (?, ?, ?)");
-            $stmt->bind_param("isi", $idEmpleado, $fechaHoy, $idEstado);
-            $stmt->execute();
-            $idAsistencia = $stmt->insert_id;
-            $stmt->close();
-
-            // Insertar detalle_asistencia con valores por defecto
-            $stmt = $conexion->prepare("INSERT INTO detalle_asistencia (idAsistencia, horasTrabajadas, observaciones) VALUES (?, '00:00:00', '')");
-            $stmt->bind_param("i", $idAsistencia);
-            $stmt->execute();
-            $stmt->close();
-        }
-
-        return $idAsistencia;
-    }
-}*/
 function guardarAsistenciaEstado($conexion, $idEmpleado, $fechaHoy, $idEstadoManual = null)
 {
     $idAsistencia = null;
