@@ -382,6 +382,12 @@ function registrarEventoAsistencia($conexion, $idAsistencia, $tipoEvento, $horaE
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Mantener parámetros GET (como ?pagina=2)
+    $redirectUrl = $_SERVER['PHP_SELF'];
+
+    if (!empty($_GET)) {
+        $redirectUrl .= '?' . http_build_query($_GET);
+    }
     $idEmpleado = intval($_POST['idEmpleado']);
     $accion = $_POST['accion']; // Puede ser: Presente, Ausente, Justificado, Entrada, Salida
 
@@ -425,6 +431,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Para registrar Entrada o Salida, primero asegurar que exista asistencia con estado 'Presente' (o similar)
         // Podrías requerir que el empleado esté marcado Presente para registrar entrada/salida, o crear asistencia si no existe
 
+
+
         // Buscar asistencia para hoy
         $stmt = $conexion->prepare("SELECT idAsistencia FROM asistencia WHERE idEmpleado = ? AND fecha = ?");
         $stmt->bind_param("is", $idEmpleado, $fechaHoy);
@@ -459,18 +467,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_result($horaEsperadaEntrada, $horaEsperadaSalida);
         $stmt->fetch();
         $stmt->close();
+
+        // ==========================
+        // CONTROL DE ENTRADA / SALIDA
+        // ==========================
+
+        // Verificar eventos registrados hoy
+        $stmt = $conexion->prepare("
+    SELECT 
+        SUM(CASE WHEN tipoEvento = 'Entrada' THEN 1 ELSE 0 END) AS entradas,
+        SUM(CASE WHEN tipoEvento = 'Salida' THEN 1 ELSE 0 END) AS salidas
+    FROM evento_asistencia ea
+    INNER JOIN detalle_asistencia da ON ea.idDetalleAsistencia = da.idDetalleAsistencia
+    WHERE da.idAsistencia = ?
+");
+        $stmt->bind_param("i", $idAsistencia);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $ev = $res->fetch_assoc();
+        $stmt->close();
+
+        $entradasHoy = intval($ev['entradas']);
+        $salidasHoy  = intval($ev['salidas']);
+
+        // ❌ No permitir SALIDA sin ENTRADA
+        if ($accion === 'Salida' && $entradasHoy == 0) {
+            $_SESSION['error'] = "Debe registrar ENTRADA antes de una SALIDA.";
+            header("Location: $redirectUrl");
+            exit;
+        }
+
+        // ❌ No permitir más de una ENTRADA
+        if ($accion === 'Entrada' && $entradasHoy >= 1) {
+            $_SESSION['error'] = "Ya existe una ENTRADA registrada hoy.";
+            header("Location: $redirectUrl");
+            exit;
+        }
+
+        // ❌ No permitir más de una SALIDA
+        if ($accion === 'Salida' && $salidasHoy >= 1) {
+            $_SESSION['error'] = "Ya existe una SALIDA registrada hoy.";
+            header("Location: $redirectUrl");
+            exit;
+        }
+
         // Registrar evento Entrada o Salida y obtener idDetalleAsistencia
         $idDetalleAsistencia = registrarEventoAsistencia($conexion, $idAsistencia, $accion, $horaEsperadaEntrada, $horaEsperadaSalida);
 
         // Actualizar horas trabajadas
         actualizarHorasTrabajadas($conexion, $idDetalleAsistencia);
-    }
-
-    // Mantener parámetros GET (como ?pagina=2)
-    $redirectUrl = $_SERVER['PHP_SELF'];
-
-    if (!empty($_GET)) {
-        $redirectUrl .= '?' . http_build_query($_GET);
     }
 
     header("Location: $redirectUrl");
@@ -631,6 +676,13 @@ function generarObservacion($horaEsperadaEntrada, $horaEsperadaSalida, $horaEntr
 </head>
 
 <body class="bg-light">
+    <?php if (!empty($_SESSION['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            <?= htmlspecialchars($_SESSION['error']); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
 
     <h3>Asistencia de Hoy (<?= htmlspecialchars($fechaHoy) ?>)</h3>
 
