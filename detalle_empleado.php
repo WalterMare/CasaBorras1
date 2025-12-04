@@ -111,36 +111,74 @@ function Obtener_Vacaciones_Empleado_Por_Periodo($vConexion, $idEmpleado, $idPre
     $filaPeriodo = mysqli_fetch_assoc($resultadoPeriodo);
 
     if (!$filaPeriodo) {
-        return []; // No se encontró el período
+        return [
+            'detalle' => [],
+            'dias_vacaciones' => 0
+        ];
     }
 
-    // Separar las fechas de inicio y fin del período (asumiendo formato 'YYYY-MM-DD a YYYY-MM-DD')
+    // Separar fechas del período (formato "YYYY-MM-DD a YYYY-MM-DD")
     $partes = explode(' a ', $filaPeriodo['periodo']);
     if (count($partes) != 2) {
-        return []; // Formato incorrecto
+        return [
+            'detalle' => [],
+            'dias_vacaciones' => 0
+        ];
     }
-    $fechaInicioPeriodo = $partes[0];
-    $fechaFinPeriodo = $partes[1];
 
-    // Consultar vacaciones que se crucen con el período
-    $consultaVacaciones = "SELECT fecha_inicio, fecha_fin, cantidad_dias, estado
+    $inicioPeriodo = $partes[0];
+    $finPeriodo = $partes[1];
+
+    // Buscar vacaciones aprobadas que se crucen con el período
+    $consultaVacaciones = "SELECT fecha_inicio, fecha_fin, cantidad_dias,estado
                            FROM vacaciones
                            WHERE idempleado = ?
                            AND fecha_inicio <= ?
                            AND fecha_fin >= ?
-                           ORDER BY fecha_inicio DESC";
+                           AND estado = 'Aprobado'
+                           ORDER BY fecha_inicio ASC";
 
     $stmtVac = mysqli_prepare($vConexion, $consultaVacaciones);
-    mysqli_stmt_bind_param($stmtVac, "iss", $idEmpleado, $fechaFinPeriodo, $fechaInicioPeriodo);
+    mysqli_stmt_bind_param($stmtVac, "iss", $idEmpleado, $finPeriodo, $inicioPeriodo);
     mysqli_stmt_execute($stmtVac);
     $resultadoVac = mysqli_stmt_get_result($stmtVac);
 
     $vacaciones = [];
+    $totalDiasAplicables = 0;
+
     while ($fila = mysqli_fetch_assoc($resultadoVac)) {
+
+        // Calcular solapamiento real entre vacaciones y período
+        $inicioVac = $fila['fecha_inicio'];
+        $finVac = $fila['fecha_fin'];
+
+        // El inicio aplicable es el más reciente
+        $inicioAplicable = max($inicioVac, $inicioPeriodo);
+
+        // El fin aplicable es el más temprano
+        $finAplicable = min($finVac, $finPeriodo);
+
+        // Cálculo de días dentro del período
+        if ($inicioAplicable <= $finAplicable) {
+            $dias = (strtotime($finAplicable) - strtotime($inicioAplicable)) / 86400 + 1;
+        } else {
+            $dias = 0;
+        }
+
+        $totalDiasAplicables += $dias;
+
+        // Guardamos el detalle
+        $fila['dias_en_periodo'] = $dias;
         $vacaciones[] = $fila;
     }
-    return $vacaciones;
+
+    return [
+        'detalle' => $vacaciones,
+        'dias_vacaciones' => $totalDiasAplicables
+    ];
 }
+
+
 function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
 {
     // 1. Obtener el periodo desde la tabla preliquidacion
@@ -332,6 +370,10 @@ $infoJornada = Obtener_Detalles_Jornada_Empleado($conexion, $idEmpleado, $idPrel
 $detalle = Obtener_Detalles_Empleado($conexion, $idEmpleado, $idPreliquidacion);
 $horasExtras = Obtener_Horas_Extras_Empleado($conexion, $idEmpleado, $idPreliquidacion);
 $licencias = Listar_Licencia_Empleado_preliquidacion($conexion, $idEmpleado, $idPreliquidacion);
+// Asegurar que $licencias sea un array aunque no haya registros
+if (!is_array($licencias)) {
+    $licencias = [];
+}
 $viaticos = Listar_Viaticos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
 $sanciones = Listar_Sancion_Empleado_Preliquidacion($conexion, $idEmpleado, $idPreliquidacion);
 $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $idPreliquidacion);
@@ -453,7 +495,8 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                                                 <th>Tipo</th>
                                                 <th>Inicio</th>
                                                 <th>Fin</th>
-                                                <th>Días</th>
+                                                <th>Días Totales</th>
+                                                <th>Días Período</th>
                                                 <th>Estado</th>
                                             </tr>
                                         </thead>
@@ -463,7 +506,8 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                                                     <td><?php echo htmlspecialchars($lic['NOMBRETIPO']); ?></td>
                                                     <td><?php echo htmlspecialchars($lic['FECHAINICIO']); ?></td>
                                                     <td><?php echo htmlspecialchars($lic['FECHAFIN']); ?></td>
-                                                    <td><?php echo htmlspecialchars($lic['DIAS']); ?></td>
+                                                    <td><?php echo htmlspecialchars($lic['DIAS_TOTALES']); ?></td>
+                                                    <td><?php echo htmlspecialchars($lic['DIAS_PERIODO']); ?></td>
                                                     <td><?php echo htmlspecialchars($lic['ESTADO']); ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
@@ -477,33 +521,47 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                             <div class="mb-4">
                                 <h5 class="text-secondary"><i class="fas fa-gavel"></i> Vacaciones Detalladas</h5>
 
-                                <?php if (!empty($vacaciones)): ?>
+                                <?php if (!empty($vacaciones['detalle'])): ?>
                                     <table class="table table-bordered table-hover">
                                         <thead class="table-secondary">
                                             <tr>
                                                 <th>Fecha Inicio</th>
                                                 <th>Fecha Fin</th>
-                                                <th>Días</th>
+                                                <th>Días Solicitados</th>
+                                                <th>Días en Período</th>
                                                 <th>Estado</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php foreach ($vacaciones as $vac): ?>
+
+                                            <?php foreach ($vacaciones['detalle'] as $vac): ?>
                                                 <tr>
                                                     <td><?php echo date('d/m/Y', strtotime($vac['fecha_inicio'])); ?></td>
                                                     <td><?php echo date('d/m/Y', strtotime($vac['fecha_fin'])); ?></td>
-                                                    <td><?php echo htmlspecialchars($vac['cantidad_dias']); ?></td>
-                                                    <td><?php echo htmlspecialchars($vac['estado']); ?></td>
+
+                                                    <td><?php echo $vac['cantidad_dias']; ?></td>
+
+                                                    <td>
+                                                        <strong><?php echo $vac['dias_en_periodo']; ?></strong>
+                                                    </td>
+
+                                                    <td><?php echo $vac['estado']; ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
+
                                         </tbody>
                                     </table>
+
+                                    <p class="mt-2"><strong>Total días en este período:</strong>
+                                        <?php echo $vacaciones['dias_vacaciones']; ?>
+                                    </p>
+
                                 <?php else: ?>
                                     <p class="text-muted">No registra vacaciones.</p>
                                 <?php endif; ?>
 
-
                             </div>
+
 
                             <div class="mb-4">
                                 <h5 class="text-success"><i class="fas fa-money-bill-wave"></i> Viáticos</h5>
@@ -636,7 +694,7 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
 
 
                         <div class="mb-4">
-                            <h5 class="text-danger"><i class="fas fa-gavel"></i> Sanciones activas</h5>
+                            <h5 class="text-danger"><i class="fas fa-gavel"></i> Sanciones</h5>
                             <?php if (!empty($sanciones)): ?>
                                 <table class="table table-bordered table-hover">
                                     <thead class="table-danger">
@@ -644,7 +702,8 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                                             <th>Tipo</th>
                                             <th>Inicio</th>
                                             <th>Fin</th>
-                                            <th>Días</th>
+                                            <th>Cant. Dias Totales</th>
+                                            <th>Días comprendidos en Período</th>
                                             <th>Estado</th>
                                         </tr>
                                     </thead>
@@ -656,11 +715,12 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                                                 <td><?php echo htmlspecialchars($san['NOMBRETIPO']); ?></td>
                                                 <td><?php echo htmlspecialchars($san['FECHAINICIO']); ?></td>
                                                 <td><?php echo htmlspecialchars($san['FECHAFIN']); ?></td>
-                                                <td><?php echo htmlspecialchars($san['DIAS']); ?></td>
+                                                <td><?php echo htmlspecialchars($san['DIAS_TOTALES']); ?></td>
+                                                <td><?php echo htmlspecialchars($san['DIAS_PERIODO']); ?></td>
                                                 <td><?php echo htmlspecialchars($san['ESTADO']); ?></td>
                                             </tr>
 
-                                        <?php $diasSuspension += (int)$san['DIAS'];
+                                        <?php $diasSuspension += (int)$san['DIAS_PERIODO'];
                                         endforeach; ?>
                                     </tbody>
                                 </table>
@@ -671,32 +731,51 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
 
 
                         <?php
-                        // Total de días a descontar
-                        $diasADescontar = $infoJornada['inasistencias'] + $diasSuspension;
-                        $basico = $detalle['sueldo_basico'];
-                        // Valor día
-                        $valorDia = ($infoJornada['diasLaboralesProgramados'] > 0)
-                            ? $detalle['sueldo_basico'] / $infoJornada['diasLaboralesProgramados']
-                            : 0;
+                        // 1. Vacaciones
+                        $vacData = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $idEmpleado, $idPreliquidacion);
+                        $diasVacacionesAprobadas = $vacData['dias_vacaciones'];  // total en el período
 
-                        // Descuento total
+                        // 2. Días totales posibles
+                        $diasLaborales = $infoJornada['diasLaboralesProgramados'];
+
+                        // 3. Días trabajados + vacaciones
+                        $diasPagados = $infoJornada['diasTrabajados'] + $diasVacacionesAprobadas;
+
+                        // 4. Licencias no pagas
+                        $clasifLic = Clasificar_Dias_Licencias($licencias);
+                        $diasLicenciasNoPagas = $clasifLic['dias_no_pagos'];
+
+                        // 5. Suspensiones en período
+                        $sanciones = Listar_Sancion_Empleado_Preliquidacion($conexion, $idEmpleado, $idPreliquidacion);
+                        $diasSuspension = 0;
+                        foreach ($sanciones as $sancion) {
+                            $diasSuspension += $sancion['DIAS_PERIODO'];
+                        }
+
+                        // 6. Total días a descontar
+                        $diasADescontar = max(0, ($diasLaborales - $diasPagados) + $diasLicenciasNoPagas + $diasSuspension);
+
+                        // 7. Valor del día
+                        $basico = $detalle['sueldo_basico'];
+                        $valorDia = ($diasLaborales > 0) ? $basico / $diasLaborales : 0;
+
+                        // 8. Descuento total por días no trabajados
                         $descuentoTotal = $valorDia * $diasADescontar;
 
-                        // Sueldo ajustado después de descuentos por inasistencias/suspensiones (mínimo 0)
-                        $sueldoAjustado = max(0, $detalle['sueldo_basico'] - $descuentoTotal);
+                        // 9. Sueldo ajustado después de descuentos por inasistencias, licencias no pagas y suspensiones
+                        $sueldoAjustado = max(0, $basico - $descuentoTotal);
 
-                        // Sueldo bruto sumando horas extras
+                        // 10. Sueldo bruto sumando horas extras
                         $sueldoBruto = $sueldoAjustado + $totalMonto;
 
-                        // Porcentajes
+                        // 11. Porcentajes de descuentos legales
                         $porcentajeObraSocial = 0.03;  // 3%
                         $porcentajeJubilacion = 0.11;  // 11%
 
-                        // Descuentos sobre sueldo ajustado, nunca sobre negativo
-                        $descuentoObraSocial = $basico * $porcentajeObraSocial;
-                        $descuentoJubilacion = $basico * $porcentajeJubilacion;
+                        $descuentoObraSocial = $sueldoAjustado * $porcentajeObraSocial;
+                        $descuentoJubilacion = $sueldoAjustado * $porcentajeJubilacion;
 
-                        // 7. Descuento por embargos
+                        // 12. Descuentos por embargos
                         $descuentoEmbargos = 0;
                         if (!empty($embargos)) {
                             foreach ($embargos as $em) {
@@ -708,12 +787,16 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                             }
                         }
 
-                        // Total descuentos
+                        // 13. Días efectivamente a cobrar
+                        $diasACobrar = $diasLaborales - $diasADescontar;
+
+                        // 14. Total descuentos
                         $totalDescuentos = $descuentoTotal + $descuentoObraSocial + $descuentoJubilacion + $descuentoEmbargos;
 
-                        // Sueldo neto final, mínimo 0
-                        $sueldoNeto = max(0, $sueldoBruto - $descuentoObraSocial - $descuentoJubilacion - $descuentoEmbargos);
+                        // 15. Sueldo neto final
+                        $sueldoNeto = max(0, $sueldoBruto - $totalDescuentos);
                         ?>
+
 
 
                         <div style="max-width: 500px; margin: 20px auto; padding: 20px; border: 1px solid #999; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5; background-color: #f9f9f9;">
@@ -726,16 +809,29 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                                         <td style="text-align: right;">$<?php echo $detalle['sueldo_basico']; ?></td>
                                     </tr>
                                     <tr>
+                                        <td><strong>Días Laborales en Período:</strong></td>
+                                        <td style="text-align: right;"><?php echo $infoJornada['diasLaboralesProgramados']; ?></td>
+                                    </tr>
+                                    <tr>
                                         <td><strong>Días Inasistidos:</strong></td>
                                         <td style="text-align: right;"><?php echo $infoJornada['inasistencias']; ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Días de Vacaciones:</strong></td>
+                                        <td style="text-align: right;"><?php echo $diasVacacionesAprobadas; ?></td>
                                     </tr>
                                     <tr>
                                         <td><strong>Días de Suspensión:</strong></td>
                                         <td style="text-align: right;"><?php echo $diasSuspension; ?></td>
                                     </tr>
+                                    <tr>
+                                        <td><strong>Días Licencias NO Pagas:</strong></td>
+                                        <td style="text-align: right;"><?php echo $diasLicenciasNoPagas; ?></td>
+                                    </tr>
+
                                     <tr style="border-top: 1px solid #ccc;">
-                                        <td><strong>Total días a descontar:</strong></td>
-                                        <td style="text-align: right;"><?php echo $diasADescontar; ?></td>
+                                        <td><strong>Total días a cobrar:</strong></td>
+                                        <td style="text-align: right;"><?php echo $diasACobrar; ?></td>
                                     </tr>
                                     <tr>
                                         <td><strong>Valor por día:</strong></td>

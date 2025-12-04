@@ -183,12 +183,22 @@ function calcularDiasPorAntiguedad($fechaIngreso)
         <div class="mb-3">
             <label>Cantidad de días seleccionados</label>
             <input type="number" name="cantidad_dias" id="cantidad_dias" class="form-control" value="<?= $cantidad_dias ?>" readonly>
+            <div class="invalid-feedback" id="diasFeedback" style="display:none;"></div>
+
         </div>
 
         <div class="mb-3">
             <label>Cantidad de días disponibles según antiguedad</label>
             <input type="number" name="dias_antiguedad" id="dias_antiguedad" class="form-control" value="<?= htmlspecialchars($diasAntiguedad) ?>" readonly>
-
+            <?php
+            // antes de renderizar el form: calcular $ultimoRestante
+            $ultimoRestante = $diasAntiguedad ?? 0;
+            if (!empty($listadoVacaciones) && count($listadoVacaciones) > 0) {
+                // asumimos que el primer registro de $listadoVacaciones es el más reciente
+                $ultimoRestante = intval($listadoVacaciones[0]['VACACIONES_RESTANTES']);
+            }
+            ?>
+            <input type="hidden" id="vac_rest_table" value="<?= htmlspecialchars($ultimoRestante) ?>">
         </div>
 
         <div class="mb-3">
@@ -196,7 +206,8 @@ function calcularDiasPorAntiguedad($fechaIngreso)
             <textarea name="observaciones" class="form-control"></textarea>
         </div>
 
-        <button type="submit" name="guardarVacacion" class="btn btn-primary">Guardar</button>
+        <button type="submit" name="guardarVacacion" id="btnGuardar" class="btn btn-primary">Guardar</button>
+
 
     </form>
     <?php if ($CantidadVaca != 0 && $CantidadVaca != null) { ?>
@@ -255,32 +266,90 @@ function calcularDiasPorAntiguedad($fechaIngreso)
     <?php } ?>
 
     <script>
-        // Obtener los elementos
-        const fechaInicio = document.getElementById('fecha_inicio');
-        const fechaFin = document.getElementById('fecha_fin');
-        const cantidadDias = document.getElementById('cantidad_dias');
+        document.addEventListener('DOMContentLoaded', function() {
+            const fechaInicio = document.getElementById('fecha_inicio');
+            const fechaFin = document.getElementById('fecha_fin');
+            const cantidadDias = document.getElementById('cantidad_dias');
+            const diasDisponibles = document.getElementById('dias_antiguedad');
+            const btnGuardar = document.getElementById('btnGuardar');
+            const diasFeedback = document.getElementById('diasFeedback');
+            const vacRestTable = document.getElementById('vac_rest_table');
 
-        // Función para calcular los días
-        function calcularDias() {
-            if (fechaInicio.value && fechaFin.value) {
-                const inicio = new Date(fechaInicio.value);
-                const fin = new Date(fechaFin.value);
+            if (!fechaInicio || !fechaFin || !cantidadDias || !diasDisponibles || !btnGuardar || !vacRestTable) {
+                console.warn('Faltan elementos para validar días. Revisa los ids.');
+                return;
+            }
 
-                if (fin >= inicio) {
-                    // Calcular la diferencia en milisegundos
-                    const diferencia = fin - inicio;
-                    // Convertir a días (+1 para incluir el día de inicio)
-                    cantidadDias.value = Math.floor(diferencia / (1000 * 60 * 60 * 24)) + 1;
-                } else {
+            function calcularDias() {
+                const inicioVal = fechaInicio.value;
+                const finVal = fechaFin.value;
+
+                if (!inicioVal || !finVal) {
                     cantidadDias.value = 0;
+                    validarDias();
+                    return;
+                }
+
+                const inicio = new Date(inicioVal);
+                const fin = new Date(finVal);
+
+                if (isNaN(inicio.getTime()) || isNaN(fin.getTime()) || fin < inicio) {
+                    cantidadDias.value = 0;
+                    validarDias();
+                    return;
+                }
+
+                const diferencia = fin.getTime() - inicio.getTime();
+                const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24)) + 1;
+                cantidadDias.value = dias;
+                validarDias();
+            }
+
+            function validarDias() {
+                const seleccionados = parseInt(cantidadDias.value, 10) || 0;
+                const disponibles = parseInt(diasDisponibles.value, 10);
+                const desdeTabla = parseInt(vacRestTable.value, 10);
+
+                const disponiblesSafe = isNaN(disponibles) ? Infinity : disponibles; // si no está, no restringe
+                const desdeTablaSafe = isNaN(desdeTabla) ? Infinity : desdeTabla;
+
+                // tomamos el tope más restrictivo entre antiguedad y tabla
+                const maxPermitido = Math.min(disponiblesSafe, desdeTablaSafe);
+
+                if (seleccionados > maxPermitido) {
+                    cantidadDias.classList.add('is-invalid');
+                    cantidadDias.classList.remove('is-valid');
+                    btnGuardar.disabled = true;
+
+                    if (diasFeedback) {
+                        diasFeedback.textContent = `Supera los días disponibles. Máximo permitido: ${maxPermitido}.`;
+                        diasFeedback.style.display = 'block';
+                    }
+                } else {
+                    cantidadDias.classList.remove('is-invalid');
+                    cantidadDias.classList.add('is-valid');
+                    btnGuardar.disabled = false;
+
+                    if (diasFeedback) {
+                        diasFeedback.textContent = '';
+                        diasFeedback.style.display = 'none';
+                    }
                 }
             }
-        }
 
-        // Ejecutar la función cuando cambien las fechas
-        fechaInicio.addEventListener('change', calcularDias);
-        fechaFin.addEventListener('change', calcularDias);
+            fechaInicio.addEventListener('change', calcularDias);
+            fechaFin.addEventListener('change', calcularDias);
+
+            // revalidar al cargar (por si ya vienen fechas)
+            calcularDias();
+
+            // si actualizás vac_rest_table por JS/AJAX, escuchá cambios:
+            vacRestTable.addEventListener('change', validarDias);
+            vacRestTable.addEventListener('input', validarDias);
+        });
     </script>
+
+
 </body>
 
 </html>

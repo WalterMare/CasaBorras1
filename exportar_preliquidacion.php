@@ -15,6 +15,21 @@ if (!isset($_GET['id'])) {
 }
 $idPreliquidacion = intval($_GET['id']);
 
+// --- obtener periodo de la preliquidacion para usar en todo el export ---
+$consultaPeriodo = "SELECT periodo FROM preliquidacion WHERE idpreliquidacion = ?";
+$stmtPeriodo = mysqli_prepare($conexion, $consultaPeriodo);
+mysqli_stmt_bind_param($stmtPeriodo, "i", $idPreliquidacion);
+mysqli_stmt_execute($stmtPeriodo);
+$rsPeriodo = mysqli_stmt_get_result($stmtPeriodo);
+$filaPeriodo = mysqli_fetch_assoc($rsPeriodo);
+
+if (!$filaPeriodo || empty($filaPeriodo['periodo'])) {
+    throw new Exception("Período inválido");
+}
+
+list($periodoInicio, $periodoFin) = array_map('trim', explode(' a ', $filaPeriodo['periodo']));
+
+
 
 // --- 1. Consultar todos los empleados de la preliquidación ---
 $consultaEmpleados = "SELECT dp.idEmpleado, e.nombre, e.apellido, e.dni
@@ -117,6 +132,7 @@ function Obtener_Horas_Extras_Empleado($conexion, $idEmpleado, $idPreliquidacion
     return $horasExtras;
 }
 
+
 function Obtener_Vacaciones_Empleado_Por_Periodo($vConexion, $idEmpleado, $idPreliquidacion)
 {
     // Obtener el periodo de la preliquidacion
@@ -128,24 +144,22 @@ function Obtener_Vacaciones_Empleado_Por_Periodo($vConexion, $idEmpleado, $idPre
     $filaPeriodo = mysqli_fetch_assoc($resultadoPeriodo);
 
     if (!$filaPeriodo) {
-        return []; // No se encontró el período
+        return [];
     }
 
-    // Separar las fechas de inicio y fin del período (asumiendo formato 'YYYY-MM-DD a YYYY-MM-DD')
-    $partes = explode(' a ', $filaPeriodo['periodo']);
-    if (count($partes) != 2) {
-        return []; // Formato incorrecto
-    }
-    $fechaInicioPeriodo = $partes[0];
-    $fechaFinPeriodo = $partes[1];
+    // Separar las fechas de inicio y fin (formato 'YYYY-MM-DD a YYYY-MM-DD')
+    list($fechaInicioPeriodo, $fechaFinPeriodo) = explode(' a ', $filaPeriodo['periodo']);
 
-    // Consultar vacaciones que se crucen con el período
-    $consultaVacaciones = "SELECT fecha_inicio, fecha_fin, cantidad_dias, estado
-                           FROM vacaciones
-                           WHERE idempleado = ?
-                           AND fecha_inicio <= ?
-                           AND fecha_fin >= ?
-                           ORDER BY fecha_inicio DESC";
+    // Consultar vacaciones que se cruzan con el período
+    $consultaVacaciones = "
+        SELECT fecha_inicio, fecha_fin, cantidad_dias, estado
+        FROM vacaciones
+        WHERE idempleado = ?
+        AND estado = 'Aprobado'
+        AND fecha_inicio <= ?
+        AND fecha_fin >= ?
+        ORDER BY fecha_inicio DESC
+    ";
 
     $stmtVac = mysqli_prepare($vConexion, $consultaVacaciones);
     mysqli_stmt_bind_param($stmtVac, "iss", $idEmpleado, $fechaFinPeriodo, $fechaInicioPeriodo);
@@ -153,11 +167,43 @@ function Obtener_Vacaciones_Empleado_Por_Periodo($vConexion, $idEmpleado, $idPre
     $resultadoVac = mysqli_stmt_get_result($stmtVac);
 
     $vacaciones = [];
+    $totalDiasAplicables = 0;
+
     while ($fila = mysqli_fetch_assoc($resultadoVac)) {
+
+        // Calcular solapamiento real entre vacaciones y período
+        $inicioVac = $fila['fecha_inicio'];
+        $finVac = $fila['fecha_fin'];
+
+        // El inicio aplicable es el más reciente
+        $inicioAplicable = max($inicioVac, $fechaInicioPeriodo);
+
+        // El fin aplicable es el más temprano
+        $finAplicable = min($finVac, $fechaFinPeriodo);
+
+        // Cálculo de días dentro del período
+        if ($inicioAplicable <= $finAplicable) {
+            $dias = (strtotime($finAplicable) - strtotime($inicioAplicable)) / 86400 + 1;
+        } else {
+            $dias = 0;
+        }
+
+        // Acumular totales
+        $totalDiasAplicables += $dias;
+
+        // Guardar detalle con días dentro del período
+        $fila['dias_en_periodo'] = $dias;
+
         $vacaciones[] = $fila;
     }
-    return $vacaciones;
+
+    return [
+        'detalle' => $vacaciones,
+        'dias_vacaciones' => $totalDiasAplicables
+    ];
 }
+
+
 function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
 {
     // 1. Obtener el periodo desde la tabla preliquidacion
@@ -353,7 +399,7 @@ $sheet = $spreadsheet->getActiveSheet();
 $sheet->setTitle('Resumen Empleados');
 
 // Cabeceras
-$headers = ['Nombre', 'Apellido', 'DNI', 'Cargo', 'Sueldo Básico', 'Fecha Inicio', 'Antigüedad', 'Estado Civil', 'Hijos a cargo', 'Días Trabajados', 'Inasistencias'];
+$headers = ['Nombre', 'Apellido', 'DNI', 'Cargo', 'Sueldo Básico', 'Fecha Inicio', 'Antigüedad', 'Estado Civil', 'Hijos a cargo', 'Días Laborables', 'Días Trabajados', 'Inasistencias'];
 $col = 'A';
 foreach ($headers as $h) {
     $sheet->setCellValue($col . '1', $h);
@@ -390,8 +436,9 @@ foreach ($empleados as $emp) {
     $sheet->setCellValue('G' . $row, $antiguedad);
     $sheet->setCellValue('H' . $row, $detalle['estado_civil']);
     $sheet->setCellValue('I' . $row, $detalle['cantidad_hijos']);
-    $sheet->setCellValue('J' . $row, $infoJornada['diasTrabajados']);
-    $sheet->setCellValue('K' . $row, $infoJornada['inasistencias']);
+    $sheet->setCellValue('J' . $row, $infoJornada['diasLaboralesProgramados']);
+    $sheet->setCellValue('K' . $row, $infoJornada['diasTrabajados']);
+    $sheet->setCellValue('L' . $row, $infoJornada['inasistencias']);
     $row++;
 }
 
@@ -422,8 +469,8 @@ foreach ($empleados as $emp) {
             ->setFormatCode('"$"#,##0.00');
         $sheet->setCellValue('G' . $row, $totalHE);
         $sheet->getStyle('G' . $row)
-      ->getNumberFormat()
-      ->setFormatCode('"$"#,##0.00');
+            ->getNumberFormat()
+            ->setFormatCode('"$"#,##0.00');
         $row++;
     }
 }
@@ -431,7 +478,7 @@ foreach ($empleados as $emp) {
 // --- HOJA 3: Licencias ---
 $sheet = $spreadsheet->createSheet();
 $sheet->setTitle('Licencias');
-$headers = ['Empleado', 'Tipo', 'Inicio', 'Fin', 'Días', 'Estado'];
+$headers = ['Empleado', 'Tipo', 'Inicio', 'Fin', 'Días en Período', 'Estado'];
 $col = 'A';
 foreach ($headers as $h) {
     $sheet->setCellValue($col . '1', $h);
@@ -439,40 +486,92 @@ foreach ($headers as $h) {
     $sheet->getColumnDimension($col)->setAutoSize(true);
     $col++;
 }
+
 $row = 2;
+
 foreach ($empleados as $emp) {
-    $licencias = Listar_Licencia_Empleado_preliquidacion($conexion, $emp['idEmpleado'], $idPreliquidacion);
+
+    $licencias = Listar_Licencia_Empleado_preliquidacion(
+        $conexion,
+        $emp['idEmpleado'],
+        $idPreliquidacion
+    );
+
     foreach ($licencias as $lic) {
+
+        // --- FECHAS DEL PERÍODO ---
+        $inicioPeriodo = new DateTime($periodoInicio);   // ej: 2024-11-01
+        $finPeriodo    = new DateTime($periodoFin);      // ej: 2024-11-30
+
+        // --- FECHAS DE LA LICENCIA ---
+        $inicioLic = new DateTime($lic['FECHAINICIO']);
+        $finLic    = new DateTime($lic['FECHAFIN']);
+
+        // --- RECORTE DE FECHAS QUE CAEN FUERA DEL PERÍODO ---
+        $inicioReal = ($inicioLic < $inicioPeriodo) ? clone $inicioPeriodo : clone $inicioLic;
+        $finReal    = ($finLic > $finPeriodo) ? clone $finPeriodo : clone $finLic;
+
+        // --- CÁLCULO DE DÍAS DENTRO DEL PERÍODO ---
+        $dias = 0;
+        if ($inicioReal <= $finReal) {
+            $dias = $inicioReal->diff($finReal)->days + 1;
+        }
+
+        // SI NO HAY DÍAS EN ESTE PERÍODO, NO LO MOSTRAMOS
+        if ($dias <= 0) continue;
+
+        // --- CARGA EN EXCEL ---
         $sheet->setCellValue('A' . $row, $emp['nombre'] . ' ' . $emp['apellido']);
         $sheet->setCellValue('B' . $row, $lic['NOMBRETIPO']);
-        $sheet->setCellValue('C' . $row, $lic['FECHAINICIO']);
-        $sheet->setCellValue('D' . $row, $lic['FECHAFIN']);
-        $sheet->setCellValue('E' . $row, $lic['DIAS']);
+        $sheet->setCellValue('C' . $row, $inicioReal->format('Y-m-d'));
+        $sheet->setCellValue('D' . $row, $finReal->format('Y-m-d'));
+        $sheet->setCellValue('E' . $row, $dias);
         $sheet->setCellValue('F' . $row, $lic['ESTADO']);
+
         $row++;
     }
 }
 
+
+
 // --- HOJA 4: Vacaciones ---
 $sheet = $spreadsheet->createSheet();
 $sheet->setTitle('Vacaciones');
-$headers = ['Empleado', 'Inicio', 'Fin', 'Días', 'Estado'];
+
+$headers = ['Empleado', 'Inicio', 'Fin', 'Días dentro del periodo', 'Estado'];
 $col = 'A';
+
 foreach ($headers as $h) {
     $sheet->setCellValue($col . '1', $h);
     $sheet->getStyle($col . '1')->getFont()->setBold(true);
     $sheet->getColumnDimension($col)->setAutoSize(true);
     $col++;
 }
+
 $row = 2;
+
 foreach ($empleados as $emp) {
-    $vacaciones = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $emp['idEmpleado'], $idPreliquidacion);
-    foreach ($vacaciones as $vac) {
+
+    $vacData = Obtener_Vacaciones_Empleado_Por_Periodo($conexion, $emp['idEmpleado'], $idPreliquidacion);
+
+    // Si no hay detalle, pasar al próximo empleado
+    if (empty($vacData['detalle'])) {
+        continue;
+    }
+
+    foreach ($vacData['detalle'] as $vac) {
+
+        // Solo mostrar si tiene días dentro del período
+        if ($vac['dias_en_periodo'] <= 0) {
+            continue;
+        }
+
         $sheet->setCellValue('A' . $row, $emp['nombre'] . ' ' . $emp['apellido']);
         $sheet->setCellValue('B' . $row, $vac['fecha_inicio']);
         $sheet->setCellValue('C' . $row, $vac['fecha_fin']);
-        $sheet->setCellValue('D' . $row, $vac['cantidad_dias']);
+        $sheet->setCellValue('D' . $row, $vac['dias_en_periodo']);  // SOLO días dentro del período
         $sheet->setCellValue('E' . $row, $vac['estado']);
+
         $row++;
     }
 }
@@ -497,8 +596,8 @@ foreach ($empleados as $emp) {
         $sheet->setCellValue('C' . $row, $v['TIPO']);
         $sheet->setCellValue('D' . $row, $v['MONTO']);
         $sheet->getStyle('D' . $row)
-      ->getNumberFormat()
-      ->setFormatCode('"$"#,##0.00');
+            ->getNumberFormat()
+            ->setFormatCode('"$"#,##0.00');
         $row++;
     }
 }
@@ -506,7 +605,8 @@ foreach ($empleados as $emp) {
 // --- HOJA 6: Sanciones ---
 $sheet = $spreadsheet->createSheet();
 $sheet->setTitle('Sanciones');
-$headers = ['Empleado', 'Tipo', 'Inicio', 'Fin', 'Días', 'Estado'];
+
+$headers = ['Empleado', 'Tipo', 'Inicio', 'Fin', 'Días en Período', 'Estado'];
 $col = 'A';
 foreach ($headers as $h) {
     $sheet->setCellValue($col . '1', $h);
@@ -514,19 +614,58 @@ foreach ($headers as $h) {
     $sheet->getColumnDimension($col)->setAutoSize(true);
     $col++;
 }
+
 $row = 2;
+
 foreach ($empleados as $emp) {
-    $sanciones = Listar_Sancion_Empleado_Preliquidacion($conexion, $emp['idEmpleado'], $idPreliquidacion);
+
+    // <<<--- SOLO CAMBIA LA FUNCIÓN
+    $sanciones = Listar_Sancion_Empleado_Preliquidacion(
+        $conexion,
+        $emp['idEmpleado'],
+        $idPreliquidacion
+    );
+
     foreach ($sanciones as $san) {
+
+        // --- FECHAS DEL PERÍODO ---
+        $inicioPeriodo = new DateTime($periodoInicio);
+        $finPeriodo    = new DateTime($periodoFin);
+
+        // --- FECHAS DE LA SANCIÓN ---
+        $inicioSan = new DateTime($san['FECHAINICIO']);
+        $finSan    = new DateTime($san['FECHAFIN']);
+
+        // --- SOLO MOSTRAR SI ES SUSPENSIÓN ---
+        if (strtolower($san['NOMBRETIPO']) == 'Suspensión') {
+            continue;
+        }
+
+        // --- RECORTE IGUAL QUE LICENCIAS ---
+        $inicioReal = ($inicioSan < $inicioPeriodo) ? clone $inicioPeriodo : clone $inicioSan;
+        $finReal    = ($finSan > $finPeriodo) ? clone $finPeriodo : clone $finSan;
+
+        // --- CÁLCULO DE DÍAS DENTRO DEL PERÍODO ---
+        $dias = 0;
+        if ($inicioReal <= $finReal) {
+            $dias = $inicioReal->diff($finReal)->days + 1;
+        }
+
+        // SI NO HAY DÍAS DE SUSPENSIÓN EN ESTE PERÍODO, NO SE MUESTRA
+        if ($dias <= 0) continue;
+
+        // --- CARGA EN EXCEL ---
         $sheet->setCellValue('A' . $row, $emp['nombre'] . ' ' . $emp['apellido']);
         $sheet->setCellValue('B' . $row, $san['NOMBRETIPO']);
-        $sheet->setCellValue('C' . $row, $san['FECHAINICIO']);
-        $sheet->setCellValue('D' . $row, $san['FECHAFIN']);
-        $sheet->setCellValue('E' . $row, $san['DIAS']);
+        $sheet->setCellValue('C' . $row, $inicioReal->format('Y-m-d'));
+        $sheet->setCellValue('D' . $row, $finReal->format('Y-m-d'));
+        $sheet->setCellValue('E' . $row, $dias);
         $sheet->setCellValue('F' . $row, $san['ESTADO']);
+
         $row++;
     }
 }
+
 
 // --- HOJA 7: Embargos ---
 $sheet = $spreadsheet->createSheet();
@@ -551,8 +690,8 @@ foreach ($empleados as $emp) {
         $sheet->setCellValue('F' . $row, $emb['fecha_fin']);
         $sheet->setCellValue('G' . $row, $emb['monto']);
         $sheet->getStyle('G' . $row)
-      ->getNumberFormat()
-      ->setFormatCode('"$"#,##0.00');
+            ->getNumberFormat()
+            ->setFormatCode('"$"#,##0.00');
         $sheet->setCellValue('H' . $row, $emb['porcentaje']);
         $sheet->setCellValue('I' . $row, $emb['estado']);
         $row++;
