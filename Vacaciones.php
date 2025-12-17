@@ -8,6 +8,16 @@ if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;
 }
+require_once 'seguridad.php';
+
+if (!TieneAccesos(
+    $_SESSION['Usuario_Nivel'],
+    $_SESSION['Usuario_Roles_Funcionales'],
+    ['Encargado de Licencias']
+)) {
+    include 'acceso_denegado.php';
+    exit;
+}
 
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
@@ -65,39 +75,36 @@ $conexion = ConexionBD();
                 </ol>
             </nav>
         </div><!-- End Page Title -->
+       
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Vacaciones</h5>
 
+                    <!-- Nav Tabs -->
+                    <ul class="nav nav-tabs" id="VacacionesTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="registrar-tab" data-bs-toggle="tab" data-bs-target="#registrar" type="button" role="tab">Registrar</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="consultar-tab" data-bs-toggle="tab" data-bs-target="#consultar" type="button" role="tab">Consultar</button>
+                        </li>
+                    </ul>
 
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Vacaciones</h5>
+                    <!-- Contenido de las Tabs -->
+                    <div class="tab-content pt-2" id="VacacionesTabsContent">
+                        <!-- Tab de Registro -->
+                        <div class="tab-pane fade show active" id="registrar" role="tabpanel">
+                            <?php include 'Registrar_Vacaciones.php'; ?>
+                        </div>
 
-                <!-- Nav Tabs -->
-                <ul class="nav nav-tabs" id="VacacionesTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="registrar-tab" data-bs-toggle="tab" data-bs-target="#registrar" type="button" role="tab">Registrar</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="consultar-tab" data-bs-toggle="tab" data-bs-target="#consultar" type="button" role="tab">Consultar</button>
-                    </li>
-                </ul>
-
-                <!-- Contenido de las Tabs -->
-                <div class="tab-content pt-2" id="VacacionesTabsContent">
-                    <!-- Tab de Registro -->
-                    <div class="tab-pane fade show active" id="registrar" role="tabpanel">
-                        <?php include 'Registrar_Vacaciones.php'; ?>
+                        <!-- Tab de Historial -->
+                        <div class="tab-pane fade" id="consultar" role="tabpanel">
+                            <?php include 'Consultar_Vacaciones.php'; ?>
+                        </div>
                     </div>
 
-                    <!-- Tab de Historial -->
-                    <div class="tab-pane fade" id="consultar" role="tabpanel">
-                        <?php include 'Consultar_Vacaciones.php'; ?>
-                    </div>
                 </div>
-
             </div>
-        </div>
-
-
     </main><!-- End #main -->
     <!-- ======= Footer ======= -->
     <?php include_once 'partes/footer.php' ?>

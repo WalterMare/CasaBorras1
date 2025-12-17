@@ -9,6 +9,16 @@ if (empty($_SESSION['Usuario_Nombre'])) {
     exit;
 }
 
+require_once 'seguridad.php';
+
+if (!TieneAccesos(
+    $_SESSION['Usuario_Nivel'],
+    $_SESSION['Usuario_Roles_Funcionales'],
+    ['Encargado de Movimientos']
+)) {
+    include 'acceso_denegado.php';
+    exit;
+}
 require_once 'conexiondb.php';
 $conexion = ConexionBD();
 ?>

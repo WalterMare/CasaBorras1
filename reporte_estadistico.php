@@ -7,6 +7,16 @@ if (empty($_SESSION['Usuario_Nombre'])) {
     header('Refresh: 3; URL=cerrarsesion.php');
     exit;
 }
+require_once 'seguridad.php';
+
+if (!TieneAccesos(
+    $_SESSION['Usuario_Nivel'],
+    $_SESSION['Usuario_Roles_Funcionales'],
+    ['Gerente de Departamento']
+)) {
+    include 'acceso_denegado.php';
+    exit;
+}
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);

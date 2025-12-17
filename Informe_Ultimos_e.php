@@ -10,6 +10,16 @@ if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;
 }
+require_once 'seguridad.php';
+
+if (!TieneAccesos(
+    $_SESSION['Usuario_Nivel'],
+    $_SESSION['Usuario_Roles_Funcionales'],
+    ['Gerente de Departamento']
+)) {
+    include 'acceso_denegado.php';
+    exit;
+}
 
 $seleccionado = "1"; //se establece un valor por defecto para la primera carga de la página
 $seleccionado2 = "2";

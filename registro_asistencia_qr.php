@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['qrData'])) {
         }
 
         $diaSemana = obtenerDiaEnEspañol();
-
+        $horaFin = '';
         // Obtener horario asignado para hoy
         $sql = "SELECT hora_inicio, hora_fin FROM empleado_dia_horario WHERE idempleado = ? AND dia_semana = ?";
         $stmt = mysqli_prepare($conexion, $sql);

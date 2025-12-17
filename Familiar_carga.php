@@ -1,10 +1,4 @@
 <?php
-
-require_once 'conexiondb.php';
-$conexion = ConexionBD();
-require_once 'validacion_registro_familiar.php';
-require_once 'insertar_familiar.php';
-
 session_start();
 
 //si tengo vacio mi elemento de sesion me tiene q redireccionar al login.. 
@@ -13,6 +7,23 @@ if (empty($_SESSION['Usuario_Nombre'])) {
   header('Location: cerrarsesion.php');
   exit;
 }
+require_once 'seguridad.php';
+
+if (!TieneAccesos(
+    $_SESSION['Usuario_Nivel'],
+    $_SESSION['Usuario_Roles_Funcionales'],
+    ['Encargado de Personal']
+)) {
+    include 'acceso_denegado.php';
+    exit;
+}
+
+require_once 'conexiondb.php';
+$conexion = ConexionBD();
+require_once 'validacion_registro_familiar.php';
+require_once 'insertar_familiar.php';
+
+
 
 require_once 'select_relacion.php';
 $listadoRelacion = Listar_relacion($conexion);

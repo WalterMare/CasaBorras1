@@ -227,13 +227,32 @@ function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquid
     $estadosValidos = [1, 3, 4]; // 1=Presente, 3=Justificado, 4=Licencia
     $placeholders = implode(',', array_fill(0, count($estadosValidos), '?'));
 
-    $consultaAsistencias = "
-        SELECT COUNT(*) AS diasTrabajados 
+    /*$consultaAsistencias = "
+        SELECT COUNT(DISTINCT fecha) AS diasTrabajados 
         FROM asistencia 
         WHERE idEmpleado = ? 
         AND fecha BETWEEN ? AND ? 
         AND idEstado IN ($placeholders)
-    ";
+    ";*/
+    $consultaAsistencias = "
+    SELECT COUNT(DISTINCT a.fecha) AS diasTrabajados
+    FROM asistencia a
+    JOIN empleado_dia_horario h
+      ON h.idempleado = a.idEmpleado
+     AND h.dia_semana = CASE DAYOFWEEK(a.fecha)
+            WHEN 1 THEN 'Domingo'
+            WHEN 2 THEN 'Lunes'
+            WHEN 3 THEN 'Martes'
+            WHEN 4 THEN 'Miércoles'
+            WHEN 5 THEN 'Jueves'
+            WHEN 6 THEN 'Viernes'
+            WHEN 7 THEN 'Sábado'
+        END
+    WHERE a.idEmpleado = ?
+      AND a.fecha BETWEEN ? AND ?
+      AND a.idEstado IN ($placeholders)
+";
+
 
     $stmt2 = mysqli_prepare($vConexion, $consultaAsistencias);
 
@@ -253,7 +272,62 @@ function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquid
     $diasTrabajados = $fila2['diasTrabajados'] ?? 0;
 
     // 6. Inasistencias = días laborales programados - días trabajados
-    $inasistencias = $diasLaboralesProgramados - $diasTrabajados;
+    /*$inasistencias = $diasLaboralesProgramados - $diasTrabajados;
+    $consultaAusentes = "
+    SELECT COUNT(*) AS diasAusentes
+    FROM asistencia
+    WHERE idEmpleado = ?
+    AND fecha BETWEEN ? AND ?
+    AND idEstado = 2
+";*/
+    $consultaAusentes = "
+    SELECT COUNT(*) AS diasAusentes
+    FROM (
+        SELECT DATE_ADD(?, INTERVAL n DAY) AS fecha
+        FROM (
+            SELECT 0 n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
+            SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL
+            SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL
+            SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15 UNION ALL
+            SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL
+            SELECT 20 UNION ALL SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 UNION ALL
+            SELECT 24 UNION ALL SELECT 25 UNION ALL SELECT 26 UNION ALL SELECT 27 UNION ALL
+            SELECT 28 UNION ALL SELECT 29 UNION ALL SELECT 30
+        ) numeros
+        WHERE DATE_ADD(?, INTERVAL n DAY) <= ?
+    ) calendario
+    JOIN empleado_dia_horario h
+      ON h.idempleado = ?
+     AND h.dia_semana = CASE DAYOFWEEK(calendario.fecha)
+            WHEN 1 THEN 'Domingo'
+            WHEN 2 THEN 'Lunes'
+            WHEN 3 THEN 'Martes'
+            WHEN 4 THEN 'Miércoles'
+            WHEN 5 THEN 'Jueves'
+            WHEN 6 THEN 'Viernes'
+            WHEN 7 THEN 'Sábado'
+        END
+    LEFT JOIN asistencia a
+      ON a.idEmpleado = ?
+     AND a.fecha = calendario.fecha
+    WHERE a.idAsistencia IS NULL
+       OR a.idEstado = 2
+";
+
+    $stmt3 = mysqli_prepare($vConexion, $consultaAusentes);
+    mysqli_stmt_bind_param(
+        $stmt3,
+        "sssii",
+        $fechaInicio,
+        $fechaInicio,
+        $fechaFin,
+        $idEmpleado,
+        $idEmpleado
+    );
+    mysqli_stmt_execute($stmt3);
+    $resultado3 = mysqli_stmt_get_result($stmt3);
+    $fila3 = mysqli_fetch_assoc($resultado3);
+    $inasistencias = $fila3['diasAusentes'] ?? 0;
 
     return [
         'periodoTexto' => $fechaInicio . ' a ' . $fechaFin,
@@ -753,14 +827,16 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                         }
 
                         // 6. Total días a descontar
-                        $diasADescontar = max(0, ($diasLaborales - $diasPagados) + $diasLicenciasNoPagas + $diasSuspension);
+                        $diasADescontar = ($diasLaborales - $infoJornada['inasistencias']) + $diasLicenciasNoPagas;
 
                         // 7. Valor del día
                         $basico = $detalle['sueldo_basico'];
                         $valorDia = ($diasLaborales > 0) ? $basico / $diasLaborales : 0;
 
+                        // 13. Días efectivamente a cobrar
+                        $diasACobrar = $diasLaborales - $diasADescontar;
                         // 8. Descuento total por días no trabajados
-                        $descuentoTotal = $valorDia * $diasADescontar;
+                        $descuentoTotal = $valorDia * $diasACobrar;
 
                         // 9. Sueldo ajustado después de descuentos por inasistencias, licencias no pagas y suspensiones
                         $sueldoAjustado = max(0, $basico - $descuentoTotal);
@@ -787,8 +863,7 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
                             }
                         }
 
-                        // 13. Días efectivamente a cobrar
-                        $diasACobrar = $diasLaborales - $diasADescontar;
+                        
 
                         // 14. Total descuentos
                         $totalDescuentos = $descuentoTotal + $descuentoObraSocial + $descuentoJubilacion + $descuentoEmbargos;
@@ -831,14 +906,14 @@ $embargos = Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion);
 
                                     <tr style="border-top: 1px solid #ccc;">
                                         <td><strong>Total días a cobrar:</strong></td>
-                                        <td style="text-align: right;"><?php echo $diasACobrar; ?></td>
+                                        <td style="text-align: right;"><?php echo $diasADescontar; ?></td>
                                     </tr>
                                     <tr>
                                         <td><strong>Valor por día:</strong></td>
                                         <td style="text-align: right;">$<?php echo number_format($valorDia, 0, ',', '.'); ?></td>
                                     </tr>
                                     <tr style="border-bottom: 1px solid #ccc;">
-                                        <td><strong>Descuento total:</strong></td>
+                                        <td><strong>Descuento días:</strong></td>
                                         <td style="text-align: right;">$<?php echo number_format($descuentoTotal, 0, ',', '.'); ?></td>
                                     </tr>
                                     <tr style="border-top: 1px solid #ccc;">

@@ -5,6 +5,16 @@ if (empty($_SESSION['Usuario_Nombre'])) {
     header('Location: cerrarsesion.php');
     exit;
 }
+require_once 'seguridad.php';
+
+if (!TieneAccesos(
+    $_SESSION['Usuario_Nivel'],
+    $_SESSION['Usuario_Roles_Funcionales'],
+    ['Gerente de Departamento']
+)) {
+    include 'acceso_denegado.php';
+    exit;
+}
 
 require_once 'conexiondb.php';
 $conexion = ConexionBD();

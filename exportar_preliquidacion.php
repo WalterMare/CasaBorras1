@@ -204,7 +204,7 @@ function Obtener_Vacaciones_Empleado_Por_Periodo($vConexion, $idEmpleado, $idPre
 }
 
 
-function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
+/*function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
 {
     // 1. Obtener el periodo desde la tabla preliquidacion
     $queryPeriodo = "SELECT periodo FROM preliquidacion WHERE idpreliquidacion = ?";
@@ -287,7 +287,167 @@ function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquid
         'diasTrabajados' => $diasTrabajados,
         'inasistencias' => $inasistencias
     ];
+}*/
+function Obtener_Detalles_Jornada_Empleado($vConexion, $idEmpleado, $idPreliquidacion)
+{
+    // 1. Obtener el periodo desde la tabla preliquidacion
+    $queryPeriodo = "SELECT periodo FROM preliquidacion WHERE idpreliquidacion = ?";
+    $stmt = mysqli_prepare($vConexion, $queryPeriodo);
+    mysqli_stmt_bind_param($stmt, "i", $idPreliquidacion);
+    mysqli_stmt_execute($stmt);
+    $resultado = mysqli_stmt_get_result($stmt);
+    $fila = mysqli_fetch_assoc($resultado);
+
+    if (!$fila || empty($fila['periodo'])) {
+        return [
+            'periodoTexto' => 'No disponible',
+            'diasPeriodo' => 0,
+            'diasLaboralesProgramados' => 0,
+            'diasTrabajados' => 0,
+            'inasistencias' => 0
+        ];
+    }
+
+    // 2. Parsear el período
+    $periodo = explode(" a ", $fila['periodo']);
+    if (count($periodo) != 2) {
+        return [
+            'periodoTexto' => 'Formato inválido',
+            'diasPeriodo' => 0,
+            'diasLaboralesProgramados' => 0,
+            'diasTrabajados' => 0,
+            'inasistencias' => 0
+        ];
+    }
+
+    $fechaInicio = trim($periodo[0]);
+    $fechaFin = trim($periodo[1]);
+
+    // 3. Calcular días del periodo
+    $fechaInicioDT = new DateTime($fechaInicio);
+    $fechaFinDT = new DateTime($fechaFin);
+    $intervalo = $fechaInicioDT->diff($fechaFinDT);
+    $diasDelPeriodo = $intervalo->days + 1;
+
+    // 4. Contar días laborales programados usando la función creada
+    $diasLaboralesProgramados = contarDiasLaboralesProgramados($idEmpleado, $fechaInicio, $fechaFin, $vConexion);
+
+    // 5. Estados que cuentan como trabajados
+    $estadosValidos = [1, 3, 4]; // 1=Presente, 3=Justificado, 4=Licencia
+    $placeholders = implode(',', array_fill(0, count($estadosValidos), '?'));
+
+    /*$consultaAsistencias = "
+        SELECT COUNT(DISTINCT fecha) AS diasTrabajados 
+        FROM asistencia 
+        WHERE idEmpleado = ? 
+        AND fecha BETWEEN ? AND ? 
+        AND idEstado IN ($placeholders)
+    ";*/
+    $consultaAsistencias = "
+    SELECT COUNT(DISTINCT a.fecha) AS diasTrabajados
+    FROM asistencia a
+    JOIN empleado_dia_horario h
+      ON h.idempleado = a.idEmpleado
+     AND h.dia_semana = CASE DAYOFWEEK(a.fecha)
+            WHEN 1 THEN 'Domingo'
+            WHEN 2 THEN 'Lunes'
+            WHEN 3 THEN 'Martes'
+            WHEN 4 THEN 'Miércoles'
+            WHEN 5 THEN 'Jueves'
+            WHEN 6 THEN 'Viernes'
+            WHEN 7 THEN 'Sábado'
+        END
+    WHERE a.idEmpleado = ?
+      AND a.fecha BETWEEN ? AND ?
+      AND a.idEstado IN ($placeholders)
+";
+
+
+    $stmt2 = mysqli_prepare($vConexion, $consultaAsistencias);
+
+    $tipos = 'iss' . str_repeat('i', count($estadosValidos));
+    mysqli_stmt_bind_param(
+        $stmt2,
+        $tipos,
+        $idEmpleado,
+        $fechaInicio,
+        $fechaFin,
+        ...$estadosValidos
+    );
+
+    mysqli_stmt_execute($stmt2);
+    $resultado2 = mysqli_stmt_get_result($stmt2);
+    $fila2 = mysqli_fetch_assoc($resultado2);
+    $diasTrabajados = $fila2['diasTrabajados'] ?? 0;
+
+    // 6. Inasistencias = días laborales programados - días trabajados
+    /*$inasistencias = $diasLaboralesProgramados - $diasTrabajados;
+    $consultaAusentes = "
+    SELECT COUNT(*) AS diasAusentes
+    FROM asistencia
+    WHERE idEmpleado = ?
+    AND fecha BETWEEN ? AND ?
+    AND idEstado = 2
+";*/
+    $consultaAusentes = "
+    SELECT COUNT(*) AS diasAusentes
+    FROM (
+        SELECT DATE_ADD(?, INTERVAL n DAY) AS fecha
+        FROM (
+            SELECT 0 n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
+            SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL
+            SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL
+            SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15 UNION ALL
+            SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL
+            SELECT 20 UNION ALL SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 UNION ALL
+            SELECT 24 UNION ALL SELECT 25 UNION ALL SELECT 26 UNION ALL SELECT 27 UNION ALL
+            SELECT 28 UNION ALL SELECT 29 UNION ALL SELECT 30
+        ) numeros
+        WHERE DATE_ADD(?, INTERVAL n DAY) <= ?
+    ) calendario
+    JOIN empleado_dia_horario h
+      ON h.idempleado = ?
+     AND h.dia_semana = CASE DAYOFWEEK(calendario.fecha)
+            WHEN 1 THEN 'Domingo'
+            WHEN 2 THEN 'Lunes'
+            WHEN 3 THEN 'Martes'
+            WHEN 4 THEN 'Miércoles'
+            WHEN 5 THEN 'Jueves'
+            WHEN 6 THEN 'Viernes'
+            WHEN 7 THEN 'Sábado'
+        END
+    LEFT JOIN asistencia a
+      ON a.idEmpleado = ?
+     AND a.fecha = calendario.fecha
+    WHERE a.idAsistencia IS NULL
+       OR a.idEstado = 2
+";
+
+    $stmt3 = mysqli_prepare($vConexion, $consultaAusentes);
+    mysqli_stmt_bind_param(
+        $stmt3,
+        "sssii",
+        $fechaInicio,
+        $fechaInicio,
+        $fechaFin,
+        $idEmpleado,
+        $idEmpleado
+    );
+    mysqli_stmt_execute($stmt3);
+    $resultado3 = mysqli_stmt_get_result($stmt3);
+    $fila3 = mysqli_fetch_assoc($resultado3);
+    $inasistencias = $fila3['diasAusentes'] ?? 0;
+
+    return [
+        'periodoTexto' => $fechaInicio . ' a ' . $fechaFin,
+        'diasPeriodo' => $diasDelPeriodo,
+        'diasLaboralesProgramados' => $diasLaboralesProgramados,
+        'diasTrabajados' => $diasTrabajados,
+        'inasistencias' => $inasistencias
+    ];
 }
+
+
 
 function Listar_Embargos_Empleado($conexion, $idEmpleado, $idPreliquidacion)
 {
@@ -659,7 +819,7 @@ foreach ($empleados as $emp) {
         $sheet->setCellValue('B' . $row, $san['NOMBRETIPO']);
         $sheet->setCellValue('C' . $row, $inicioReal->format('Y-m-d'));
         $sheet->setCellValue('D' . $row, $finReal->format('Y-m-d'));
-        $sheet->setCellValue('E' . $row, $dias);
+        $sheet->setCellValue('E' . $row, $dias-1);
         $sheet->setCellValue('F' . $row, $san['ESTADO']);
 
         $row++;

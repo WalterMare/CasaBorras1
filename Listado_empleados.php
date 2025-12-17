@@ -8,6 +8,16 @@ if (empty($_SESSION['Usuario_Nombre'])) {
   header('Location: cerrarsesion.php');
   exit;
 }
+require_once 'seguridad.php';
+
+if (!TieneAccesos(
+    $_SESSION['Usuario_Nivel'],
+    $_SESSION['Usuario_Roles_Funcionales'],
+    ['Encargado de Personal']
+)) {
+    include 'acceso_denegado.php';
+    exit;
+}
 
 //voy a necesitar la conexion: incluyo la funcion de Conexion.
 require_once 'conexiondb.php';

@@ -1,5 +1,5 @@
 <?php
-$nivelUsuario = $_SESSION['Usuario_Id']; // Ej: 1 = admin, 2 = operador
+$nivelUsuario = $_SESSION['Usuario_Nivel']; // Ej: 1 = admin, 2 = operador
 $rolesFuncionales = $_SESSION['Usuario_Roles_Funcionales']; // Array con roles, ej: ['Encargado de Personal', 'Encargado de Licencias']
 
 // Función para validar acceso según nivel y rol
@@ -27,7 +27,7 @@ function TieneAcceso($nivelUsuario, $rolesFuncionales, $rolesNecesarios = [])
     </li><!-- End Dashboard Nav -->
 
     <!-- Gestor de Personal - Solo para administradores y RRHH -->
-    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Encargado de Personal', 'Administrador', 'Gerente de Departamento'])): ?>
+    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Encargado de Personal'])): ?>
       <!-- Gestor de Personal -->
       <li class="nav-item">
         <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'Empleado_carga.php' || basename($_SERVER['PHP_SELF']) == 'Familiar_carga.php' || basename($_SERVER['PHP_SELF']) == 'Usuario.php' || basename($_SERVER['PHP_SELF']) == 'Listado_empleados.php') ? 'active' : ''; ?>" data-bs-target="#forms-nav-personal" data-bs-toggle="collapse" href="#">
@@ -54,7 +54,7 @@ function TieneAcceso($nivelUsuario, $rolesFuncionales, $rolesNecesarios = [])
       <!-- End Gestor de Personal -->
     <?php endif; ?>
 
-    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Encargado de Movimientos', 'Administrador', 'Gerente de Departamento'])): ?>
+    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Encargado de Movimientos', 'Administrador'])): ?>
       <!-- Gestor Movimientos -->
       <li class="nav-item">
 
@@ -125,7 +125,7 @@ function TieneAcceso($nivelUsuario, $rolesFuncionales, $rolesNecesarios = [])
       </li>
     <?php endif; ?>
     
-    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Encargado de Licencias', 'Administrador', 'Gerente de Departamento'])): ?>
+    <?php if (TieneAcceso($nivelUsuario, $rolesFuncionales, ['Encargado de Licencias', 'Administrador'])): ?>
       <!-- Gestor Licencias-->
       <li class="nav-item">
 
