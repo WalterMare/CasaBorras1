@@ -43,7 +43,7 @@ $listadoDetalle = 0;
 require_once 'select_empleado.php';
 $empleado = Listar_empleadoId($conexion, $empleado_id);
 
-require_once('TCPDF-main/tcpdf.php');
+//require_once('TCPDF-main/tcpdf.php');
 
 
 ?>
